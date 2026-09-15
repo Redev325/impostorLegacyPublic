@@ -101,14 +101,7 @@ jobs:
               return text[:start]+replacement+text[end:]
           cp=Path('source/funkin/data/ClientPrefs.hx'); s=cp.read_text(); s=replace_function(s,'backupSave',"\tpublic static function backupSave(name:String='funkin'):Void { }\n"); s=replace_function(s,'tryBindingSave',"\tpublic static function tryBindingSave(name:String='funkin'):Void { FlxG.save.bind(name,CoolUtil.getSavePath(),function(data:String,exception:haxe.Exception) { if(exception!=null) trace('save binding failed: ${exception.message}'); return {}; }); }\n"); s=replace_function(s,'attemptLoadBackup',"\tpublic static function attemptLoadBackup(name:String='funkin'):Dynamic { return {}; }\n"); cp.write_text(s)
           mods=Path('source/funkin/Mods.hx'); s=mods.read_text(); s=re.sub(r'(?m)^\s*File\.saveContent\([^\n]*\);\s*$','\t// modsList.txt saving disabled for HTML5',s); s=s.replace('FileSystem.exists(path + fileToFind)','FunkinAssets.exists(path + fileToFind)'); mods.write_text(s)
-          fnaf=Path('source/funkin/states/FNAFState.hx'); s=fnaf.read_text()
-          # Remove all native process exits and the native temporary-video API calls.
-          s=s.replace('Sys.exit(0);','// browser build does not terminate the process')
-          s=s.replace('var tmp = Sys.getEnv("TEMP");','var tmp = ".";')
-          s=s.replace('sys.io.File.saveBytes(dest, bytes);','// native video file write disabled for browser')
-          # Also remove the complete native extraction block when its stable marker exists.
-          marker='if (vidPath != null && FunkinAssets.exists(vidPath))'
-          pos=s.find(marker)
+          fnaf=Path('source/funkin/states/FNAFState.hx'); s=fnaf.read_text(); s=s.replace('Sys.exit(0);','// browser build does not terminate the process'); s=s.replace('var tmp = Sys.getEnv("TEMP");','var tmp = ".";'); s=s.replace('sys.io.File.saveBytes(dest, bytes);','// native video file write disabled for browser'); marker='if (vidPath != null && FunkinAssets.exists(vidPath))'; pos=s.find(marker)
           if pos >= 0:
               brace=s.find('{',pos)
               if brace >= 0:
@@ -127,17 +120,13 @@ jobs:
                               if depth==0: end=i+1; break
                       i+=1
                   if end is not None:
-                      line_start=s.rfind('\n',0,pos)+1
-                      indent=s[line_start:pos]
-                      s=s[:line_start]+indent+'// Browser build: native temporary video extraction disabled.\n'+s[end:]
-          # Final literal replacements are intentionally repeated after block removal.
-          s=s.replace('Sys.getEnv("TEMP")','"."')
-          s=s.replace('sys.io.File.saveBytes(dest, bytes);','// native video file write disabled for browser')
-          s=s.replace('Sys.exit(0);','// browser build does not terminate the process')
-          forbidden=('Sys.getEnv("TEMP")','sys.io.File.saveBytes','Sys.exit(0);')
-          leftovers=[token for token in forbidden if token in s]
-          if leftovers: raise SystemExit('FNAF native code still present: ' + ', '.join(leftovers))
+                      line_start=s.rfind('\n',0,pos)+1; indent=s[line_start:pos]; s=s[:line_start]+indent+'// Browser build: native temporary video extraction disabled.\n'+s[end:]
+          s=s.replace('Sys.getEnv("TEMP")','"."').replace('sys.io.File.saveBytes(dest, bytes);','// native video file write disabled for browser').replace('Sys.exit(0);','// browser build does not terminate the process')
+          leftovers=[x for x in ('Sys.getEnv("TEMP")','sys.io.File.saveBytes','Sys.exit(0);') if x in s]
+          if leftovers: raise SystemExit('FNAF native code still present: '+', '.join(leftovers))
           fnaf.write_text(s)
+          edit('source/funkin/backend/CrashHandler.hx', lambda s: s.replace("\t\tif (FlxG.state != null)\n\t\t{\n\t\t\tfinal cl = Type.getClass(FlxG.state);", "\t\tif (FlxG.state != null)\n\t\t{\n\t\t\tvar state = FlxG.state;\n\t\t\tif (state == null) return;\n\t\t\tfinal cl = Type.getClass(state);", 1))
+          edit('source/funkin/backend/DebugDisplay.hx', lambda s: s.replace('var className = Type.getClassName(Type.getClass(FlxG.state));', "var state = FlxG.state;\n\t\t\tif (state == null) return;\n\t\t\tvar className = Type.getClassName(Type.getClass(state)) ?? 'Unknown';", 1))
           edit('source/funkin/data/ClientPrefs.hx',lambda s:s.replace('funkin.api.DiscordClient.check();','// Discord RPC disabled for HTML5'))
           edit('source/Init.hx',lambda s:s.replace('DiscordClient.check();','// Discord RPC disabled for HTML5'))
           edit('source/funkin/utils/CoolUtil.hx',lambda s:s.replace('FlxG.error("Platform is not supported for CoolUtil.openFolder");','trace("Platform is not supported for CoolUtil.openFolder");'))
@@ -149,6 +138,7 @@ jobs:
           set -e
           ! grep -R -n -E '^[[:space:]]*(sys\.io\.File|Sys\.getEnv|Sys\.exit\(|FileSystem\.(exists|deleteFile|rename)|File\.(copy|saveContent))' source/funkin/data/ClientPrefs.hx source/funkin/Mods.hx source/funkin/states/FNAFState.hx
           ! grep -R -n -E 'Sys\.getEnv\("TEMP"\)|sys\.io\.File\.saveBytes|Sys\.exit\(0\);' source/funkin/states/FNAFState.hx
+          ! grep -R -n -E 'Type\.getClass\(FlxG\.state\)' source/funkin/backend/CrashHandler.hx source/funkin/backend/DebugDisplay.hx
       - name: Compile to Web Port
         run: haxelib run lime build html5
       - name: Upload HTML5 Build
