@@ -19,13 +19,7 @@ jobs:
           haxelib install openfl
           haxelib install flixel
           haxelib run lime setup
-
-      - name: Install HMM Package Manager
-        run: |
-          haxelib install hmm
-          haxelib run hmm setup
-          haxelib run hmm install
-
+          haxelib run flixel setup --y
 
       - name: Compile to Web Port
         run: haxelib run lime build html5
