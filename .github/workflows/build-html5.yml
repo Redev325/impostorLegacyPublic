@@ -18,39 +18,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential \
-            pkg-config \
-            libwayland-dev \
-            libwayland-bin \
-            wayland-protocols \
-            libasound2-dev \
-            libpulse-dev \
-            libdbus-1-dev \
-            libudev-dev \
-            libx11-dev \
-            libxext-dev \
-            libxrandr-dev \
-            libxinerama-dev \
-            libxcursor-dev \
-            libxi-dev \
-            libxfixes-dev \
-            libxxf86vm-dev \
-            libxss-dev \
-            libxkbcommon-dev \
-            libxt-dev \
-            libxv-dev \
-            libdrm-dev \
-            libgbm-dev \
-            libgl-dev \
-            libgles-dev \
-            libegl1-mesa-dev \
-            libglu1-mesa-dev \
-            libibus-1.0-dev \
-            libsamplerate0-dev \
-            libsndio-dev \
-            libpipewire-0.3-dev \
-            libspa-0.2-dev \
-            libsdl2-dev
+            build-essential pkg-config libwayland-dev libwayland-bin wayland-protocols \
+            libasound2-dev libpulse-dev libdbus-1-dev libudev-dev \
+            libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+            libxi-dev libxfixes-dev libxxf86vm-dev libxss-dev libxkbcommon-dev \
+            libxt-dev libxv-dev libdrm-dev libgbm-dev libgl-dev libgles-dev \
+            libegl1-mesa-dev libglu1-mesa-dev libibus-1.0-dev libsamplerate0-dev \
+            libsndio-dev libpipewire-0.3-dev libspa-0.2-dev libsdl2-dev
 
       - name: Setup Haxe Environment
         uses: krdlab/setup-haxe@v1
@@ -77,10 +51,7 @@ jobs:
         run: |
           cat > source/funkin/video/FunkinVideoSprite.hx <<'EOF'
           package funkin.video;
-
           import flixel.FlxSprite;
-
-          // hxvlc is native-only. This compatibility class lets the HTML5 build compile.
           class FunkinVideoSprite extends FlxSprite
           {
             public static final looping:String = ':input-repeat=65535';
@@ -125,57 +96,46 @@ jobs:
                   raise SystemExit(f'No change made to {path}; expected source pattern was not found')
               p.write_text(out)
 
-          # Paths.mods() is compiled out on HTML5 in this project, but several shared
-          # classes still call it. Provide a harmless web implementation.
           edit('source/funkin/Paths.hx', lambda s: s
               .replace("\tpublic static function getModFolder(path:String, ?exclude:String):String\n", "\t#if html5\n\tpublic static inline function mods(?mod:String = ''):String\n\t{\n\t\treturn MODS_DIRECTORY + '/' + (mod ?? '');\n\t}\n\t#end\n\n\tpublic static function getModFolder(path:String, ?exclude:String):String\n", 1)
               .replace("return (!FileSystem.exists(path) && Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);", "return (Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);", 1))
 
-          # The cosmicube filesystem loader is a desktop feature. Keep its data types,
-          # but make its loaders no-ops on HTML5.
           edit('source/funkin/data/CosmicubeData.hx', lambda s: s
               .replace("\tpublic static function reload(hard:Bool = true):Void\n\t{\n", "\tpublic static function reload(hard:Bool = true):Void\n\t{\n\t\t#if html5\n\t\treturn;\n\t\t#else\n", 1)
               .replace("\t}\n\t\n\tstatic function getShopItems", "\t\t#end\n\t}\n\t\n\tstatic function getShopItems", 1)
               .replace("\tstatic function getShopItems(dir:String, meta:CosmicubeMetadata):Array<ShopItemData>\n\t{\n", "\tstatic function getShopItems(dir:String, meta:CosmicubeMetadata):Array<ShopItemData>\n\t{\n\t\t#if html5\n\t\treturn [];\n\t\t#else\n", 1)
               .replace("\t\treturn list;\n\t}\n\n\tinline static function get_currentMeta", "\t\treturn list;\n\t\t#end\n\t}\n\n\tinline static function get_currentMeta", 1))
 
-          # Chart editor: use OpenFL's Sound type explicitly and the project's asset API
-          # instead of sys.io.File for the small offset text file.
           edit('source/funkin/states/editors/ChartEditorState.hx', lambda s: s
               .replace('import openfl.events.Event;\n', 'import openfl.events.Event;\nimport openfl.media.Sound;\n', 1)
               .replace("File.getContent(Paths.getCorePath('$path.txt'))", "FunkinAssets.getContent(Paths.getCorePath('$path.txt'))", 1))
 
-          # Browser builds cannot use the desktop file dialog implementation.
-          Path('source/funkin/utils/FileUtil.hx').write_text('''package funkin.utils;\n\nimport openfl.net.FileFilter;\n\ntypedef BrowseOptions =\n{\n  var ?typeFilter:Array<FileFilter>;\n  var ?title:String;\n  var ?defaultSearch:String;\n}\n\n@:nullSafety\nclass FileUtil\n{\n  public static function browseForFile(options:BrowseOptions, ?onSelect:String->Void, ?onCancel:Void->Void):Void\n  { if (onCancel != null) onCancel(); }\n  public static function browseForMultipleFiles(options:BrowseOptions, ?onSelect:Array<String>->Void, ?onCancel:Void->Void):Void\n  { if (onCancel != null) onCancel(); }\n  public static function saveFile(data:Dynamic, ?fileName:String, ?onSelect:String->Void, ?onCancel:Void->Void):Void\n  { if (onCancel != null) onCancel(); }\n  public static function saveFileToPath(data:Dynamic, path:String, ensureDirectory:Bool = true):Bool\n  { return false; }\n}\n''')
+          Path('source/funkin/utils/FileUtil.hx').write_text('''package funkin.utils;\nimport openfl.net.FileFilter;\ntypedef BrowseOptions = { var ?typeFilter:Array<FileFilter>; var ?title:String; var ?defaultSearch:String; }\n@:nullSafety class FileUtil\n{\n  public static function browseForFile(options:BrowseOptions, ?onSelect:String->Void, ?onCancel:Void->Void):Void { if (onCancel != null) onCancel(); }\n  public static function browseForMultipleFiles(options:BrowseOptions, ?onSelect:Array<String>->Void, ?onCancel:Void->Void):Void { if (onCancel != null) onCancel(); }\n  public static function saveFile(data:Dynamic, ?fileName:String, ?onSelect:String->Void, ?onCancel:Void->Void):Void { if (onCancel != null) onCancel(); }\n  public static function saveFileToPath(data:Dynamic, path:String, ensureDirectory:Bool = true):Bool return false;\n}\n''')
 
-          # Desktop preference-file existence checks do not work in a browser. The
-          # normal FlxSave/browser path remains available elsewhere.
           edit('source/funkin/data/ClientPrefs.hx', lambda s: s.replace('FileSystem.exists(', 'FunkinAssets.exists('))
 
-          # Discord RPC is not available in the browser build.
           for path in ['source/funkin/data/ClientPrefs.hx', 'source/Init.hx']:
               edit(path, lambda s: s.replace('DiscordClient.check();', '#if !html5\n\tDiscordClient.check();\n\t#end'))
 
-          # FlxG.error is not present in this Flixel version on web.
           edit('source/funkin/utils/CoolUtil.hx', lambda s: s.replace('FlxG.error("Platform is not supported for CoolUtil.openFolder");', 'trace("Platform is not supported for CoolUtil.openFolder");'))
 
-          # Mods use physical files only on desktop. Keep the normal web asset path
-          # for simple existence checks and disable writes to modsList.txt.
           edit('source/funkin/Mods.hx', lambda s: s
               .replace("File.saveContent('modsList.txt', '');", "#if !html5\n\t\t\tFile.saveContent('modsList.txt', '');\n\t\t\t#end", 1)
               .replace('FileSystem.exists(path + fileToFind)', 'FunkinAssets.exists(path + fileToFind)', 1))
 
-          # Splash branding directory enumeration is desktop filesystem-only.
           edit('source/Splash.hx', lambda s: s.replace("\tfunction logoFunc()\n\t{\n", "\tfunction logoFunc()\n\t{\n\t\t#if html5\n\t\tfinish();\n\t\treturn;\n\t\t#else\n", 1)
               .replace("\t\tadd(logo);\n", "\t\tadd(logo);\n\t\t#end\n", 1))
 
-          # FNAF's crash/file-export path is native-only. The video stub already
-          # prevents actual video playback on HTML5.
-          edit('source/funkin/states/FNAFState.hx', lambda s: s
-              .replace('                    Sys.exit(0);', '                    #if !html5\n                    Sys.exit(0);\n                    #end', 1)
-              .replace('                    var tmp = Sys.getEnv("TEMP");\n                    if (tmp == null) tmp = ".";\n                    var dest = tmp + "/fnaf_vid_" + Paths.sanitize(key) + ".mp4";\n                    sys.io.File.saveBytes(dest, bytes);\n                    loadPath = dest;', '                    #if !html5\n                    var tmp = Sys.getEnv("TEMP");\n                    if (tmp == null) tmp = ".";\n                    var dest = tmp + "/fnaf_vid_" + Paths.sanitize(key) + ".mp4";\n                    sys.io.File.saveBytes(dest, bytes);\n                    loadPath = dest;\n                    #end', 1))
+          def patch_fnaf(s):
+              s = re.sub(r'(?m)^(\s*)Sys\.exit\(0\);$', r'\1#if !html5\n\1Sys.exit(0);\n\1#end', s, count=1)
+              old = '''\t\t\t\t\tvar tmp = Sys.getEnv("TEMP");\n\t\t\t\t\tif (tmp == null) tmp = ".";\n\t\t\t\t\tvar dest = tmp + "/fnaf_vid_" + Paths.sanitize(key) + ".mp4";\n\t\t\t\t\tsys.io.File.saveBytes(dest, bytes);\n\t\t\t\t\tloadPath = dest;'''
+              new = '''\t\t\t\t\t#if !html5\n''' + old + '''\n\t\t\t\t\t#end'''
+              if old in s: s = s.replace(old, new, 1)
+              else:
+                  s = re.sub(r'(?s)(\s*var tmp = Sys\.getEnv\("TEMP"\);.*?loadPath = dest;)', lambda m: m.group(1).replace(m.group(1).lstrip(), '#if !html5\n' + m.group(1).lstrip() + '\n#end', 1), s, count=1)
+              return s
+          edit('source/funkin/states/FNAFState.hx', patch_fnaf)
 
-          # AppData lookup is native-only; browser has no equivalent local folder.
           edit('source/funkin/objects/menu/CosmicubeNode.hx', lambda s: s.replace('inline function hasUpdogSaveData():Bool\n\t{\n', 'inline function hasUpdogSaveData():Bool\n\t{\n\t\t#if html5\n\t\treturn false;\n\t\t#else\n', 1)
               .replace("\t\treturn FileSystem.isDirectory('$appDataPath/UpdogTeam');\n\t}\n", "\t\treturn FileSystem.isDirectory('$appDataPath/UpdogTeam');\n\t\t#end\n\t}\n", 1))
           PY
