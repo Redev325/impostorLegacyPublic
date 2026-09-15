@@ -1,0 +1,36 @@
+name: Build HTML5 Web Port
+on: [workflow_dispatch] # Allows you to manually trigger it
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Haxe Environment
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: 4.3.4
+
+      - name: Install Build Systems
+        run: |
+          haxelib install lime
+          haxelib install openfl
+          haxelib install flixel
+          haxelib run lime setup
+
+      - name: Install HMM Package Manager
+        run: |
+          haxelib install hmm
+          haxelib run hmm setup
+          hmm install
+
+      - name: Compile to Web Port
+        run: haxelib run lime build html5
+
+      - name: Upload Web Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Impostor-Legacy-Web-Build
+          path: export/html5/bin/
