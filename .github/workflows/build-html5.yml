@@ -48,6 +48,8 @@ jobs:
             libibus-1.0-dev \
             libsamplerate0-dev \
             libsndio-dev \
+            libpipewire-0.3-dev \
+            libspa-0.2-dev \
             libsdl2-dev
 
       - name: Setup Haxe Environment
