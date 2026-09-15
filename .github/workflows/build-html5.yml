@@ -73,6 +73,63 @@ jobs:
           cd ../../..
           haxelib run lime rebuild cpp -release
 
+      - name: Disable native-only video backend for HTML5
+        run: |
+          cat > source/funkin/video/FunkinVideoSprite.hx <<'EOF'
+          package funkin.video;
+
+          import flixel.FlxSprite;
+
+          // hxvlc is a native-only video backend. HTML5 uses this harmless
+          // compatibility stub so the rest of the game can still compile.
+          class FunkinVideoSprite extends FlxSprite
+          {
+            public static final looping:String = ':input-repeat=65535';
+            public static final muted:String = ':no-audio';
+
+            public var tiedToGame:Bool = true;
+            public var time(get, set):Float;
+            public var length(get, never):Float;
+            public var playing(get, never):Bool;
+            public var percent(get, never):Float;
+
+            var _time:Float = 0;
+            var _playing:Bool = false;
+
+            public function new(x:Float = 0, y:Float = 0, oneTimeUse:Bool = true)
+            {
+              super(x, y);
+            }
+
+            public static function init():Void {}
+
+            public function delayAndStart(delay:Float = 0):Void
+            {
+              // Videos are intentionally disabled in the HTML5 build.
+            }
+
+            public function onEnd(func:Void->Void, once:Bool = false, priority:Int = 0):Void {}
+            public function onStart(func:Void->Void, once:Bool = false, priority:Int = 0):Void {}
+            public function onFormat(func:Void->Void, once:Bool = false, priority:Int = 0):Void {}
+
+            public function load(location:Dynamic, ?options:Array<String>):Bool
+            {
+              return false;
+            }
+
+            public function play():Void { _playing = false; }
+            public function pause():Void { _playing = false; }
+            public function resume():Void { _playing = false; }
+            public function stop():Void { _playing = false; }
+
+            inline function get_time():Float return _time;
+            inline function set_time(value:Float):Float { _time = value; return value; }
+            inline function get_length():Float return 0;
+            inline function get_playing():Bool return _playing;
+            inline function get_percent():Float return 0;
+          }
+          EOF
+
       - name: Compile to Web Port
         run: haxelib run lime build html5
 
