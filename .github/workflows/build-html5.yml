@@ -11,11 +11,13 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Setup Haxe Environment
         uses: krdlab/setup-haxe@v1
         with:
-          haxe-version: 4.3.4
+          haxe-version: 4.3.6
 
       - name: Install hxpkg
         run: haxelib install hxpkg --quiet
@@ -24,7 +26,14 @@ jobs:
         run: |
           haxelib run hxpkg setup
           haxelib run hxpkg install
-          haxelib run lime setup
+
+      - name: Build Lime native tools
+        run: |
+          cd .haxelib/lime/git
+          git submodule sync --recursive
+          git submodule update --init --recursive --force
+          cd ../../..
+          haxelib run lime rebuild cpp -release
 
       - name: Compile to Web Port
         run: haxelib run lime build html5
