@@ -127,8 +127,9 @@ jobs:
 
           fnaf = Path('source/funkin/states/FNAFState.hx'); s = fnaf.read_text()
           s = s.replace('Sys.exit(0);', '// browser build does not terminate the process')
-          s = re.sub(r'(?s)\s*var tmp = Sys\.getEnv\("TEMP"\);.*?\s*loadPath = dest;', '\n\t\t\t\t\t// native temporary video extraction disabled for browser\n\t\t\t\t\tloadPath = null;', s, count=1)
-          s = re.sub(r'(?m)^\s*sys\.io\.File\.saveBytes\([^\n]*\);\s*$', '\t\t\t\t\t// native file save disabled for browser', s)
+          s = re.sub(r'(?m)^\s*var tmp = Sys\.getEnv\("TEMP"\);\s*\n\s*if \(tmp == null\) tmp = ".";\s*\n\s*var dest = tmp \+ "/fnaf_vid_" \+ Paths\.sanitize\(key\) \+ "\\.mp4";\s*\n\s*sys\.io\.File\.saveBytes\(dest, bytes\);\s*\n\s*loadPath = dest;', '\t\t\t\t\t// native temporary video extraction disabled for browser\n\t\t\t\t\tloadPath = null;', s)
+          if 'Sys.getEnv("TEMP")' in s or 'sys.io.File.saveBytes' in s:
+              raise SystemExit('FNAF native video code was not fully removed')
           fnaf.write_text(s)
 
           edit('source/funkin/data/ClientPrefs.hx', lambda s: s.replace('funkin.api.DiscordClient.check();', '// Discord RPC disabled for HTML5'))
