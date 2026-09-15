@@ -24,7 +24,8 @@ jobs:
         run: |
           haxelib install hmm
           haxelib run hmm setup
-          hmm install
+          haxelib run hmm install
+
 
       - name: Compile to Web Port
         run: haxelib run lime build html5
