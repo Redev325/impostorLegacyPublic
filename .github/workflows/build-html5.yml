@@ -20,6 +20,7 @@ jobs:
           haxelib install openfl --quiet
           haxelib install flixel --quiet
           haxelib install flixel-addons --quiet
+          haxelib install flixel-ui --quiet
           haxelib run lime setup
 
       - name: Compile to Web Port
