@@ -90,22 +90,28 @@ jobs:
           from pathlib import Path
           import re
 
-          def edit(path, fn):
+          def replace_required(path, old, new):
               p = Path(path)
               s = p.read_text()
-              out = fn(s)
-              if out == s:
-                  print(f'No change needed for {path}')
-              else:
-                  p.write_text(out)
-                  print(f'Patched {path}')
+              if old not in s:
+                  raise SystemExit(f'Expected source text not found in {path}: {old[:100]!r}')
+              p.write_text(s.replace(old, new))
+              print(f'Patched {path}')
 
-          # Paths: provide the mods path expected by web builds and avoid native FileSystem font probing.
-          edit('source/funkin/Paths.hx', lambda s: s
-              .replace("\tpublic static function getModFolder(path:String, ?exclude:String):String\n", "\t#if html5\n\tpublic static inline function mods(?mod:String = ''):String\n\t{\n\t\treturn MODS_DIRECTORY + '/' + (mod ?? '');\n\t}\n\t#end\n\n\tpublic static function getModFolder(path:String, ?exclude:String):String\n", 1)
-              .replace("return (!FileSystem.exists(path) && Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);", "return (Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);", 1))
+          # Paths: web-safe mods path and font lookup.
+          replace_required('source/funkin/Paths.hx',
+              "return (!FileSystem.exists(path) && Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);",
+              "return (Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);")
+          p = Path('source/funkin/Paths.hx')
+          s = p.read_text()
+          if '#if html5\n\tpublic static inline function mods' not in s:
+              marker = "\tpublic static function getModFolder(path:String, ?exclude:String):String\n"
+              if marker not in s:
+                  raise SystemExit('Could not find Paths.getModFolder')
+              s = s.replace(marker, "\t#if html5\n\tpublic static inline function mods(?mod:String = ''):String\n\t{\n\t\treturn MODS_DIRECTORY + '/' + (mod ?? '');\n\t}\n\t#end\n\n" + marker, 1)
+              p.write_text(s)
 
-          # Cosmicube loading is filesystem-based on desktop. Keep the data API alive on web without scanning disk.
+          # Cosmicube data is filesystem-based on desktop; keep its public API on web.
           Path('source/funkin/data/CosmicubeData.hx').write_text('''package funkin.data;
 
 typedef CosmicubeMetadata =
@@ -173,9 +179,7 @@ class CosmicubeData
   }
 
   inline static function get_currentCurrency():String return currentMeta?.currency ?? '';
-
   static function get_currentMoney():Int return getMoney(currentCurrency);
-
   static function set_currentMoney(money:Int):Int return setMoney(currentCurrency, money);
 
   public static inline function getMoney(currency:Null<String>):Int
@@ -194,9 +198,13 @@ class CosmicubeData
 }
 ''')
 
-          edit('source/funkin/states/editors/ChartEditorState.hx', lambda s: s
-              .replace('import openfl.events.Event;\n', 'import openfl.events.Event;\nimport openfl.media.Sound;\n', 1)
-              .replace("File.getContent(Paths.getCorePath('$path.txt'))", "FunkinAssets.getContent(Paths.getCorePath('$path.txt'))", 1))
+          # Chart editor: browser assets instead of sys.io.File.
+          p = Path('source/funkin/states/editors/ChartEditorState.hx')
+          s = p.read_text()
+          if 'import openfl.media.Sound;' not in s:
+              s = s.replace('import openfl.events.Event;\n', 'import openfl.events.Event;\nimport openfl.media.Sound;\n', 1)
+          s = s.replace("File.getContent(Paths.getCorePath('$path.txt'))", "FunkinAssets.getContent(Paths.getCorePath('$path.txt'))")
+          p.write_text(s)
 
           Path('source/funkin/utils/FileUtil.hx').write_text('''package funkin.utils;
 import openfl.net.FileFilter;
@@ -210,47 +218,88 @@ typedef BrowseOptions = { var ?typeFilter:Array<FileFilter>; var ?title:String; 
 }
 ''')
 
-          # ClientPrefs backup/restore code is desktop-only. Remove every native filesystem statement
-          # from this build copy; normal FlxSave/browser storage remains available.
-          def patch_clientprefs(s):
-              lines = []
-              for line in s.splitlines(True):
-                  stripped = line.strip()
-                  if ('FileSystem.' in stripped or 'File.copy(' in stripped or 'File.delete' in stripped or 'File.rename(' in stripped):
-                      indent = line[:len(line)-len(line.lstrip())]
-                      lines.append(indent + '// native filesystem operation disabled for HTML5\n')
-                  else:
-                      lines.append(line)
-              return ''.join(lines)
-          edit('source/funkin/data/ClientPrefs.hx', patch_clientprefs)
+          # ClientPrefs backup/corruption recovery uses desktop .sol files. Replace the
+          # entire three helper functions with harmless web implementations so no native
+          # filesystem symbols remain and no dangling if-statements are produced.
+          p = Path('source/funkin/data/ClientPrefs.hx')
+          s = p.read_text()
+          pattern = r'\tpublic static function backupSave\(name:String = \'funkin\'\):Void.*?\n\t/\*\*\n'
+          replacement = '''\tpublic static function backupSave(name:String = 'funkin'):Void
+\t{
+\t\t// Desktop save-file backups are unavailable in HTML5.
+\t}
 
-          edit('source/Init.hx', lambda s: s.replace('DiscordClient.check();', '// Discord RPC disabled for HTML5'))
-          edit('source/funkin/utils/CoolUtil.hx', lambda s: s.replace('FlxG.error("Platform is not supported for CoolUtil.openFolder");', 'trace("Platform is not supported for CoolUtil.openFolder");'))
+\tpublic static function tryBindingSave(name:String = 'funkin'):Void
+\t{
+\t\tFlxG.save.bind(name, CoolUtil.getSavePath(), function(data:String, exception:haxe.Exception) {
+\t\t\ttrace('save binding failed: ${exception.message}');
+\t\t\treturn {};
+\t\t});
+\t}
 
-          def patch_mods(s):
-              s = re.sub(r'(?m)^\s*File\.saveContent\([^;]*\);\s*$', '\t// modsList.txt saving disabled for HTML5\n', s)
-              s = s.replace('FileSystem.exists(path + fileToFind)', 'FunkinAssets.exists(path + fileToFind)')
-              return s
-          edit('source/funkin/Mods.hx', patch_mods)
+\tpublic static function attemptLoadBackup(name:String = 'funkin'):Dynamic
+\t{
+\t\treturn {};
+\t}
+\t
+\t/**
+'''
+          out, count = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('Could not replace ClientPrefs desktop backup functions')
+          p.write_text(out)
+          print('Patched ClientPrefs.hx')
 
-          # HTML5 does not need the desktop filesystem branding scan.
-          edit('source/Splash.hx', lambda s: re.sub(
-              r'(?s)(\tfunction logoFunc\(\)\n\t\{).*?(\n\t\}\n)',
-              r'\1\n\t\tfinish();\n\t\2', s, count=1))
+          # Discord RPC is native-only.
+          replace_required('source/Init.hx', 'DiscordClient.check();', '// Discord RPC disabled for HTML5')
+          p = Path('source/funkin/utils/CoolUtil.hx')
+          s = p.read_text().replace('FlxG.error("Platform is not supported for CoolUtil.openFolder");', 'trace("Platform is not supported for CoolUtil.openFolder");')
+          p.write_text(s)
 
-          # FNAF desktop process/file operations are unavailable in JS.
-          def patch_fnaf(s):
-              s = re.sub(r'(?m)^(\s*)Sys\.exit\(0\);\s*$', r'\1// process exit disabled for HTML5', s)
-              s = re.sub(r'(?s)(\s*)var tmp = Sys\.getEnv\("TEMP"\);.*?\n(\s*)loadPath = dest;', r'\1// native temporary video-file extraction disabled for HTML5\n\2loadPath = null;', s, count=1)
-              # Also remove any remaining direct sys.io.File use if the source contains another branch.
-              s = re.sub(r'(?m)^\s*sys\.io\.File\.saveBytes\([^;]*\);\s*$', '\t\t// native file save disabled for HTML5\n', s)
-              return s
-          edit('source/funkin/states/FNAFState.hx', patch_fnaf)
+          # Mods list is not writable from the browser.
+          p = Path('source/funkin/Mods.hx')
+          s = p.read_text()
+          s = re.sub(r'(?m)^\s*File\.saveContent\([^;]*\);\s*$', '\t// modsList.txt saving disabled for HTML5', s)
+          s = s.replace('FileSystem.exists(path + fileToFind)', 'FunkinAssets.exists(path + fileToFind)')
+          p.write_text(s)
 
-          edit('source/funkin/objects/menu/CosmicubeNode.hx', lambda s: re.sub(
-              r'(?s)(inline function hasUpdogSaveData\(\):Bool\n\t\{).*?(\n\t\}\n)',
-              r'\1\n\t\treturn false;\n\t\2', s, count=1))
+          # Splash branding scan uses native filesystem APIs.
+          p = Path('source/Splash.hx')
+          s = p.read_text()
+          pattern = r'(\tfunction logoFunc\(\)\n\t\{).*?(\n\t\}\n)'
+          out, count = re.subn(pattern, r'\1\n\t\tfinish();\n\t\2', s, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('Could not patch Splash.logoFunc')
+          p.write_text(out)
+
+          # FNAF video extraction uses TEMP and sys.io.File on desktop only.
+          p = Path('source/funkin/states/FNAFState.hx')
+          s = p.read_text()
+          s = s.replace('Sys.exit(0);', '// process exit disabled for HTML5')
+          native_block = '''\t\t\t\tvar tmp = Sys.getEnv("TEMP");
+\t\t\t\tif (tmp == null) tmp = ".";
+\t\t\t\tvar dest = tmp + "/fnaf_vid_" + Paths.sanitize(key) + ".mp4";
+\t\t\t\tsys.io.File.saveBytes(dest, bytes);
+\t\t\t\tloadPath = dest;'''
+          if native_block in s:
+              s = s.replace(native_block, '\t\t\t\t// Native temporary video extraction disabled for HTML5.\n\t\t\t\tloadPath = null;', 1)
+          else:
+              s = re.sub(r'\s*var tmp = Sys\.getEnv\("TEMP"\);.*?loadPath = dest;', '\n\t\t\t\t// Native temporary video extraction disabled for HTML5.\n\t\t\t\tloadPath = null;', s, count=1, flags=re.S)
+          p.write_text(s)
+
+          # Cosmicube node save-file probe is unavailable on web.
+          p = Path('source/funkin/objects/menu/CosmicubeNode.hx')
+          s = p.read_text()
+          pattern = r'(inline function hasUpdogSaveData\(\):Bool\n\t\{).*?(\n\t\}\n)'
+          out, count = re.subn(pattern, r'\1\n\t\treturn false;\n\t\2', s, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('Could not patch CosmicubeNode.hasUpdogSaveData')
+          p.write_text(out)
           PY
+
+      - name: Verify no native-only symbols remain in HTML5 source
+        run: |
+          ! grep -R -n -E 'sys\.io\.File|Sys\.getEnv|Sys\.exit\(|FileSystem\.(exists|deleteFile|rename)|File\.(copy|saveContent)' source/funkin/data/ClientPrefs.hx source/funkin/Mods.hx source/funkin/states/FNAFState.hx
 
       - name: Compile to Web Port
         run: haxelib run lime build html5
