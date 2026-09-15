@@ -2,6 +2,9 @@ name: Build HTML5 Web Port
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,16 +17,22 @@ jobs:
         with:
           haxe-version: 4.3.4
 
-      - name: Install Build Systems
+      - name: Install hxpkg
+        run: haxelib install hxpkg --quiet
+
+      - name: Install Project Libraries
         run: |
-          haxelib install lime --quiet
-          haxelib install openfl --quiet
-          haxelib install flixel 5.5.0 --quiet
-          haxelib install flixel-addons 3.2.1 --quiet
-          haxelib install flixel-ui 2.6.4 --quiet
-          haxelib git hscript-iris https://github.com
-          haxelib git polymod https://github.com
+          haxelib run hxpkg setup
+          haxelib run hxpkg install
           haxelib run lime setup
 
       - name: Compile to Web Port
         run: haxelib run lime build html5
+
+      - name: Upload HTML5 Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: impostor-legacy-html5
+          path: export/html5/bin
+          if-no-files-found: error
+          retention-days: 7
