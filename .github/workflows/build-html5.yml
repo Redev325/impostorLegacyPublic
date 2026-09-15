@@ -114,8 +114,11 @@ jobs:
 
           edit('source/funkin/data/ClientPrefs.hx', lambda s: s.replace('FileSystem.exists(', 'FunkinAssets.exists('))
 
-          for path in ['source/funkin/data/ClientPrefs.hx', 'source/Init.hx']:
-              edit(path, lambda s: s.replace('DiscordClient.check();', '#if !html5\n\tDiscordClient.check();\n\t#end'))
+          # Discord RPC is unavailable in HTML5, so remove these native calls from
+          # the temporary web-build copy instead of inserting conditional directives
+          # inside functions.
+          edit('source/funkin/data/ClientPrefs.hx', lambda s: s.replace('funkin.api.DiscordClient.check();', '// Discord RPC disabled for HTML5'))
+          edit('source/Init.hx', lambda s: s.replace('DiscordClient.check();', '// Discord RPC disabled for HTML5'))
 
           edit('source/funkin/utils/CoolUtil.hx', lambda s: s.replace('FlxG.error("Platform is not supported for CoolUtil.openFolder");', 'trace("Platform is not supported for CoolUtil.openFolder");'))
 
@@ -132,7 +135,7 @@ jobs:
               new = '''\t\t\t\t\t#if !html5\n''' + old + '''\n\t\t\t\t\t#end'''
               if old in s: s = s.replace(old, new, 1)
               else:
-                  s = re.sub(r'(?s)(\s*var tmp = Sys\.getEnv\("TEMP"\);.*?loadPath = dest;)', lambda m: m.group(1).replace(m.group(1).lstrip(), '#if !html5\n' + m.group(1).lstrip() + '\n#end', 1), s, count=1)
+                  s = re.sub(r'(?s)(\s*var tmp = Sys\.getEnv\("TEMP"\);.*?loadPath = dest;)', lambda m: '#if !html5\n' + m.group(1) + '\n#end', s, count=1)
               return s
           edit('source/funkin/states/FNAFState.hx', patch_fnaf)
 
