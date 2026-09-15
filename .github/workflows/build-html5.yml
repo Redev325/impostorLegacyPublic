@@ -1,5 +1,6 @@
 name: Build HTML5 Web Port
-on: [workflow_dispatch] # Allows you to manually trigger it
+on:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -15,11 +16,11 @@ jobs:
 
       - name: Install Build Systems
         run: |
-          haxelib install lime
-          haxelib install openfl
-          haxelib install flixel
+          haxelib install lime --quiet
+          haxelib install openfl --quiet
+          haxelib install flixel --quiet
+          haxelib install flixel-addons --quiet
           haxelib run lime setup
-          haxelib run flixel setup --y
 
       - name: Compile to Web Port
         run: haxelib run lime build html5
