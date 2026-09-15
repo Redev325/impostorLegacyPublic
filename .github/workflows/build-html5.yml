@@ -17,7 +17,7 @@ jobs:
       - name: Install Linux build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libwayland-dev libwayland-bin wayland-protocols libasound2-dev pkg-config
+          sudo apt-get install -y build-essential libwayland-dev libwayland-bin wayland-protocols libasound2-dev libpulse-dev pkg-config
 
       - name: Setup Haxe Environment
         uses: krdlab/setup-haxe@v1
