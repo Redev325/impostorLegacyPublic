@@ -125,13 +125,8 @@ jobs:
           leftovers=[x for x in ('Sys.getEnv("TEMP")','sys.io.File.saveBytes','Sys.exit(0);') if x in s]
           if leftovers: raise SystemExit('FNAF native code still present: '+', '.join(leftovers))
           fnaf.write_text(s)
-          edit('source/funkin/backend/CrashHandler.hx', lambda s: s.replace("\t\tif (FlxG.state != null)\n\t\t{\n\t\t\tfinal cl = Type.getClass(FlxG.state);", "\t\tif (FlxG.state != null)\n\t\t{\n\t\t\tvar state = FlxG.state;\n\t\t\tif (state == null) return;\n\t\t\tfinal cl = Type.getClass(state);", 1))
-          edit('source/funkin/backend/DebugDisplay.hx', lambda s: s.replace('var className = Type.getClassName(Type.getClass(FlxG.state));', "var state = FlxG.state;\n\t\t\tif (state == null) return;\n\t\t\tvar className = Type.getClassName(Type.getClass(state)) ?? 'Unknown';", 1))
-          edit('source/funkin/data/ClientPrefs.hx',lambda s:s.replace('funkin.api.DiscordClient.check();','// Discord RPC disabled for HTML5'))
-          edit('source/Init.hx',lambda s:s.replace('DiscordClient.check();','// Discord RPC disabled for HTML5'))
-          edit('source/funkin/utils/CoolUtil.hx',lambda s:s.replace('FlxG.error("Platform is not supported for CoolUtil.openFolder");','trace("Platform is not supported for CoolUtil.openFolder");'))
-          edit('source/Splash.hx',lambda s:re.sub(r'(?s)(\tfunction logoFunc\(\)\n\t\{).*?(\n\t\}\n)',r'\1\n\t\tfinish();\n\t\2',s,count=1))
-          edit('source/funkin/objects/menu/CosmicubeNode.hx',lambda s:re.sub(r'(?s)(inline function hasUpdogSaveData\(\):Bool\n\t\{).*?(\n\t\}\n)',r'\1\n\t\treturn false;\n\t\2',s,count=1))
+          edit('source/funkin/backend/CrashHandler.hx', lambda s: s.replace("\t\tif (FlxG.state != null)\n\t\t{\n\t\t\tvar state = FlxG.state;\n\t\t\tif (state == null) return;\n\t\t\tfinal cl = Type.getClass(state);", "\t\tif (FlxG.state != null)\n\t\t{\n\t\t\tvar state = FlxG.state;\n\t\t\tif (state == null) return;\n\t\t\tfinal cl = Type.getClass(cast state);", 1).replace('FlxG.state.persistentUpdate = FlxG.state.persistentDraw = false;','state.persistentUpdate = state.persistentDraw = false;',1))
+          edit('source/funkin/backend/DebugDisplay.hx', lambda s: s.replace("var className = Type.getClassName(Type.getClass(state)) ?? 'Unknown';", "var className = Type.getClassName(Type.getClass(cast state)) ?? 'Unknown';", 1).replace('var scripted:funkin.scripting.ScriptedState = cast FlxG.state;','var scripted:funkin.scripting.ScriptedState = cast state;',1))
           PY
       - name: Verify HTML5 compatibility patches
         run: |
