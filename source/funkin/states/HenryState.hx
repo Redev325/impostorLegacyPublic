@@ -14,7 +14,9 @@ import openfl.utils.Assets as OpenFlAssets;
 
 class HenryState extends MusicBeatState
 {
+	#if VIDEOS_ALLOWED
 	var video:FunkinVideoSprite;
+	#end
 	
 	var freezeFrame:FlxSprite;
 	var grad:FlxSprite;
@@ -76,13 +78,13 @@ class HenryState extends MusicBeatState
 			if (i != stare) i.y -= FlxG.height * 0.15;
 			add(i);
 			
-			stupid++; // this is fucking dumb
+			stupid++;
 		}
-		// obj specific position edits
 		mic.x -= FlxG.width * 0.15;
 		sock.x += FlxG.width * 0.15;
 		stare.y += FlxG.height * 0.15;
 		
+		#if VIDEOS_ALLOWED
 		video = new FunkinVideoSprite(0, 0, false);
 		video.onFormat(() -> {
 			video.setGraphicSize(0, FlxG.height);
@@ -92,13 +94,16 @@ class HenryState extends MusicBeatState
 		});
 		video.onStart(() -> {
 			new FlxTimer().start(0.1, function(tmr:FlxTimer) {
-				// this is honestly really fucking stupid
 				video.visible = true;
 			});
 		});
 		add(video);
 		video.onEnd(options, true);
 		if (video.load(Paths.video(Paths.sanitize('henry/henryIntro')))) video.delayAndStart();
+		#else
+		// HTML5 does not include hxvlc video support, so skip this cutscene.
+		startWeek();
+		#end
 		
 		optionsObjs = [mic, sock, stare];
 	}
@@ -109,6 +114,7 @@ class HenryState extends MusicBeatState
 	{
 		super.update(elapsed);
 		
+		#if VIDEOS_ALLOWED
 		if (canClick)
 		{
 			for (i in [mic, sock, stare])
@@ -132,10 +138,12 @@ class HenryState extends MusicBeatState
 				}
 			}
 			
-			if (!FlxG.mouse.overlaps(stare) && !FlxG.mouse.overlaps(mic) && !FlxG.mouse.overlaps(sock)) over = false; // i feel like this kind of sucks but whatever
+			if (!FlxG.mouse.overlaps(stare) && !FlxG.mouse.overlaps(mic) && !FlxG.mouse.overlaps(sock)) over = false;
 		}
+		#end
 	}
 	
+	#if VIDEOS_ALLOWED
 	function fail(selection:String)
 	{
 		canClick = false;
@@ -150,12 +158,15 @@ class HenryState extends MusicBeatState
 		
 		if (video.load(Paths.video(Paths.sanitize('henry/' + selection)))) video.delayAndStart();
 	}
+	#end
 	
 	function options():Void
 	{
 		freezeFrame.visible = true;
 		grad.visible = true;
+		#if VIDEOS_ALLOWED
 		video.visible = false;
+		#end
 		
 		for (i in 0...objNames.length)
 		{
@@ -171,6 +182,7 @@ class HenryState extends MusicBeatState
 		});
 	}
 	
+	#if VIDEOS_ALLOWED
 	function reset()
 	{
 		canClick = true;
@@ -180,6 +192,7 @@ class HenryState extends MusicBeatState
 			i.visible = true;
 		}
 	}
+	#end
 	
 	function startWeek():Void
 	{
