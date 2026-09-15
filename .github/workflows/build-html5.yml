@@ -21,13 +21,9 @@ jobs:
           haxelib install flixel 5.5.0 --quiet
           haxelib install flixel-addons 3.2.1 --quiet
           haxelib install flixel-ui 2.6.4 --quiet
+          haxelib git hscript-iris https://github.com
+          haxelib git polymod https://github.com
           haxelib run lime setup
 
       - name: Compile to Web Port
         run: haxelib run lime build html5
-
-      - name: Upload Web Package
-        uses: actions/upload-artifact@v4
-        with:
-          name: Impostor-Legacy-Web-Build
-          path: export/html5/bin/
