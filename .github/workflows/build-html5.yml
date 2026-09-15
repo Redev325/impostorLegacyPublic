@@ -100,11 +100,10 @@ jobs:
               .replace("\tpublic static function getModFolder(path:String, ?exclude:String):String\n", "\t#if html5\n\tpublic static inline function mods(?mod:String = ''):String\n\t{\n\t\treturn MODS_DIRECTORY + '/' + (mod ?? '');\n\t}\n\t#end\n\n\tpublic static function getModFolder(path:String, ?exclude:String):String\n", 1)
               .replace("return (!FileSystem.exists(path) && Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);", "return (Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);", 1))
 
-          edit('source/funkin/data/CosmicubeData.hx', lambda s: s
-              .replace("\tpublic static function reload(hard:Bool = true):Void\n\t{\n", "\tpublic static function reload(hard:Bool = true):Void\n\t{\n\t\t#if html5\n\t\treturn;\n\t\t#else\n", 1)
-              .replace("\t}\n\t\n\tstatic function getShopItems", "\t\t#end\n\t}\n\t\n\tstatic function getShopItems", 1)
-              .replace("\tstatic function getShopItems(dir:String, meta:CosmicubeMetadata):Array<ShopItemData>\n\t{\n", "\tstatic function getShopItems(dir:String, meta:CosmicubeMetadata):Array<ShopItemData>\n\t{\n\t\t#if html5\n\t\treturn [];\n\t\t#else\n", 1)
-              .replace("\t\treturn list;\n\t}\n\n\tinline static function get_currentMeta", "\t\treturn list;\n\t\t#end\n\t}\n\n\tinline static function get_currentMeta", 1))
+          # The original CosmicubeData scans desktop filesystem folders. That is not
+          # available to the HTML5 target. Replace only the temporary web-build copy
+          # with a small data-safe implementation instead of injecting #if/#else blocks.
+          Path('source/funkin/data/CosmicubeData.hx').write_text('''package funkin.data;\n\ntypedef CosmicubeMetadata =\n{\n  var title:String;\n  var ?currency:String;\n  var ?mod:String;\n  var ?fileName:String;\n}\n\ntypedef ShopItemData =\n{\n  var ?requirement:Dynamic;\n  var ?week:String;\n  var ?song:String;\n  var ?completionExcluded:Bool;\n  var type:String;\n  var price:Int;\n  var ?title:String;\n  var ?hint:String;\n  var ?description:String;\n  var node:NodeData;\n  var ?fileName:String;\n  var ?color:Dynamic;\n  var ?icon:String;\n  var ?currency:String;\n}\n\nenum ShopRequirement\n{\n  WEEK(week:String, ?accuracy:Float);\n  SONG(song:String, ?accuracy:Float, ?rank:String);\n  COMPLETION(percent:Float);\n  GLOBAL_COMPLETION(percent:Float);\n  UPDOG_SAVE;\n  SCRIPTED;\n  NONE;\n}\n\nclass CosmicubeData\n{\n  public static var currentMeta(get, never):Null<CosmicubeMetadata>;\n  public static var currentCurrency(get, never):String;\n  public static var currentMoney(get, set):Int;\n\n  public static var cosmicubeList:Array<String> = [];\n  public static var cosmicubeMetas:Map<String, CosmicubeMetadata> = [];\n  public static var cosmicubeItems:Map<String, Array<ShopItemData>> = [];\n\n  public static var fallbackMeta:CosmicubeMetadata =\n  {\n    title: 'Unknown',\n    currency: 'beans',\n    fileName: 'idk'\n  };\n\n  public static function reload(hard:Bool = true):Void\n  {\n    // Cosmicube filesystem loading is disabled for HTML5.\n    if (!hard && cosmicubeList.length > 0) return;\n    cosmicubeList.resize(0);\n    cosmicubeMetas.clear();\n    cosmicubeItems.clear();\n  }\n\n  static function getShopItems(dir:String, meta:CosmicubeMetadata):Array<ShopItemData>\n  {\n    return [];\n  }\n\n  inline static function get_currentMeta():CosmicubeMetadata\n  {\n    reload(false);\n    var meta = cosmicubeMetas.get(ClientPrefs.activeCosmicube);\n    return meta == null ? fallbackMeta : meta;\n  }\n\n  inline static function get_currentCurrency():String\n  {\n    return currentMeta?.currency ?? '';\n  }\n\n  static function get_currentMoney():Int\n  {\n    return getMoney(currentCurrency);\n  }\n\n  static function set_currentMoney(money:Int):Int\n  {\n    return setMoney(currentCurrency, money);\n  }\n\n  public static inline function getMoney(currency:Null<String>):Int\n  {\n    if (currency == null || currency.length == 0) return 0;\n    if (!ClientPrefs.money.exists(currency)) ClientPrefs.money.set(currency, 0);\n    return ClientPrefs.money.get(currency);\n  }\n\n  public static inline function setMoney(currency:Null<String>, money:Int):Int\n  {\n    if (currency == null || currency.length == 0) return 0;\n    ClientPrefs.money.set(currency, money);\n    return money;\n  }\n}\n''')
 
           edit('source/funkin/states/editors/ChartEditorState.hx', lambda s: s
               .replace('import openfl.events.Event;\n', 'import openfl.events.Event;\nimport openfl.media.Sound;\n', 1)
@@ -113,34 +112,29 @@ jobs:
           Path('source/funkin/utils/FileUtil.hx').write_text('''package funkin.utils;\nimport openfl.net.FileFilter;\ntypedef BrowseOptions = { var ?typeFilter:Array<FileFilter>; var ?title:String; var ?defaultSearch:String; }\n@:nullSafety class FileUtil\n{\n  public static function browseForFile(options:BrowseOptions, ?onSelect:String->Void, ?onCancel:Void->Void):Void { if (onCancel != null) onCancel(); }\n  public static function browseForMultipleFiles(options:BrowseOptions, ?onSelect:Array<String>->Void, ?onCancel:Void->Void):Void { if (onCancel != null) onCancel(); }\n  public static function saveFile(data:Dynamic, ?fileName:String, ?onSelect:String->Void, ?onCancel:Void->Void):Void { if (onCancel != null) onCancel(); }\n  public static function saveFileToPath(data:Dynamic, path:String, ensureDirectory:Bool = true):Bool return false;\n}\n''')
 
           edit('source/funkin/data/ClientPrefs.hx', lambda s: s.replace('FileSystem.exists(', 'FunkinAssets.exists('))
-
-          # Discord RPC is unavailable in HTML5, so remove these native calls from
-          # the temporary web-build copy instead of inserting conditional directives
-          # inside functions.
           edit('source/funkin/data/ClientPrefs.hx', lambda s: s.replace('funkin.api.DiscordClient.check();', '// Discord RPC disabled for HTML5'))
           edit('source/Init.hx', lambda s: s.replace('DiscordClient.check();', '// Discord RPC disabled for HTML5'))
-
           edit('source/funkin/utils/CoolUtil.hx', lambda s: s.replace('FlxG.error("Platform is not supported for CoolUtil.openFolder");', 'trace("Platform is not supported for CoolUtil.openFolder");'))
 
           edit('source/funkin/Mods.hx', lambda s: s
-              .replace("File.saveContent('modsList.txt', '');", "#if !html5\n\t\t\tFile.saveContent('modsList.txt', '');\n\t\t\t#end", 1)
+              .replace("File.saveContent('modsList.txt', '');", "// modsList.txt saving disabled for HTML5", 1)
               .replace('FileSystem.exists(path + fileToFind)', 'FunkinAssets.exists(path + fileToFind)', 1))
 
-          edit('source/Splash.hx', lambda s: s.replace("\tfunction logoFunc()\n\t{\n", "\tfunction logoFunc()\n\t{\n\t\t#if html5\n\t\tfinish();\n\t\treturn;\n\t\t#else\n", 1)
-              .replace("\t\tadd(logo);\n", "\t\tadd(logo);\n\t\t#end\n", 1))
+          # HTML5 does not need the desktop filesystem branding scan. Make logoFunc
+          # finish immediately in the temporary build copy, without conditionals.
+          edit('source/Splash.hx', lambda s: re.sub(
+              r'(?s)(\tfunction logoFunc\(\):Void\n\t\{).*?(\n\t\}\n)',
+              r'\1\n\t\tfinish();\n\t\2', s, count=1))
 
           def patch_fnaf(s):
-              s = re.sub(r'(?m)^(\s*)Sys\.exit\(0\);$', r'\1#if !html5\n\1Sys.exit(0);\n\1#end', s, count=1)
-              old = '''\t\t\t\t\tvar tmp = Sys.getEnv("TEMP");\n\t\t\t\t\tif (tmp == null) tmp = ".";\n\t\t\t\t\tvar dest = tmp + "/fnaf_vid_" + Paths.sanitize(key) + ".mp4";\n\t\t\t\t\tsys.io.File.saveBytes(dest, bytes);\n\t\t\t\t\tloadPath = dest;'''
-              new = '''\t\t\t\t\t#if !html5\n''' + old + '''\n\t\t\t\t\t#end'''
-              if old in s: s = s.replace(old, new, 1)
-              else:
-                  s = re.sub(r'(?s)(\s*var tmp = Sys\.getEnv\("TEMP"\);.*?loadPath = dest;)', lambda m: '#if !html5\n' + m.group(1) + '\n#end', s, count=1)
+              s = re.sub(r'(?m)^\s*Sys\.exit\(0\);\s*$', '\t\t\t// exit disabled for HTML5', s, count=1)
+              s = re.sub(r'(?s)\s*var tmp = Sys\.getEnv\("TEMP"\);.*?loadPath = dest;', '\n\t\t\t// native temporary video-file extraction disabled for HTML5', s, count=1)
               return s
           edit('source/funkin/states/FNAFState.hx', patch_fnaf)
 
-          edit('source/funkin/objects/menu/CosmicubeNode.hx', lambda s: s.replace('inline function hasUpdogSaveData():Bool\n\t{\n', 'inline function hasUpdogSaveData():Bool\n\t{\n\t\t#if html5\n\t\treturn false;\n\t\t#else\n', 1)
-              .replace("\t\treturn FileSystem.isDirectory('$appDataPath/UpdogTeam');\n\t}\n", "\t\treturn FileSystem.isDirectory('$appDataPath/UpdogTeam');\n\t\t#end\n\t}\n", 1))
+          edit('source/funkin/objects/menu/CosmicubeNode.hx', lambda s: re.sub(
+              r'(?s)(inline function hasUpdogSaveData\(\):Bool\n\t\{).*?(\n\t\}\n)',
+              r'\1\n\t\treturn false;\n\t\2', s, count=1))
           PY
 
       - name: Compile to Web Port
