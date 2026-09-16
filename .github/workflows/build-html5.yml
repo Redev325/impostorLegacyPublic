@@ -1,6 +1,9 @@
 name: Build HTML5 Web Port
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 permissions:
   contents: read
 jobs:
@@ -101,11 +104,11 @@ jobs:
               return text[:start]+replacement+text[end:]
           cp=Path('source/funkin/data/ClientPrefs.hx'); s=cp.read_text(); s=replace_function(s,'backupSave',"\tpublic static function backupSave(name:String='funkin'):Void { }\n"); s=replace_function(s,'tryBindingSave',"\tpublic static function tryBindingSave(name:String='funkin'):Void { FlxG.save.bind(name,CoolUtil.getSavePath(),function(data:String,exception:haxe.Exception) { if(exception!=null) trace('save binding failed: ${exception.message}'); return {}; }); }\n"); s=replace_function(s,'attemptLoadBackup',"\tpublic static function attemptLoadBackup(name:String='funkin'):Dynamic { return {}; }\n"); cp.write_text(s)
           mods=Path('source/funkin/Mods.hx'); s=mods.read_text(); s=re.sub(r'(?m)^\s*File\.saveContent\([^\n]*\);\s*$','\t// modsList.txt saving disabled for HTML5',s); s=s.replace('FileSystem.exists(path + fileToFind)','FunkinAssets.exists(path + fileToFind)'); mods.write_text(s)
-          fnaf=Path('source/funkin/states/FNAFState.hx'); s=fnaf.read_text(); s=s.replace('Sys.exit(0);','// browser build does not terminate the process'); s=s.replace('var tmp = Sys.getEnv("TEMP");','var tmp = ".";'); s=s.replace('sys.io.File.saveBytes(dest, bytes);','// native video file write disabled for browser'); s=s.replace('Sys.getEnv("TEMP")','"."').replace('sys.io.File.saveBytes(dest, bytes);','// native video file write disabled for browser').replace('Sys.exit(0);','// browser build does not terminate the process'); leftovers=[x for x in ('Sys.getEnv("TEMP")','sys.io.File.saveBytes','Sys.exit(0);') if x in s]
+          fnaf=Path('source/funkin/states/FNAFState.hx'); s=fnaf.read_text(); s=s.replace('Sys.exit(0);','// browser build does not terminate the process'); s=s.replace('var tmp = Sys.getEnv("TEMP");','var tmp = ".";'); s=s.replace('sys.io.File.saveBytes(dest, bytes);','// native video file write disabled for browser'); leftovers=[x for x in ('Sys.getEnv("TEMP")','sys.io.File.saveBytes','Sys.exit(0);') if x in s]
           if leftovers: raise SystemExit('FNAF native code still present: '+', '.join(leftovers))
           fnaf.write_text(s)
           edit('source/funkin/backend/CrashHandler.hx', lambda s: s.replace('final cl = Type.getClass(FlxG.state);','final cl:Null<Class<Dynamic>> = null;',1))
-          edit('source/funkin/backend/DebugDisplay.hx', lambda s: s.replace('var className = Type.getClassName(Type.getClass(FlxG.state));','var className:String = \'Unknown\';',1).replace('var scripted:funkin.scripting.ScriptedState = cast FlxG.state;','var scripted:funkin.scripting.ScriptedState = cast FlxG.state;',1))
+          edit('source/funkin/backend/DebugDisplay.hx', lambda s: s.replace('var className = Type.getClassName(Type.getClass(FlxG.state));','var className:String = \'Unknown\';',1))
           edit('source/funkin/data/ClientPrefs.hx',lambda s:s.replace('funkin.api.DiscordClient.check();','// Discord RPC disabled for HTML5'))
           edit('source/Init.hx',lambda s:s.replace('DiscordClient.check();','// Discord RPC disabled for HTML5'))
           edit('source/funkin/utils/CoolUtil.hx',lambda s:s.replace('FlxG.error("Platform is not supported for CoolUtil.openFolder");','trace("Platform is not supported for CoolUtil.openFolder");'))
@@ -146,28 +149,20 @@ jobs:
           files = []
           for p in root.rglob('*'):
               if p.is_file():
-                  try:
-                      files.append((p.stat().st_size, str(p)))
-                  except OSError:
-                      pass
+                  try: files.append((p.stat().st_size, str(p)))
+                  except OSError: pass
           files.sort(reverse=True)
           print('===== TOP 100 LARGEST HTML5 FILES AFTER CLEANUP =====')
-          for size, path in files[:100]:
-              print(f'{size}\t{path}')
+          for size, path in files[:100]: print(f'{size}\t{path}')
           print('===== SIZE BY TOP-LEVEL DIRECTORY AFTER CLEANUP =====')
           entries = []
           for p in root.iterdir():
               try:
-                  if p.is_file():
-                      size = p.stat().st_size
-                  else:
-                      size = sum(x.stat().st_size for x in p.rglob('*') if x.is_file())
+                  size = p.stat().st_size if p.is_file() else sum(x.stat().st_size for x in p.rglob('*') if x.is_file())
                   entries.append((size, str(p)))
-              except OSError:
-                  pass
+              except OSError: pass
           entries.sort(reverse=True)
-          for size, path in entries[:50]:
-              print(f'{size}\t{path}')
+          for size, path in entries[:50]: print(f'{size}\t{path}')
           PY
       - name: Verify HTML5 build output
         shell: bash
@@ -180,14 +175,8 @@ jobs:
             find export -maxdepth 5 -type d -print
             exit 1
           fi
-          if [ ! -f "$OUTPUT_DIR/index.html" ]; then
-            echo "ERROR: index.html is missing from $OUTPUT_DIR"
-            exit 1
-          fi
-          if [ ! -f "$OUTPUT_DIR/ImpostorLegacy.js" ]; then
-            echo "ERROR: ImpostorLegacy.js is missing from $OUTPUT_DIR"
-            exit 1
-          fi
+          if [ ! -f "$OUTPUT_DIR/index.html" ]; then echo "ERROR: index.html is missing from $OUTPUT_DIR"; exit 1; fi
+          if [ ! -f "$OUTPUT_DIR/ImpostorLegacy.js" ]; then echo "ERROR: ImpostorLegacy.js is missing from $OUTPUT_DIR"; exit 1; fi
           echo "HTML5 build output verified successfully."
       - name: Upload HTML5 Build
         uses: actions/upload-artifact@v4
