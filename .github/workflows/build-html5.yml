@@ -127,9 +127,9 @@ jobs:
           set -e
           OUTPUT_DIR="export/release/html5/bin"
           echo "===== TOP 100 LARGEST HTML5 FILES ====="
-          find "$OUTPUT_DIR" -type f -printf '%s\t%p\n' | sort -nr | head -100 | numfmt --field=1 --to=iec
+          find "$OUTPUT_DIR" -type f -printf '%s\t%p\n' | sort -nr | head -100
           echo "===== SIZE BY TOP-LEVEL DIRECTORY ====="
-          du -sh "$OUTPUT_DIR"/* 2>/dev/null | sort -hr | head -50
+          du -sk "$OUTPUT_DIR"/* 2>/dev/null | sort -nr | head -50
       - name: Make Lean HTML5 Package
         shell: bash
         run: |
