@@ -1,0 +1,86 @@
+name: Optimize HTML5 Artifact
+
+on:
+  workflow_run:
+    workflows: ["Build HTML5 Web Port"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  optimize:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download successful HTML5 artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          echo "Finding HTML5 artifact from workflow run ${RUN_ID}..."
+          ARTIFACT_ID="$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" --jq '.artifacts[] | select(.name == "impostor-legacy-html5-lean") | select(.expired == false) | .id' | head -n 1)"
+          if [ -z "${ARTIFACT_ID}" ]; then
+            echo "ERROR: Could not find impostor-legacy-html5-lean artifact."
+            exit 1
+          fi
+          echo "Artifact ID: ${ARTIFACT_ID}"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > artifact.zip
+          mkdir extracted
+          unzip -q artifact.zip -d extracted
+          rm -f artifact.zip
+          echo "Downloaded artifact contents:"
+          find extracted -maxdepth 2 -type f | head -20
+
+      - name: Install lossless image optimizer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y optipng
+
+      - name: Losslessly optimize PNG assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="extracted"
+          BEFORE="$(du -sb "${ROOT}" | cut -f1)"
+          COUNT=0
+          while IFS= read -r -d '' file; do
+            if optipng -quiet -strip all -o2 "$file" >/dev/null 2>&1; then
+              COUNT=$((COUNT + 1))
+            fi
+          done < <(find "$ROOT" -type f -iname '*.png' -print0)
+          AFTER="$(du -sb "${ROOT}" | cut -f1)"
+          SAVED=$((BEFORE - AFTER))
+          echo "Optimized ${COUNT} PNG files."
+          echo "Bytes saved: ${SAVED}"
+          echo "Optimized artifact size:"
+          du -sh "$ROOT"
+
+      - name: Verify required HTML5 files
+        shell: bash
+        run: |
+          set -euo pipefail
+          INDEX="$(find extracted -type f -name index.html -print -quit)"
+          JS="$(find extracted -type f -name ImpostorLegacy.js -print -quit)"
+          if [ -z "$INDEX" ]; then
+            echo "ERROR: index.html was lost during optimization."
+            exit 1
+          fi
+          if [ -z "$JS" ]; then
+            echo "ERROR: ImpostorLegacy.js was lost during optimization."
+            exit 1
+          fi
+          echo "Verified: $INDEX"
+          echo "Verified: $JS"
+
+      - name: Upload optimized HTML5 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: impostor-legacy-html5-optimized
+          path: extracted
+          if-no-files-found: error
+          compression-level: 9
+          retention-days: 7
