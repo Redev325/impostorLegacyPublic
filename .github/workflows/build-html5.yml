@@ -133,15 +133,17 @@ jobs:
           rm -f "$OUTPUT_DIR/CHANGELOG.md"
           echo "Lean package size:"
           du -sh "$OUTPUT_DIR"
-      - name: Report largest HTML5 assets
+      - name: Report largest HTML5 assets after cleanup
         shell: bash
         run: |
           set -e
           OUTPUT_DIR="export/release/html5/bin"
           echo "===== TOP 100 LARGEST HTML5 FILES AFTER CLEANUP ====="
-          find "$OUTPUT_DIR" -type f -printf '%s\t%p\n' | sort -nr | head -100
+          find "$OUTPUT_DIR" -type f -printf '%s\t%p\n' | sort -nr > /tmp/largest-html5-files.txt
+          head -100 /tmp/largest-html5-files.txt
           echo "===== SIZE BY TOP-LEVEL DIRECTORY AFTER CLEANUP ====="
-          du -sk "$OUTPUT_DIR"/* 2>/dev/null | sort -nr | head -50
+          du -sk "$OUTPUT_DIR"/* 2>/dev/null | sort -nr > /tmp/html5-top-level.txt
+          head -50 /tmp/html5-top-level.txt
       - name: Verify HTML5 build output
         shell: bash
         run: |
