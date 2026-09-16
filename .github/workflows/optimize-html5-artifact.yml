@@ -38,23 +38,26 @@ jobs:
       - name: Install lossless image optimizer
         run: |
           sudo apt-get update
-          sudo apt-get install -y optipng
+          sudo apt-get install -y optipng parallel
 
-      - name: Losslessly optimize PNG assets
+      - name: Fast lossless PNG optimization
         shell: bash
         run: |
           set -euo pipefail
           ROOT="extracted"
           BEFORE="$(du -sb "${ROOT}" | cut -f1)"
-          COUNT=0
-          while IFS= read -r -d '' file; do
-            if optipng -quiet -strip all -o2 "$file" >/dev/null 2>&1; then
-              COUNT=$((COUNT + 1))
-            fi
-          done < <(find "$ROOT" -type f -iname '*.png' -print0)
+          echo "Scanning PNG assets larger than 512 KB..."
+          mapfile -d '' PNGS < <(find "$ROOT" -type f -iname '*.png' -size +512k -print0)
+          TOTAL="${#PNGS[@]}"
+          echo "PNG files selected: ${TOTAL}"
+
+          if [ "$TOTAL" -gt 0 ]; then
+            printf '%s\0' "${PNGS[@]}" | parallel --null --jobs 2 --halt soon,fail=1 'optipng -quiet -strip all -o1 "{}" >/dev/null 2>&1 || true'
+          fi
+
           AFTER="$(du -sb "${ROOT}" | cut -f1)"
           SAVED=$((BEFORE - AFTER))
-          echo "Optimized ${COUNT} PNG files."
+          echo "Lossless PNG optimization completed."
           echo "Bytes saved: ${SAVED}"
           echo "Optimized artifact size:"
           du -sh "$ROOT"
