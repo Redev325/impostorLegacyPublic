@@ -121,6 +121,18 @@ jobs:
       - name: Compile to Web Port
         run: |
           haxelib run lime build html5
+      - name: Make Lean HTML5 Package
+        shell: bash
+        run: |
+          set -e
+          OUTPUT_DIR="export/release/html5/bin"
+          test -f "$OUTPUT_DIR/index.html"
+          test -f "$OUTPUT_DIR/ImpostorLegacy.js"
+          echo "Removing video files that cannot be used by the HTML5 build..."
+          find "$OUTPUT_DIR" -type f \( -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mkv' -o -iname '*.avi' -o -iname '*.mov' -o -iname '*.wmv' \) -delete
+          rm -f "$OUTPUT_DIR/CHANGELOG.md"
+          echo "Lean package size:"
+          du -sh "$OUTPUT_DIR"
       - name: Verify HTML5 build output
         shell: bash
         run: |
@@ -129,14 +141,11 @@ jobs:
           echo "Checking generated HTML5 output at: $OUTPUT_DIR"
           if [ ! -d "$OUTPUT_DIR" ]; then
             echo "ERROR: Expected HTML5 output directory was not created: $OUTPUT_DIR"
-            echo "Export directories found:"
             find export -maxdepth 5 -type d -print
             exit 1
           fi
           if [ ! -f "$OUTPUT_DIR/index.html" ]; then
             echo "ERROR: index.html is missing from $OUTPUT_DIR"
-            echo "HTML5 output files found:"
-            find "$OUTPUT_DIR" -maxdepth 2 -type f -print
             exit 1
           fi
           if [ ! -f "$OUTPUT_DIR/ImpostorLegacy.js" ]; then
@@ -147,7 +156,7 @@ jobs:
       - name: Upload HTML5 Build
         uses: actions/upload-artifact@v4
         with:
-          name: impostor-legacy-html5
+          name: impostor-legacy-html5-lean
           path: export/release/html5/bin
           if-no-files-found: error
           retention-days: 7
