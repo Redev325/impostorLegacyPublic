@@ -8,6 +8,8 @@ on:
 permissions:
   actions: read
   contents: read
+  pages: write
+  id-token: write
 
 jobs:
   optimize:
@@ -87,3 +89,15 @@ jobs:
           if-no-files-found: error
           compression-level: 9
           retention-days: 7
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload game to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: extracted
+
+      - name: Deploy game to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
