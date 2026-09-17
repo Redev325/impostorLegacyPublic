@@ -72,6 +72,7 @@
 		<!-- Song metadata stays in the default library; large song audio is moved out of startup preload. -->
 		<assets path="assets/legacy/songs" rename="assets/songs" include="**/*.json|**/*.txt" />
 		<assets path="assets/legacy/songs" rename="assets/songs" library="songs" include="**/*.ogg|**/*.wav" />
+		<library name="default" preload="false" />
 		<library name="songs" preload="false" />
 	</section>
 
