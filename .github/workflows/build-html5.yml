@@ -121,9 +121,14 @@ jobs:
           ! grep -R -n -E '^[[:space:]]*(sys\.io\.File|Sys\.getEnv|Sys\.exit\(|FileSystem\.(exists|deleteFile|rename)|File\.(copy|saveContent))' source/funkin/data/ClientPrefs.hx source/funkin/Mods.hx source/funkin/states/FNAFState.hx
           ! grep -R -n -E 'Sys\.getEnv\("TEMP"\)|sys\.io\.File\.saveBytes|Sys\.exit\(0\);' source/funkin/states/FNAFState.hx
           ! grep -R -n -E 'Type\.getClass\(FlxG\.state\)|Type\.getClassName\(Type\.getClass\(FlxG\.state\)\)' source/funkin/backend/CrashHandler.hx source/funkin/backend/DebugDisplay.hx
+      - name: Setup Java for production web compilation
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - name: Compile to Web Port
         run: |
-          haxelib run lime build html5
+          haxelib run lime build html5 -final
       - name: Make Lean HTML5 Package
         shell: bash
         run: |
