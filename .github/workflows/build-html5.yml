@@ -110,7 +110,11 @@ jobs:
           edit('source/funkin/backend/CrashHandler.hx', lambda s: s.replace('final cl = Type.getClass(FlxG.state);','final cl:Null<Class<Dynamic>> = null;',1))
           edit('source/funkin/backend/DebugDisplay.hx', lambda s: s.replace('var className = Type.getClassName(Type.getClass(FlxG.state));','var className:String = \'Unknown\';',1))
           edit('source/funkin/data/ClientPrefs.hx',lambda s:s.replace('funkin.api.DiscordClient.check();','// Discord RPC disabled for HTML5'))
-          edit('source/Init.hx',lambda s:s.replace('DiscordClient.check();','// Discord RPC disabled for HTML5'))
+          # Init.hx already contains the HTML5-safe Discord change in the repository; do not fail if there is nothing left to patch.
+          init_path=Path('source/Init.hx')
+          init_text=init_path.read_text()
+          init_new=init_text.replace('DiscordClient.check();','// Discord RPC disabled for HTML5')
+          if init_new != init_text: init_path.write_text(init_new)
           edit('source/funkin/utils/CoolUtil.hx',lambda s:s.replace('FlxG.error("Platform is not supported for CoolUtil.openFolder");','trace("Platform is not supported for CoolUtil.openFolder");'))
           edit('source/Splash.hx',lambda s:re.sub(r'(?s)(\tfunction logoFunc\(\)\n\t\{).*?(\n\t\}\n)',r'\1\n\t\tfinish();\n\t\2',s,count=1))
           edit('source/funkin/objects/menu/CosmicubeNode.hx',lambda s:re.sub(r'(?s)(inline function hasUpdogSaveData\(\):Bool\n\t\{).*?(\n\t\}\n)',r'\1\n\t\treturn false;\n\t\2',s,count=1))
