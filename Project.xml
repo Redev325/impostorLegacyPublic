@@ -11,10 +11,8 @@
 	<haxedef name="LINC_LUA_RELATIVE_DYNAMIC_LIB"/>
 	<!-- stable luas PUT AFTER FIRST LINE WITH APP NAME AND ETC -->
 
-	<!--The flixel preloader is not accurate in Chrome. You can use it regularly if you embed the swf into a html file
-		or you can set the actual size of your file manually at "FlxPreloaderBase-onUpdate-bytesTotal"-->
-	<!-- <app preloader="Preloader" resizable="true" /> -->
-	<app preloader="flixel.system.FlxPreloader" unless="html5" />
+	<!--Use the HaxeFlixel loading screen on native targets and HTML5 too. -->
+	<app preloader="flixel.system.FlxPreloader" />
 
 	<!--Minimum without FLX_NO_GAMEPAD: 11.8, without FLX_NO_NATIVE_CURSOR: 11.2-->
 	<set name="SWF_VERSION" value="11.8" />
