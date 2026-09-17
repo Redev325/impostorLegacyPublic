@@ -66,7 +66,7 @@
 	<!--OpenAL config-->	<!-- appreciate you cyn0x8 and smokey for finding this -->
 	<section if="desktop">
 		<assets path="projFiles/alsoft.ini" rename="alsoft.ini" type="text" if="windows"/>
-		<assets path="projFiles/alsoft.ini" rename="alsoft.conf" type="text" unless="windows"/>
+		<assets path="projFiles/alsoft.ini" rename="alsoft.conf" unless="windows"/>
 	</section>
 
 	<!-- _______________________________ Haxe libraries ______________________________ -->
@@ -112,6 +112,9 @@
 	<haxeflag name="-dce no" />
 
 	<!-- ______________________________ Haxedefines _____________________________ -->
+
+	<!-- Force HTML5 to use the software Canvas renderer instead of WebGL. -->
+	<haxedef name="canvas" if="html5" />
 
 	<haxedef name="analyzer-optimize" unless='debug'/>
 
