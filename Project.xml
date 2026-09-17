@@ -63,6 +63,9 @@
 		<assets path="assets/legacy" rename="assets"/>
 	</section>
 
+	<!-- Do not make the entire default asset library block the HTML5 startup preloader. -->
+	<library name="default" preload="false" />
+
 	<!--OpenAL config-->	<!-- appreciate you cyn0x8 and smokey for finding this -->
 	<section if="desktop">
 		<assets path="projFiles/alsoft.ini" rename="alsoft.ini" type="text" if="windows"/>
