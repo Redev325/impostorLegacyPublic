@@ -113,10 +113,6 @@
 
 	<haxedef name="analyzer-optimize" unless='debug'/>
 
-	<!--Use the HTML5 Canvas renderer for broader browser compatibility. This only affects the web build. -->
-	<haxedef name="canvas" if="html5" />
-
-	<!--Needed for haxeui-->
 	<haxedef name="haxeui_dont_impose_base_class"/>
 	<haxedef name="haxeui_focus_out_on_click"/>
 
