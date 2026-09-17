@@ -42,6 +42,7 @@ class Init extends FlxState
 	var loadingFill:Null<openfl.display.Shape> = null;
 	var loadingText:Null<openfl.text.TextField> = null;
 
+	@:nullSafety(Off)
 	function showHtml5Loading():Void
 	{
 		loadingOverlay = new openfl.display.Sprite();
@@ -81,6 +82,7 @@ class Init extends FlxState
 		openfl.Lib.current.stage.addChild(loadingOverlay);
 	}
 
+	@:nullSafety(Off)
 	function updateHtml5Loading(progress:Float):Void
 	{
 		if (loadingOverlay == null || loadingFill == null || loadingText == null) return;
@@ -94,12 +96,14 @@ class Init extends FlxState
 		loadingText.text = 'Loading VS IMPOSTOR: LEGACY... ' + Std.int(clamped * 100) + '%';
 	}
 
+	@:nullSafety(Off)
 	function updateHtml5LoadingError(message:String):Void
 	{
 		if (loadingText == null) return;
 		loadingText.text = message + '\nRefresh the page to try again.';
 	}
 
+	@:nullSafety(Off)
 	function removeHtml5Loading():Void
 	{
 		if (loadingOverlay != null && loadingOverlay.parent != null) loadingOverlay.parent.removeChild(loadingOverlay);
