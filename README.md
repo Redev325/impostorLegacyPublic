@@ -32,6 +32,8 @@ This mod has plenty of content for you to explore, especially with brand-new awa
 <p align="center">
 	<a href="https://github.com/NMVTeam/NightmareVision">
 		<img src="assets/legacy/images/branding/UpdogBlack.png" alt="Made with NightmareVision Engine" width="325"/>
+		<img width="1600" height="1600" alt="image" src="https://github.com/user-attachments/assets/b09c3ac2-533a-441b-a0d4-46a6b9df42a6" />
+
 	</a>
 </p>
 
