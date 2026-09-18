@@ -176,6 +176,7 @@ jobs:
             var box=document.getElementById('neo-boot-loader');
             var fill=document.getElementById('neo-boot-loader-fill');
             var text=document.getElementById('neo-boot-loader-text');
+            window.__neoBootDone=function(){if(box){box.remove();}window.__neoBootDone=null;};
             var xhr=new XMLHttpRequest();
             xhr.open('GET','./ImpostorLegacy.js',true);
             xhr.onprogress=function(e){
