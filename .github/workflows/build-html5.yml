@@ -145,6 +145,39 @@ jobs:
           rm -f "$OUTPUT_DIR/CHANGELOG.md"
           echo "Lean package size:"
           du -sh "$OUTPUT_DIR"
+      - name: Inspect generated HTML5 asset manifests
+        shell: bash
+        run: |
+          set -e
+          OUTPUT_DIR="export/release/html5/bin"
+          echo "===== GENERATED MANIFESTS ====="
+          find "$OUTPUT_DIR/manifest" -maxdepth 1 -type f -name '*.json' -printf '%f\t%s bytes\n' 2>/dev/null | sort || true
+          python3 - "$OUTPUT_DIR" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          root = Path(sys.argv[1])
+          manifest_dir = root / 'manifest'
+          for path in sorted(manifest_dir.glob('*.json')) if manifest_dir.exists() else []:
+              try:
+                  data = json.loads(path.read_text())
+              except Exception as e:
+                  print(f'Could not parse {path.name}: {e}')
+                  continue
+              assets = data if isinstance(data, list) else data.get('assets', []) if isinstance(data, dict) else []
+              rows = []
+              for item in assets if isinstance(assets, list) else []:
+                  if not isinstance(item, dict):
+                      continue
+                  size = int(item.get('size', 0) or 0)
+                  name = item.get('id') or item.get('path') or item.get('src') or '?'
+                  rows.append((size, name))
+              print(f'{path.name}: entries={len(rows)} declared_bytes={sum(size for size, _ in rows)}')
+              if path.name == 'default.json':
+                  print('===== DEFAULT MANIFEST LARGEST DECLARED ASSETS =====')
+                  for size, name in sorted(rows, reverse=True)[:100]:
+                      print(f'{size}\t{name}')
+          PY
       - name: Report largest HTML5 assets after cleanup
         shell: bash
         run: |
