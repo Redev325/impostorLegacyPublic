@@ -12,8 +12,8 @@
 	<!-- stable luas PUT AFTER FIRST LINE WITH APP NAME AND ETC -->
 
 	<!--Use the HaxeFlixel loading screen on native targets and HTML5 too. -->
-	<!-- Keep the HaxeFlixel preloader on native builds, but skip it on HTML5 so the browser can use the custom real asset loader below. -->
-	<app preloader="flixel.system.FlxPreloader" unless="html5" />
+	<!-- Use the real HaxeFlixel loading screen now that the default library contains only startup/menu assets. -->
+	<app preloader="flixel.system.FlxPreloader" />
 
 	<!--Minimum without FLX_NO_GAMEPAD: 11.8, without FLX_NO_NATIVE_CURSOR: 11.2-->
 	<set name="SWF_VERSION" value="11.8" />
