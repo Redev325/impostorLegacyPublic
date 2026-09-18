@@ -17,7 +17,7 @@ class Init extends FlxState
 	override public function create():Void
 	{
 		#if html5
-		untyped __js__('if (window.__neoBootDone) window.__neoBootDone();');
+		untyped __js__('var e=document.getElementById("neo-boot-loader"); if(e)e.remove();');
 		showHtml5Loading();
 		openfl.Assets.loadLibrary("startup")
 			.onProgress(function(loaded:Int, total:Int)
