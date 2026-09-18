@@ -26,6 +26,7 @@ class Init extends FlxState
 			.onComplete(function(_)
 			{
 				updateHtml5Loading(1);
+				removeHtml5Loading();
 				initializeGame();
 			})
 			.onError(function(error)

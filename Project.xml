@@ -86,16 +86,14 @@
 
 		<!-- Everything else is copied into separate libraries and is NOT preloaded. -->
 		<assets path="assets/embeds" rename="assets" library="embedded" embed="true" />
+		<!-- HTML5 never uses the native video backend; keep video manifests out of startup. -->
+		<assets path="assets/legacy/videos" rename="assets/videos" library="embedded" if="html5" />
 		<assets path="content/securitydlc" rename="content/securitydlc" library="embedded" embed="false" if="DLC" />
 
-		<assets path="assets/legacy/images/characters" rename="assets/images/characters" library="gameplay" />
-		<assets path="assets/legacy/images/stages" rename="assets/images/stages" library="gameplay" />
-		<assets path="assets/legacy/images/credits" rename="assets/images/credits" library="gameplay" />
-		<assets path="assets/legacy/images/editors" rename="assets/images/editors" library="gameplay" />
-		<assets path="assets/legacy/images/ui" rename="assets/images/ui" library="gameplay" />
-		<assets path="assets/legacy/images/pets" rename="assets/images/pets" library="gameplay" />
-		<assets path="assets/legacy/images" rename="assets/images" library="gameplay"
-			include="NOTE_assets*|sustainHold.png|noteSplashes.png|ready.png|set.png|go.png|good.png|bad.png|shit.png|sick.png|epic.png|combo.png" />
+		<!-- On HTML5, move every non-menu image out of the startup library. -->
+		<!-- The explicit startup menu/icon/award paths above remain in the default library. -->
+		<assets path="assets/legacy/images" rename="assets/images" library="gameplay" if="html5"
+			exclude="menu*|icons*|awards*|logoBumpin.png|alphabet.png|alphabet.xml|cursor.png|menuDesat.png" />
 
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="gameplay"
 			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg|clickText.ogg|click.ogg|select.ogg|hover.ogg|locked.ogg|panelAppear.ogg|panelDisappear.ogg|cosmicubePop.ogg" />
