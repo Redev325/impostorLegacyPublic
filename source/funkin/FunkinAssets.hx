@@ -22,6 +22,22 @@ class FunkinAssets
 	 * Handles the caching of assets collected through `Paths` 
 	 */
 	public static final cache:FunkinCache = new FunkinCache();
+
+	static final HTML5_LIBRARIES:Array<String> = ['startup', 'mainmenu', 'embedded', 'gameplay', 'music', 'fonts'];
+
+	#if html5
+	static function resolveHtml5AssetId(path:String, ?type:AssetType):Null<String>
+	{
+		if (Assets.exists(path, type)) return path;
+		for (library in HTML5_LIBRARIES)
+		{
+			if (!Assets.hasLibrary(library)) continue;
+			final id = library + ':' + path;
+			if (Assets.exists(id, type)) return id;
+		}
+		return null;
+	}
+	#end
 	
 	/**
 	 * Safer alternative to directly using `haxe.Json.parse`
@@ -68,6 +84,10 @@ class FunkinAssets
 		if (FileSystem.exists(path)) return File.getBytes(path);
 		#end
 		if (Assets.exists(path)) return Assets.getBytes(path);
+		#if html5
+		final resolved = resolveHtml5AssetId(path);
+		if (resolved != null) return Assets.getBytes(resolved);
+		#end
 		else
 		{
 			throw 'Couldnt find file at path [$path]';
@@ -84,6 +104,10 @@ class FunkinAssets
 		else
 		#end
 		if (Assets.exists(path)) return Assets.getText(path);
+		#if html5
+		final resolved = resolveHtml5AssetId(path, TEXT);
+		if (resolved != null) return Assets.getText(resolved);
+		#end
 		else
 		{
 			throw 'Couldnt find file at path [$path]';
@@ -100,6 +124,13 @@ class FunkinAssets
 		var bitmap:Null<BitmapData> = null;
 		#if (MODS_ALLOWED || ASSET_REDIRECT) if (FileSystem.exists(path)) bitmap = BitmapData.fromFile(path);
 		else #end if (Assets.exists(path, IMAGE)) bitmap = Assets.getBitmapData(path, useCache);
+		#if html5
+		if (bitmap == null)
+		{
+			final resolved = resolveHtml5AssetId(path, IMAGE);
+			if (resolved != null) bitmap = Assets.getBitmapData(resolved, useCache);
+		}
+		#end
 		
 		return bitmap;
 	}
@@ -114,6 +145,9 @@ class FunkinAssets
 		else
 		#end
 		if (Assets.exists(path, type)) return true;
+		#if html5
+		if (type == null ? resolveHtml5AssetId(path) != null : resolveHtml5AssetId(path, type) != null) return true;
+		#end
 		else return false;
 	}
 	
@@ -228,6 +262,13 @@ class FunkinAssets
 		
 		#if (MODS_ALLOWED || ASSET_REDIRECT) if (FileSystem.exists(key)) sound = Sound.fromFile(key);
 		else #end if (Assets.exists(key, SOUND)) sound = Assets.getSound(key, true);
+		#if html5
+		if (sound == null)
+		{
+			final resolved = resolveHtml5AssetId(key, SOUND);
+			if (resolved != null) sound = Assets.getSound(resolved, true);
+		}
+		#end
 		
 		if (sound != null)
 		{

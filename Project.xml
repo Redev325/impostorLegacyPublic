@@ -67,7 +67,7 @@
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="startup"
 			include="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" />
 		<assets path="assets/legacy/music" rename="assets/music" library="startup"
-			include="freakyMenu.ogg|finaleMenu.ogg" />
+			include="freakyMenu.ogg" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="startup"
 			include="vcr.ttf|vcr-srb.ttf" />
 
@@ -76,8 +76,7 @@
 			include="logoBumpin.png|logoBumpin.xml|cursor.png" />
 		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="startup" />
 		<assets path="assets/legacy/images/menu/title" rename="assets/images/menu/title" library="startup" />
-		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="startup"
-			include="redmenu.png|redmenu.xml|greenmenu.png|greenmenu.xml|glow.png|glowEVIL.png|vignette.png|tablet.png|new buttons and stuff.png|new buttons and stuff.xml|shiny.png|shiny.xml" />
+		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" />
 
 		<!-- Everything else is copied into separate libraries and is NOT loaded during startup. -->
 		<assets path="assets/legacy/data" rename="assets/data" library="gameplay"
@@ -91,6 +90,14 @@
 		<!-- HTML5 never uses the native video backend; keep video manifests out of startup. -->
 		<assets path="assets/legacy/videos" rename="assets/videos" library="embedded" if="html5" />
 		<assets path="content/securitydlc" rename="content/securitydlc" library="embedded" embed="false" if="DLC" />
+
+		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" />
+
+
+
+		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" />
+		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" />
+		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu" include="finaleMenu.ogg" />
 
 		<assets path="assets/legacy/images" rename="assets/images" library="gameplay" if="html5"
 			exclude="menu*|icons*|awards*|logoBumpin.png|logoBumpin.xml|cursor.png" />
@@ -107,6 +114,7 @@
 		<!-- The default library is deliberately empty; HTML5 loads the small startup library explicitly. -->
 		<library name="default" preload="false" />
 		<library name="startup" preload="false" />
+		<library name="mainmenu" preload="false" />
 		<library name="embedded" preload="false" />
 		<library name="gameplay" preload="false" />
 		<library name="music" preload="false" />
