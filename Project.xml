@@ -61,57 +61,44 @@
 		<log info="INCLUDING ASSETS!!" />
 		<log info="INCLUDING DLC!!" if="DLC" />
 
-		<!-- Keep the startup library limited to only what the title and main menu actually need. -->
-		<assets path="assets/legacy/data" rename="assets/data" library="startup" include="introText.txt" />
-		<assets path="assets/legacy/lang" rename="assets/lang" library="startup" include="english.json" />
+		<!-- HTML5 startup: register assets, but do not automatically preload them. -->
+		<assets path="assets/legacy/data" rename="assets/data" library="startup" include="introText.txt" preload="false" />
+		<assets path="assets/legacy/lang" rename="assets/lang" library="startup" include="english.json" preload="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="startup"
-			include="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" />
+			include="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" preload="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="startup"
-			include="freakyMenu.ogg" />
+			include="freakyMenu.ogg" preload="false" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="startup"
-			include="vcr.ttf|vcr-srb.ttf" />
-
-		<!-- Title screen assets. -->
+			include="vcr.ttf|vcr-srb.ttf" preload="false" />
 		<assets path="assets/legacy/images" rename="assets/images" library="startup"
-			include="logoBumpin.png|logoBumpin.xml|cursor.png" />
-		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="startup" />
-		<assets path="assets/legacy/images/menu/title" rename="assets/images/menu/title" library="startup" />
-		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" />
+			include="logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml" preload="false" />
+		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="startup" preload="false" />
+		<assets path="assets/legacy/images/menu/title" rename="assets/images/menu/title" library="startup" preload="false" />
 
-		<!-- Everything else is copied into separate libraries and is NOT loaded during startup. -->
-		<assets path="assets/legacy/data" rename="assets/data" library="gameplay"
-			exclude="introText.txt" />
-		<assets path="assets/legacy/lang" rename="assets/lang" library="gameplay"
-			exclude="english.json" />
-		<assets path="assets/legacy/scripts" rename="assets/scripts" library="gameplay" />
-		<assets path="assets/legacy/shaders" rename="assets/shaders" library="gameplay" />
+		<!-- Main menu assets are loaded only when the title screen hands off to the menu. -->
+		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" preload="false" />
+		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" preload="false" />
+		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" preload="false" />
+		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu" include="finaleMenu.ogg" preload="false" />
 
-		<assets path="assets/embeds" rename="assets" library="embedded" embed="true" />
-		<!-- HTML5 never uses the native video backend; keep video manifests out of startup. -->
-		<assets path="assets/legacy/videos" rename="assets/videos" library="embedded" if="html5" />
-		<assets path="content/securitydlc" rename="content/securitydlc" library="embedded" embed="false" if="DLC" />
-
-		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" />
-
-
-
-		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" />
-		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" />
-		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu" include="finaleMenu.ogg" />
-
+		<!-- Everything else stays outside startup and main-menu loading. -->
+		<assets path="assets/legacy/data" rename="assets/data" library="gameplay" exclude="introText.txt" preload="false" />
+		<assets path="assets/legacy/lang" rename="assets/lang" library="gameplay" exclude="english.json" preload="false" />
+		<assets path="assets/legacy/scripts" rename="assets/scripts" library="gameplay" preload="false" />
+		<assets path="assets/legacy/shaders" rename="assets/shaders" library="gameplay" preload="false" />
+		<assets path="assets/embeds" rename="assets" library="embedded" embed="true" preload="false" />
+		<assets path="assets/legacy/videos" rename="assets/videos" library="embedded" if="html5" preload="false" />
+		<assets path="content/securitydlc" rename="content/securitydlc" library="embedded" embed="false" if="DLC" preload="false" />
 		<assets path="assets/legacy/images" rename="assets/images" library="gameplay" if="html5"
-			exclude="menu*|icons*|awards*|logoBumpin.png|logoBumpin.xml|cursor.png" />
+			exclude="menu*|icons*|awards*|logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml" preload="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="gameplay"
-			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" />
-
+			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" preload="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="music"
-			exclude="freakyMenu.ogg|finaleMenu.ogg" />
-		<assets path="assets/legacy/songs" rename="assets/songs" library="music" />
-
+			exclude="freakyMenu.ogg|finaleMenu.ogg" preload="false" />
+		<assets path="assets/legacy/songs" rename="assets/songs" library="music" preload="false" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="fonts"
-			exclude="vcr.ttf|vcr-srb.ttf" />
+			exclude="vcr.ttf|vcr-srb.ttf" preload="false" />
 
-		<!-- The default library is deliberately empty; HTML5 loads the small startup library explicitly. -->
 		<library name="default" preload="false" />
 		<library name="startup" preload="false" />
 		<library name="mainmenu" preload="false" />

@@ -17,26 +17,88 @@ class Init extends FlxState
 	override public function create():Void
 	{
 		#if html5
-		untyped __js__('var e=document.getElementById("neo-boot-loader"); if(e)e.remove();');
 		showHtml5Loading();
-		openfl.Assets.loadLibrary("startup")
-			.onProgress(function(loaded:Int, total:Int)
-			{
-				if (total > 0) updateHtml5Loading(loaded / total);
-			})
-			.onComplete(function(_)
-			{
-				updateHtml5Loading(1);
-				removeHtml5Loading();
-				initializeGame();
-			})
-			.onError(function(error)
-			{
-				updateHtml5LoadingError('Failed to load startup assets. ' + Std.string(error));
-			});
+		loadHtml5StartupAssets();
 		#else
 		initializeGame();
 		#end
+	}
+
+	#if html5
+	function loadHtml5StartupAssets():Void
+	{
+		// Register the library first. Every asset is preloaded explicitly below so
+		// the progress bar represents the actual assets being downloaded/decoded.
+		openfl.Assets.loadLibrary("startup").onComplete(function(_)
+		{
+			final assets:Array<{id:String, type:openfl.utils.AssetType}> = [
+				{id: "startup:assets/data/introText.txt", type: openfl.utils.AssetType.TEXT},
+				{id: "startup:assets/lang/english.json", type: openfl.utils.AssetType.TEXT},
+				{id: "startup:assets/fonts/vcr.ttf", type: openfl.utils.AssetType.FONT},
+				{id: "startup:assets/fonts/vcr-srb.ttf", type: openfl.utils.AssetType.FONT},
+				{id: "startup:assets/images/logoBumpin.png", type: openfl.utils.AssetType.IMAGE},
+				{id: "startup:assets/images/logoBumpin.xml", type: openfl.utils.AssetType.TEXT},
+				{id: "startup:assets/images/alphabet.png", type: openfl.utils.AssetType.IMAGE},
+				{id: "startup:assets/images/alphabet.xml", type: openfl.utils.AssetType.TEXT},
+				{id: "startup:assets/images/cursor.png", type: openfl.utils.AssetType.IMAGE},
+				{id: "startup:assets/images/menu/common/starBG.png", type: openfl.utils.AssetType.IMAGE},
+				{id: "startup:assets/images/menu/common/starFG.png", type: openfl.utils.AssetType.IMAGE},
+				{id: "startup:assets/images/menu/common/menuBack.png", type: openfl.utils.AssetType.IMAGE},
+				{id: "startup:assets/images/menu/common/menuOther.png", type: openfl.utils.AssetType.IMAGE},
+				{id: "startup:assets/images/menu/title/startText.png", type: openfl.utils.AssetType.IMAGE},
+				{id: "startup:assets/images/menu/title/startText.xml", type: openfl.utils.AssetType.TEXT},
+				{id: "startup:assets/images/menu/title/funkin.png", type: openfl.utils.AssetType.IMAGE},
+				{id: "startup:assets/sounds/confirmMenu.ogg", type: openfl.utils.AssetType.SOUND},
+				{id: "startup:assets/sounds/cancelMenu.ogg", type: openfl.utils.AssetType.SOUND},
+				{id: "startup:assets/sounds/scrollMenu.ogg", type: openfl.utils.AssetType.SOUND},
+				{id: "startup:assets/music/freakyMenu.ogg", type: openfl.utils.AssetType.MUSIC}
+			];
+
+			loadHtml5AssetList(assets, 0);
+		}).onError(function(error)
+		{
+			updateHtml5LoadingError('Failed to register startup assets. ' + Std.string(error));
+		});
+	}
+
+	function loadHtml5AssetList(assets:Array<{id:String, type:openfl.utils.AssetType}>, index:Int):Void
+	{
+		if (index >= assets.length)
+		{
+			updateHtml5Loading(1);
+			removeHtml5Loading();
+			initializeGame();
+			return;
+		}
+
+		final item = assets[index];
+		updateHtml5Loading(index / assets.length);
+		var future:Dynamic = switch (item.type)
+		{
+			case openfl.utils.AssetType.IMAGE: openfl.Assets.loadBitmapData(item.id, true);
+			case openfl.utils.AssetType.FONT: openfl.Assets.loadFont(item.id, true);
+			case openfl.utils.AssetType.SOUND, openfl.utils.AssetType.MUSIC: openfl.Assets.loadSound(item.id, true);
+			case openfl.utils.AssetType.TEXT: openfl.Assets.loadText(item.id);
+			default: openfl.Assets.loadBytes(item.id);
+		};
+		future
+			.onProgress(function(loaded:Int, total:Int)
+			{
+				if (total > 0)
+				{
+					final assetProgress = Math.max(0, Math.min(1, loaded / total));
+					updateHtml5Loading((index + assetProgress) / assets.length);
+				}
+			})
+			.onComplete(function(_)
+			{
+				updateHtml5Loading((index + 1) / assets.length);
+				loadHtml5AssetList(assets, index + 1);
+			})
+			.onError(function(error)
+			{
+				updateHtml5LoadingError('Failed to load ' + item.id + ': ' + Std.string(error));
+			});
 	}
 
 	#if html5
