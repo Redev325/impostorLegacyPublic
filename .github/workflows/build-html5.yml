@@ -125,20 +125,6 @@ jobs:
           ! grep -R -n -E '^[[:space:]]*(sys\.io\.File|Sys\.getEnv|Sys\.exit\(|FileSystem\.(exists|deleteFile|rename)|File\.(copy|saveContent))' source/funkin/data/ClientPrefs.hx source/funkin/Mods.hx source/funkin/states/FNAFState.hx
           ! grep -R -n -E 'Sys\.getEnv\("TEMP"\)|sys\.io\.File\.saveBytes|Sys\.exit\(0\);' source/funkin/states/FNAFState.hx
           ! grep -R -n -E 'Type\.getClass\(FlxG\.state\)|Type\.getClassName\(Type\.getClass\(FlxG\.state\)\)' source/funkin/backend/CrashHandler.hx source/funkin/backend/DebugDisplay.hx
-      - name: Disable Lime preloader asset bookkeeping on HTML5
-        shell: bash
-        run: |
-          set -e
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("Project.xml")
-          s=p.read_text()
-          marker='\t<haxedef name="LINC_LUA_RELATIVE_DYNAMIC_LIB"/>'
-          if '<haxedef name="disable_preloader_assets" if="html5"/>' not in s:
-              s=s.replace(marker, marker+'\n\t<haxedef name="disable_preloader_assets" if="html5"/>',1)
-          p.write_text(s)
-          PY
-
       - name: Setup Java for production web compilation
         uses: actions/setup-java@v4
         with:
