@@ -18,7 +18,7 @@ class Init extends FlxState
 	{
 		#if html5
 		showHtml5Loading();
-		openfl.Assets.loadLibrary("default")
+		openfl.Assets.loadLibrary("startup")
 			.onProgress(function(loaded:Int, total:Int)
 			{
 				if (total > 0) updateHtml5Loading(loaded / total);
