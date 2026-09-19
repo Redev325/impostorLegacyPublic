@@ -15,9 +15,8 @@
 	<!-- Use the real HaxeFlixel loading screen now that the default library contains only startup/menu assets. -->
 		<!-- Native targets use the standard HaxeFlixel preloader. -->
 	<app preloader="flixel.system.FlxPreloader" unless="html5" />
-	<!-- HTML5 uses NeoPreloader to report real browser asset-library progress. -->
-	<app preloader="NeoPreloader" if="html5" />
-	<!-- HTML5 uses NeoPreloader for the real browser download progress, then Init.hx reports real asset progress. -->
+	<!-- HTML5 deliberately has no engine preloader. Init.hx shows the real title-asset progress after the app starts. -->
+	<app preloader="" if="html5" />
 
 	<!--Minimum without FLX_NO_GAMEPAD: 11.8, without FLX_NO_NATIVE_CURSOR: 11.2-->
 	<set name="SWF_VERSION" value="11.8" />
