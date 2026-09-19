@@ -28,114 +28,42 @@ class Init extends FlxState
 	var loadingFill:Null<openfl.display.Shape> = null;
 	var loadingText:Null<openfl.text.TextField> = null;
 
-	var startupAssets:Array<{id:String, type:openfl.utils.AssetType}> = [];
-	var startupNext:Int = 0;
-	var startupActive:Int = 0;
-	var startupCompleted:Int = 0;
-	var startupFailed:Bool = false;
-
-	static inline final STARTUP_CONCURRENCY:Int = 6;
-
-	@:nullSafety(Off)
+		@:nullSafety(Off)
 	function loadStartupAssets():Void
 	{
-		final library = openfl.Assets.getLibrary("startup");
-		if (library == null)
+		final libraryName = "title";
+		if (openfl.Assets.getLibrary(libraryName) == null)
 		{
-			updateHtml5LoadingError('Startup asset library was not registered.');
+			updateHtml5LoadingError('Title asset library was not registered.');
 			return;
 		}
-
-		startupAssets = [];
-		final seen = new Map<String, Bool>();
-		final types = [
-			openfl.utils.AssetType.IMAGE,
-			openfl.utils.AssetType.SOUND,
-			openfl.utils.AssetType.MUSIC,
-			openfl.utils.AssetType.FONT,
-			openfl.utils.AssetType.TEXT,
-			openfl.utils.AssetType.BINARY
-		];
-
-		for (type in types)
-		{
-			for (id in library.list(cast type))
-			{
-				if (seen.exists(id)) continue;
-				seen.set(id, true);
-				startupAssets.push({id: id, type: type});
-			}
-		}
-
-		if (startupAssets.length == 0)
-		{
-			updateHtml5LoadingError('No startup assets were found.');
-			return;
-		}
-
-		startupNext = 0;
-		startupActive = 0;
-		startupCompleted = 0;
-		startupFailed = false;
 
 		updateHtml5Loading(0);
-		updateHtml5LoadingStatus('Loading startup assets... 0/' + startupAssets.length);
-		pumpStartupLoads();
-	}
+		updateHtml5LoadingStatus('Loading title assets...');
 
-	@:nullSafety(Off)
-	function pumpStartupLoads():Void
-	{
-		if (startupFailed) return;
-
-		while (startupActive < STARTUP_CONCURRENCY && startupNext < startupAssets.length)
-		{
-			final asset = startupAssets[startupNext++];
-			startupActive++;
-			updateHtml5LoadingStatus('Loading startup asset: ' + asset.id);
-
-			final assetId = 'startup:' + asset.id;
-			final future:openfl.utils.Future<Dynamic> = switch (asset.type)
+		openfl.Assets.loadLibrary(libraryName)
+			.onProgress(function(loaded:Int, total:Int)
 			{
-				case openfl.utils.AssetType.IMAGE:
-					cast openfl.Assets.loadBitmapData(assetId);
-				case openfl.utils.AssetType.SOUND, openfl.utils.AssetType.MUSIC:
-					cast openfl.Assets.loadSound(assetId);
-				case openfl.utils.AssetType.FONT:
-					cast openfl.Assets.loadFont(assetId);
-				case openfl.utils.AssetType.TEXT:
-					cast openfl.Assets.loadText(assetId);
-				default:
-					cast openfl.Assets.loadBytes(assetId);
-			};
-
-			future
-				.onComplete(function(_)
+				if (total > 0)
 				{
-					startupActive--;
-					startupCompleted++;
-
-					final progress:Float = startupCompleted / startupAssets.length;
+					final progress:Float = Math.max(0, Math.min(1, loaded / total));
 					updateHtml5Loading(progress);
-					updateHtml5LoadingStatus('Loaded startup assets: ' + startupCompleted + '/' + startupAssets.length);
-
-					if (startupCompleted >= startupAssets.length)
-					{
-						removeHtml5Loading();
-						initializeGame();
-					}
-					else
-					{
-						pumpStartupLoads();
-					}
-				})
-				.onError(function(error)
-				{
-					startupActive--;
-					startupFailed = true;
-					updateHtml5LoadingError('Failed startup asset: ' + asset.id + '\\n' + Std.string(error));
-				});
-		}
+					updateHtml5LoadingStatus(
+						'Loading title assets... ' + Std.int(progress * 100) + '%'
+					);
+				}
+			})
+			.onComplete(function(_)
+			{
+				updateHtml5Loading(1);
+				updateHtml5LoadingStatus('Starting VS IMPOSTOR: LEGACY...');
+				removeHtml5Loading();
+				initializeGame();
+			})
+			.onError(function(error)
+			{
+				updateHtml5LoadingError('Failed to load title assets. ' + Std.string(error));
+			});
 	}
 
 	@:nullSafety(Off)

@@ -23,7 +23,7 @@ class FunkinAssets
 	 */
 	public static final cache:FunkinCache = new FunkinCache();
 
-	static final HTML5_LIBRARIES:Array<String> = ['startup', 'mainmenu', 'embedded', 'gameplay', 'music', 'fonts'];
+	static final HTML5_LIBRARIES:Array<String> = ['title', 'mainmenu', 'embedded', 'gameplay', 'music', 'fonts'];
 
 	#if html5
 	static function resolveHtml5AssetId(path:String, ?type:AssetType):Null<String>
