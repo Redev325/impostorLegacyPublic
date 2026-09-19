@@ -258,21 +258,33 @@ jobs:
       );
     }
 
-    window.addEventListener("load", function () {
-      var bootstrap = document.getElementById("snokido-style-bootstrap");
-      if (bootstrap) {
-        setTimeout(function () {
-          bootstrap.style.opacity = "0";
-          setTimeout(function () {
-            if (bootstrap.parentNode) bootstrap.parentNode.removeChild(bootstrap);
-          }, 220);
-        }, 350);
-      }
-
+    window.addEventListener("DOMContentLoaded", function () {
       if (window.lime && typeof window.lime.embed === "function") {
         window.lime.embed("ImpostorLegacy", "openfl-content", 1280, 720, {
           parameters: {}
         });
+      }
+
+      var container = document.getElementById("openfl-content");
+      var bootstrap = document.getElementById("snokido-style-bootstrap");
+      if (!container || !bootstrap) return;
+
+      var hideWhenCanvasExists = function () {
+        if (container.querySelector("canvas")) {
+          bootstrap.style.opacity = "0";
+          setTimeout(function () {
+            if (bootstrap.parentNode) bootstrap.parentNode.removeChild(bootstrap);
+          }, 220);
+          return true;
+        }
+        return false;
+      };
+
+      if (!hideWhenCanvasExists()) {
+        var observer = new MutationObserver(function () {
+          if (hideWhenCanvasExists()) observer.disconnect();
+        });
+        observer.observe(container, { childList: true, subtree: true });
       }
     });
   </script>
