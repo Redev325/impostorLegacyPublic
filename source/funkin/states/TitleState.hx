@@ -102,14 +102,7 @@ class TitleState extends MusicBeatState
 	{
 		if (!initialized)
 		{
-			#if html5
-			openfl.Assets.loadLibrary('menuMusic').onComplete(function(_)
-			{
-				if (!closedState) FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
-			});
-			#else
 			FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
-			#end
 		}
 		
 		Conductor.bpm = 102;
