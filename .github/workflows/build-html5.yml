@@ -133,24 +133,6 @@ jobs:
       - name: Compile to Web Port
         run: |
           haxelib run lime build html5 -final
-      - name: Make HTML5 page background black
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUTPUT_DIR="export/release/html5/bin"
-          python3 - "$OUTPUT_DIR/index.html" <<'PY'
-          from pathlib import Path
-          import sys
-          p=Path(sys.argv[1])
-          s=p.read_text()
-          css='<style>html,body{margin:0!important;padding:0!important;background:#000!important;overflow:hidden!important}</style>'
-          if css not in s:
-              if '</head>' in s:
-                  s=s.replace('</head>',css+'</head>',1)
-              else:
-                  s=css+s
-          p.write_text(s)
-          PY
       - name: Make Lean HTML5 Package
         shell: bash
         run: |
