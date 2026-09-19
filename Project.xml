@@ -105,11 +105,11 @@
 
 		<library name="default" />
 		<library name="title" preload="true" />
-		<library name="mainmenu" preload="true" />
+		<library name="mainmenu" preload="false" />
 		<library name="embedded" />
-		<library name="gameplay" preload="true" />
-		<library name="music" preload="true" />
-		<library name="fonts" preload="true" />
+		<library name="gameplay" preload="false" />
+		<library name="music" preload="false" />
+		<library name="fonts" preload="false" />
 	</section>
 
 	<!--OpenAL config-->	<!-- appreciate you cyn0x8 and smokey for finding this -->
