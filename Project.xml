@@ -14,7 +14,7 @@
 	<!--Use the HaxeFlixel loading screen on native targets and HTML5 too. -->
 	<!-- Use the real HaxeFlixel loading screen now that the default library contains only startup/menu assets. -->
 		<!-- Use the standard HaxeFlixel loading screen on every target. HTML5 preloads only the small title library below. -->
-	<app preloader="flixel.system.FlxPreloader" />
+	<app preloader="flixel.system.FlxPreloader" unless="html5" />
 
 	<!--Minimum without FLX_NO_GAMEPAD: 11.8, without FLX_NO_NATIVE_CURSOR: 11.2-->
 	<set name="SWF_VERSION" value="11.8" />
@@ -103,10 +103,10 @@
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="fonts"
 			exclude="vcr.ttf|vcr-srb.ttf" />
 
-		<library name="default" />
+		<library name="default" preload="false" />
 		<library name="title" preload="false" />
 		<library name="mainmenu" preload="false" />
-		<library name="embedded" />
+		<library name="embedded" preload="false" />
 		<library name="gameplay" preload="false" />
 		<library name="music" preload="false" />
 		<library name="fonts" preload="false" />
