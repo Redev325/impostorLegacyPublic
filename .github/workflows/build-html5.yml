@@ -133,175 +133,190 @@ jobs:
       - name: Compile to Web Port
         run: |
           haxelib run lime build html5 -final
-      - name: Install Snokido-style standalone HTML5 bootstrap
+      - name: Add fast HaxeFlixel-style HTML5 loading screen
         shell: bash
         run: |
           set -e
           OUTPUT_DIR="export/release/html5/bin"
-          test -f "$OUTPUT_DIR/ImpostorLegacy.js"
-          cat > "$OUTPUT_DIR/index.html" <<'HTML'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>VS IMPOSTOR: LEGACY</title>
-  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #00345e;
-    }
+          test -f "$OUTPUT_DIR/index.html"
+          python3 - "$OUTPUT_DIR/index.html" <<'PY'
+          from pathlib import Path
+          import sys
 
-    #openfl-content {
-      width: 100%;
-      height: 100%;
-      background: #00345e;
-    }
+          path = Path(sys.argv[1])
+          html = path.read_text()
 
-    #snokido-style-bootstrap {
-      position: fixed;
-      inset: 0;
-      z-index: 99999;
-      pointer-events: none;
-      background: #00345e;
-      opacity: 1;
-      transition: opacity 180ms ease-out;
-    }
+          if "neo-html5-preloader" in html:
+              raise SystemExit("Preloader already present")
 
-    #snokido-style-bootstrap .bar {
-      position: absolute;
-      left: 4px;
-      right: 4px;
-      bottom: 11px;
-      height: 7px;
-      background: #5f6aff;
-      transform-origin: left center;
-      animation: bootstrap-progress 2.8s ease-out forwards;
-    }
+          style = r'''
+          <style id="neo-html5-preloader-style">
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              width: 100% !important;
+              height: 100% !important;
+              overflow: hidden !important;
+            }
 
-    #snokido-style-bootstrap .text {
-      position: absolute;
-      left: 2px;
-      bottom: 22px;
-      font: 8px Arial, sans-serif;
-      letter-spacing: 0.2px;
-      color: #5f6aff;
-    }
+            #neo-html5-preloader {
+              position: fixed;
+              inset: 0;
+              z-index: 2147483647;
+              pointer-events: none;
+              background: #00345e;
+              opacity: 1;
+              transition: opacity 180ms ease-out;
+            }
 
-    #snokido-style-bootstrap .logo {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 112px;
-      height: 112px;
-      margin-left: -56px;
-      margin-top: -56px;
-      opacity: 0.92;
-    }
+            #neo-html5-preloader .neo-center {
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              width: 118px;
+              height: 118px;
+              margin-left: -59px;
+              margin-top: -59px;
+            }
 
-    #snokido-style-bootstrap .logo::before {
-      content: "";
-      position: absolute;
-      inset: 18px;
-      border: 7px solid rgba(255,255,255,0.96);
-      border-radius: 24%;
-      transform: rotate(45deg);
-    }
+            #neo-html5-preloader .neo-mark {
+              position: absolute;
+              left: 29px;
+              top: 20px;
+              width: 60px;
+              height: 60px;
+              transform: rotate(45deg);
+              border: 8px solid #fff;
+              box-sizing: border-box;
+              border-radius: 14px;
+              opacity: .96;
+              animation: neo-mark-pulse 1.2s ease-in-out infinite;
+            }
 
-    #snokido-style-bootstrap .logo::after {
-      content: "HAXEFLIXEL";
-      position: absolute;
-      left: -18px;
-      right: -18px;
-      bottom: -34px;
-      text-align: center;
-      font: 700 11px Arial, sans-serif;
-      letter-spacing: 2px;
-      color: rgba(255,255,255,0.9);
-    }
+            #neo-html5-preloader .neo-dot {
+              position: absolute;
+              left: 53px;
+              top: 44px;
+              width: 12px;
+              height: 12px;
+              border-radius: 50%;
+              background: #fff;
+            }
 
-    @keyframes bootstrap-progress {
-      0% { transform: scaleX(0.02); }
-      35% { transform: scaleX(0.28); }
-      70% { transform: scaleX(0.66); }
-      100% { transform: scaleX(0.92); }
-    }
-  </style>
-</head>
-<body>
-  <noscript>This webpage makes extensive use of JavaScript. Please enable JavaScript to play VS IMPOSTOR: LEGACY.</noscript>
+            #neo-html5-preloader .neo-text {
+              position: absolute;
+              left: -10px;
+              right: -10px;
+              bottom: 0;
+              text-align: center;
+              color: #5f6aff;
+              font: 700 10px Arial, sans-serif;
+              letter-spacing: 2px;
+            }
 
-  <div id="snokido-style-bootstrap" aria-hidden="true">
-    <div class="logo"></div>
-    <div class="text">HAXEFLIXEL 0%</div>
-    <div class="bar"></div>
-  </div>
+            #neo-html5-preloader .neo-track {
+              position: absolute;
+              left: 4px;
+              right: 4px;
+              bottom: 11px;
+              height: 7px;
+              background: #173f68;
+            }
 
-  <div id="openfl-content"></div>
+            #neo-html5-preloader .neo-fill {
+              width: 14%;
+              height: 7px;
+              background: #5f6aff;
+              animation: neo-progress 2.2s ease-in-out infinite;
+              transform-origin: left center;
+            }
 
-  <script defer src="./ImpostorLegacy.js"></script>
-  <script>
-    window.addEventListener("touchmove", function (event) {
-      event.preventDefault();
-    }, { capture: false, passive: false });
+            @keyframes neo-progress {
+              0% { transform: scaleX(.04); }
+              45% { transform: scaleX(2.8); }
+              100% { transform: scaleX(7); }
+            }
 
-    if (typeof window.devicePixelRatio !== "undefined" && window.devicePixelRatio > 2) {
-      var meta = document.getElementById("viewport");
-      meta.setAttribute(
-        "content",
-        "width=device-width, initial-scale=" + (2 / window.devicePixelRatio) + ", user-scalable=no"
-      );
-    }
+            @keyframes neo-mark-pulse {
+              0%, 100% { transform: rotate(45deg) scale(1); }
+              50% { transform: rotate(45deg) scale(1.07); }
+            }
+          </style>
+          '''
 
-    window.addEventListener("DOMContentLoaded", function () {
-      if (window.lime && typeof window.lime.embed === "function") {
-        window.lime.embed("ImpostorLegacy", "openfl-content", 1280, 720, {
-          parameters: {}
-        });
-      }
+          overlay = r'''
+          <div id="neo-html5-preloader" aria-hidden="true">
+            <div class="neo-center">
+              <div class="neo-mark"></div>
+              <div class="neo-dot"></div>
+              <div class="neo-text">HAXEFLIXEL</div>
+            </div>
+            <div class="neo-track"><div class="neo-fill"></div></div>
+          </div>
+          '''
 
-      var container = document.getElementById("openfl-content");
-      var bootstrap = document.getElementById("snokido-style-bootstrap");
-      if (!container || !bootstrap) return;
+          script = r'''
+          <script>
+          (function () {
+            function hidePreloader() {
+              var preloader = document.getElementById("neo-html5-preloader");
+              if (!preloader || preloader.dataset.hidden === "1") return;
+              preloader.dataset.hidden = "1";
+              preloader.style.opacity = "0";
+              window.setTimeout(function () {
+                if (preloader && preloader.parentNode) {
+                  preloader.parentNode.removeChild(preloader);
+                }
+              }, 220);
+            }
 
-      var hideWhenCanvasExists = function () {
-        if (container.querySelector("canvas")) {
-          bootstrap.style.opacity = "0";
-          setTimeout(function () {
-            if (bootstrap.parentNode) bootstrap.parentNode.removeChild(bootstrap);
-          }, 220);
-          return true;
-        }
-        return false;
-      };
+            function watchCanvas() {
+              var root = document.getElementById("openfl-content");
+              if (!root) {
+                window.setTimeout(watchCanvas, 0);
+                return;
+              }
 
-      if (!hideWhenCanvasExists()) {
-        var observer = new MutationObserver(function () {
-          if (hideWhenCanvasExists()) observer.disconnect();
-        });
-        observer.observe(container, { childList: true, subtree: true });
-      }
-    });
-  </script>
-</body>
-</html>
-HTML
+              if (root.querySelector("canvas")) {
+                hidePreloader();
+                return;
+              }
 
-      - name: Verify standalone HTML5 bootstrap
-        shell: bash
-        run: |
-          set -e
-          OUTPUT_DIR="export/release/html5/bin"
-          grep -q 'ImpostorLegacy.js' "$OUTPUT_DIR/index.html"
+              var observer = new MutationObserver(function () {
+                if (root.querySelector("canvas")) {
+                  observer.disconnect();
+                  hidePreloader();
+                }
+              });
+
+              observer.observe(root, { childList: true, subtree: true });
+            }
+
+            if (document.readyState === "loading") {
+              document.addEventListener("DOMContentLoaded", watchCanvas, { once: true });
+            } else {
+              watchCanvas();
+            }
+          })();
+          </script>
+          '''
+
+          if "</head>" not in html:
+              raise SystemExit("Generated HTML5 page has no </head>")
+          if "<div id="openfl-content">" not in html:
+              raise SystemExit("Generated HTML5 page has no #openfl-content")
+
+          html = html.replace("</head>", style + "</head>", 1)
+          html = html.replace('<div id="openfl-content">', overlay + '<div id="openfl-content">', 1)
+          html = html.replace("</body>", script + "</body>", 1)
+
+          path.write_text(html)
+          print("Installed outer HaxeFlixel-style loader without replacing Lime bootstrap.")
+          PY
+
+          grep -q 'neo-html5-preloader' "$OUTPUT_DIR/index.html"
           grep -q 'lime.embed' "$OUTPUT_DIR/index.html"
-          grep -q '#00345e' "$OUTPUT_DIR/index.html"
-          test -f "$OUTPUT_DIR/ImpostorLegacy.js"
-          echo "Standalone HTML5 bootstrap verified."
+          grep -q 'ImpostorLegacy.js' "$OUTPUT_DIR/index.html"
 
       - name: Make Lean HTML5 Package
         shell: bash
