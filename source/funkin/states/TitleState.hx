@@ -103,12 +103,9 @@ class TitleState extends MusicBeatState
 		if (!initialized)
 		{
 			#if html5
-			openfl.Assets.loadSound('title:assets/sounds/confirmMenu.ogg').onComplete(function(_)
+			openfl.Assets.loadLibrary('menuMusic').onComplete(function(_)
 			{
-				openfl.Assets.loadSound('title:assets/music/freakyMenu.ogg').onComplete(function(_)
-				{
-					if (!closedState) FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
-				});
+				if (!closedState) FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
 			});
 			#else
 			FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
@@ -313,7 +310,11 @@ class TitleState extends MusicBeatState
 				switch (sickBeats)
 				{
 					case 1:
+						#if !html5
 						FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
+						#elseif
+						if (FunkinAssets.exists(Paths.music('freakyMenu'))) FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
+						#end
 						
 						if (ClientPrefs.finaleState != ACTIVE) FlxG.sound.music.fadeIn(4, 0, 0.7);
 					case 2:
