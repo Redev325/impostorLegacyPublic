@@ -48,7 +48,8 @@ class Init extends FlxState
 			{id: 'title:assets/images/menu/title/funkin.png', kind: 'image', size: 45365, label: 'title graphic'}
 		];
 
-		final totalBytes:Float = [for (task in tasks) task.size].fold(0.0, (sum, value) -> sum + value);
+		var totalBytes:Float = 0;
+		for (task in tasks) totalBytes += task.size;
 		final loadedBytes:Map<String, Float> = [];
 		final fraction:Map<String, Float> = [];
 
@@ -80,7 +81,8 @@ class Init extends FlxState
 		{
 			fraction.set(id, 1);
 			completed++;
-			final progressBytes:Float = [for (task in tasks) task.size * (fraction.get(task.id) ?? 0)].fold(0.0, (sum, value) -> sum + value);
+			var progressBytes:Float = 0;
+			for (task in tasks) progressBytes += task.size * (fraction.get(task.id) ?? 0);
 			final progress:Float = totalBytes > 0 ? progressBytes / totalBytes : 0;
 			updateHtml5Loading(progress);
 			if (completed >= tasks.length)
