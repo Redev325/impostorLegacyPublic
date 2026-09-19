@@ -15,7 +15,6 @@ class Init extends FlxState
 	override public function create():Void
 	{
 		initializeGame();
-		#end
 	}
 
 
