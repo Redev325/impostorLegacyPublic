@@ -312,7 +312,7 @@ class TitleState extends MusicBeatState
 					case 1:
 						#if !html5
 						FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
-						#elseif
+						#else
 						if (FunkinAssets.exists(Paths.music('freakyMenu'))) FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
 						#end
 						
