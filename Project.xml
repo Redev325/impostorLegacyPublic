@@ -157,6 +157,8 @@
 
 	<haxeflag name="--macro" value="include('funkin')" />
 	<haxeflag name="--macro" value="include('flixel', true, ['flixel.addons.nape.*','flixel.addons.editors.*','flixel.addons.tile.FlxRayCastTilemap','flixel.system.macros'])" />
+	<!-- Full DCE can otherwise strip the preloader referenced only by Project.xml on HTML5. -->
+	<haxeflag name="--macro" value="include('flixel.system.FlxPreloader')" if="html5" />
 
 	<!-- Release HTML5 builds use full dead-code elimination to reduce JS parse/startup cost. -->
 	<haxeflag name="-dce full" if="html5" />
