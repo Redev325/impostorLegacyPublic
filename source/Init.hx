@@ -27,108 +27,23 @@ class Init extends FlxState
 	#if html5
 	function loadHtml5StartupAssets():Void
 	{
-		// Register the library first. Every asset is preloaded explicitly below so
-		// the progress bar represents the actual assets being downloaded/decoded.
-		openfl.Assets.loadLibrary("startup").onComplete(function(_)
-		{
-			final assets:Array<{id:String, type:openfl.utils.AssetType}> = [
-				{id: "startup:assets/data/introText.txt", type: openfl.utils.AssetType.TEXT},
-				{id: "startup:assets/lang/english.json", type: openfl.utils.AssetType.TEXT},
-				{id: "startup:assets/fonts/vcr.ttf", type: openfl.utils.AssetType.FONT},
-				{id: "startup:assets/fonts/vcr-srb.ttf", type: openfl.utils.AssetType.FONT},
-				{id: "startup:assets/images/logoBumpin.png", type: openfl.utils.AssetType.IMAGE},
-				{id: "startup:assets/images/logoBumpin.xml", type: openfl.utils.AssetType.TEXT},
-				{id: "startup:assets/images/alphabet.png", type: openfl.utils.AssetType.IMAGE},
-				{id: "startup:assets/images/alphabet.xml", type: openfl.utils.AssetType.TEXT},
-				{id: "startup:assets/images/cursor.png", type: openfl.utils.AssetType.IMAGE},
-				{id: "startup:assets/images/menu/common/starBG.png", type: openfl.utils.AssetType.IMAGE},
-				{id: "startup:assets/images/menu/common/starFG.png", type: openfl.utils.AssetType.IMAGE},
-				{id: "startup:assets/images/menu/common/menuBack.png", type: openfl.utils.AssetType.IMAGE},
-				{id: "startup:assets/images/menu/common/menuOther.png", type: openfl.utils.AssetType.IMAGE},
-				{id: "startup:assets/images/menu/title/startText.png", type: openfl.utils.AssetType.IMAGE},
-				{id: "startup:assets/images/menu/title/startText.xml", type: openfl.utils.AssetType.TEXT},
-				{id: "startup:assets/images/menu/title/funkin.png", type: openfl.utils.AssetType.IMAGE},
-				{id: "startup:assets/sounds/confirmMenu.ogg", type: openfl.utils.AssetType.SOUND},
-				{id: "startup:assets/sounds/cancelMenu.ogg", type: openfl.utils.AssetType.SOUND},
-				{id: "startup:assets/sounds/scrollMenu.ogg", type: openfl.utils.AssetType.SOUND},
-				{id: "startup:assets/music/freakyMenu.ogg", type: openfl.utils.AssetType.MUSIC}
-			];
-
-			loadHtml5AssetList(assets, 0);
-		}).onError(function(error)
-		{
-			updateHtml5LoadingError('Failed to register startup assets. ' + Std.string(error));
-		});
-	}
-
-	function loadHtml5AssetList(assets:Array<{id:String, type:openfl.utils.AssetType}>, index:Int = 0):Void
-	{
-		// Start every startup request at once. The percentage is real asset progress:
-		// each asset contributes from 0..1, and the game does not start until every
-		// required startup asset has actually finished loading.
-		final progress:Array<Float> = [for (_ in assets) 0.0];
-		var completed:Int = 0;
-		var finished:Bool = false;
-
-		function refresh():Void
-		{
-			var totalProgress:Float = 0;
-			for (value in progress) totalProgress += value;
-			final overall:Float = assets.length == 0 ? 1 : totalProgress / assets.length;
-			updateHtml5Loading(overall, completed, assets.length);
-		}
-
-		if (assets.length == 0)
-		{
-			removeHtml5Loading();
-			initializeGame();
-			return;
-		}
-
-		for (i in 0...assets.length)
-		{
-			final item = assets[i];
-			var future:Dynamic = switch (item.type)
+		// The startup library is the real title-screen asset set and every entry is marked preload="true".
+		// Lime/OpenFL reports the actual bytes loaded by this library.
+		openfl.Assets.loadLibrary("startup")
+			.onProgress(function(loaded:Int, total:Int)
 			{
-				case openfl.utils.AssetType.IMAGE: openfl.Assets.loadBitmapData(item.id, true);
-				case openfl.utils.AssetType.FONT: openfl.Assets.loadFont(item.id, true);
-				case openfl.utils.AssetType.SOUND, openfl.utils.AssetType.MUSIC: openfl.Assets.loadSound(item.id, true);
-				case openfl.utils.AssetType.TEXT: openfl.Assets.loadText(item.id);
-				default: openfl.Assets.loadBytes(item.id);
-			};
-
-			future
-				.onProgress(function(loaded:Int, total:Int)
-				{
-					if (total > 0)
-					{
-						progress[i] = Math.max(0, Math.min(1, loaded / total));
-						refresh();
-					}
-				})
-				.onComplete(function(_)
-				{
-					if (progress[i] < 1) progress[i] = 1;
-					completed++;
-					refresh();
-
-					if (!finished && completed >= assets.length)
-					{
-						finished = true;
-						removeHtml5Loading();
-						initializeGame();
-					}
-				})
-				.onError(function(error)
-				{
-					if (!finished)
-					{
-						finished = true;
-						updateHtml5LoadingError('Failed to load ' + item.id + ': ' + Std.string(error));
-					}
-				});
-		}
-		refresh();
+				if (total > 0) updateHtml5Loading(loaded / total);
+			})
+			.onComplete(function(_)
+			{
+				updateHtml5Loading(1);
+				removeHtml5Loading();
+				initializeGame();
+			})
+			.onError(function(error)
+			{
+				updateHtml5LoadingError('Failed to load title assets. ' + Std.string(error));
+			});
 	}
 
 	var loadingOverlay:Null<openfl.display.Sprite> = null;

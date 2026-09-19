@@ -16,7 +16,6 @@
 		<!-- Native targets use the standard HaxeFlixel preloader. -->
 	<app preloader="flixel.system.FlxPreloader" unless="html5" />
 	<!-- HTML5 uses NeoPreloader for the real browser download progress, then Init.hx reports real asset progress. -->
-	<app preloader="NeoPreloader" if="html5" />
 
 	<!--Minimum without FLX_NO_GAMEPAD: 11.8, without FLX_NO_NATIVE_CURSOR: 11.2-->
 	<set name="SWF_VERSION" value="11.8" />
@@ -61,27 +60,29 @@
 		<log info="INCLUDING ASSETS!!" />
 		<log info="INCLUDING DLC!!" if="DLC" />
 
-		<!-- HTML5 startup: register assets, but do not automatically preload them. -->
-		<assets path="assets/legacy/data" rename="assets/data" library="startup" include="introText.txt" preload="false" />
-		<assets path="assets/legacy/lang" rename="assets/lang" library="startup" include="english.json" preload="false" />
+		<!-- HTML5 startup: only title-screen assets are preloaded here. -->
+		<assets path="assets/legacy/data" rename="assets/data" library="startup" include="introText.txt" preload="true" />
+		<assets path="assets/legacy/lang" rename="assets/lang" library="startup" include="english.json" preload="true" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="startup"
-			include="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" preload="false" />
+			include="confirmMenu.ogg" preload="true" />
 		<assets path="assets/legacy/music" rename="assets/music" library="startup"
-			include="freakyMenu.ogg" preload="false" />
+			include="freakyMenu.ogg" preload="true" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="startup"
-			include="vcr.ttf|vcr-srb.ttf" preload="false" />
+			include="vcr.ttf|vcr-srb.ttf" preload="true" />
 		<assets path="assets/legacy/images" rename="assets/images" library="startup"
-			include="logoBumpin.png|logoBumpin.xml|alphabet.png|alphabet.xml" preload="false" />
+			include="logoBumpin.png|logoBumpin.xml|alphabet.png|alphabet.xml" preload="true" />
 		<assets path="assets/embeds/images" rename="assets/images" library="startup"
-			include="cursor.png" preload="false" />
-		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="startup" preload="false" />
-		<assets path="assets/legacy/images/menu/title" rename="assets/images/menu/title" library="startup" preload="false" />
+			include="cursor.png" preload="true" />
+		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="startup" preload="true" />
+		<assets path="assets/legacy/images/menu/title" rename="assets/images/menu/title" library="startup" preload="true" />
 
 		<!-- Main menu assets are loaded only when the title screen hands off to the menu. -->
-		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" preload="false" />
-		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" preload="false" />
-		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" preload="false" />
-		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu" include="finaleMenu.ogg" preload="false" />
+		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" preload="true" />
+		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" preload="true" />
+		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" preload="true" />
+		<assets path="assets/legacy/sounds" rename="assets/sounds" library="mainmenu"
+			include="cancelMenu.ogg|scrollMenu.ogg" preload="true" />
+		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu" include="finaleMenu.ogg" preload="true" />
 
 		<!-- Everything else stays outside startup and main-menu loading. -->
 		<assets path="assets/legacy/data" rename="assets/data" library="gameplay" exclude="introText.txt" preload="false" />
