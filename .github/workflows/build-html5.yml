@@ -133,36 +133,6 @@ jobs:
       - name: Compile to Web Port
         run: |
           haxelib run lime build html5 -final
-      - name: Add non-blocking HTML5 startup screen
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUTPUT_DIR="export/release/html5/bin"
-          python3 - "$OUTPUT_DIR/index.html" <<'PY'
-          from pathlib import Path
-          import sys
-          p=Path(sys.argv[1])
-          s=p.read_text()
-          old='<script type="text/javascript" src="./ImpostorLegacy.js"></script>'
-          if old not in s:
-              raise SystemExit('Expected ImpostorLegacy.js script tag was not found in generated index.html')
-          boot=r'''<style>
-          #neo-boot-loader{position:fixed;inset:0;z-index:2147483647;background:#000;display:flex;align-items:center;justify-content:center}
-          #neo-boot-loader-box{width:min(760px,calc(100vw - 80px))}
-          #neo-boot-loader-text{font:700 18px Arial,sans-serif;color:#fff;margin-bottom:14px;text-align:left}
-          #neo-boot-loader-track{width:100%;height:18px;background:#202020;border-radius:9px;overflow:hidden}
-          #neo-boot-loader-fill{width:18%;height:100%;background:#ff4d6d;border-radius:9px}
-          </style>
-          <div id="neo-boot-loader">
-            <div id="neo-boot-loader-box">
-              <div id="neo-boot-loader-text">Starting VS IMPOSTOR: LEGACY...</div>
-              <div id="neo-boot-loader-track"><div id="neo-boot-loader-fill"></div></div>
-            </div>
-          </div>'''
-          s=s.replace(old,boot+'\n'+old,1)
-          p.write_text(s)
-          PY
-
       - name: Make Lean HTML5 Package
         shell: bash
         run: |
