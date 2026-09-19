@@ -61,7 +61,75 @@ class Init extends FlxState
 		});
 	}
 
-	function loadHtml5AssetList(assets:Array<{id:String, type:openfl.utils.AssetType}>, index:Int):Void
+	function loadHtml5AssetList(assets:Array<{id:String, type:openfl.utils.AssetType}>, index:Int = 0):Void
+	{
+		// Start every startup request at once. The percentage is real asset progress:
+		// each asset contributes from 0..1, and the game does not start until every
+		// required startup asset has actually finished loading.
+		final progress:Array<Float> = [for (_ in assets) 0.0];
+		var completed:Int = 0;
+		var finished:Bool = false;
+
+		function refresh():Void
+		{
+			var totalProgress:Float = 0;
+			for (value in progress) totalProgress += value;
+			final overall:Float = assets.length == 0 ? 1 : totalProgress / assets.length;
+			updateHtml5Loading(overall, completed, assets.length);
+		}
+
+		if (assets.length == 0)
+		{
+			removeHtml5Loading();
+			initializeGame();
+			return;
+		}
+
+		for (i in 0...assets.length)
+		{
+			final item = assets[i];
+			var future:Dynamic = switch (item.type)
+			{
+				case openfl.utils.AssetType.IMAGE: openfl.Assets.loadBitmapData(item.id, true);
+				case openfl.utils.AssetType.FONT: openfl.Assets.loadFont(item.id, true);
+				case openfl.utils.AssetType.SOUND, openfl.utils.AssetType.MUSIC: openfl.Assets.loadSound(item.id, true);
+				case openfl.utils.AssetType.TEXT: openfl.Assets.loadText(item.id);
+				default: openfl.Assets.loadBytes(item.id);
+			};
+
+			future
+				.onProgress(function(loaded:Int, total:Int)
+				{
+					if (total > 0)
+					{
+						progress[i] = Math.max(0, Math.min(1, loaded / total));
+						refresh();
+					}
+				})
+				.onComplete(function(_)
+				{
+					if (progress[i] < 1) progress[i] = 1;
+					completed++;
+					refresh();
+
+					if (!finished && completed >= assets.length)
+					{
+						finished = true;
+						removeHtml5Loading();
+						initializeGame();
+					}
+				})
+				.onError(function(error)
+				{
+					if (!finished)
+					{
+						finished = true;
+						updateHtml5LoadingError('Failed to load ' + item.id + ': ' + Std.string(error));
+					}
+				});
+		}
+		refresh();
+	}>, index:Int):Void
 	{
 		if (index >= assets.length)
 		{
@@ -152,14 +220,17 @@ class Init extends FlxState
 	}
 
 	@:nullSafety(Off)
-	function updateHtml5Loading(progress:Float):Void
+	function updateHtml5Loading(progress:Float, completed:Int = -1, total:Int = -1):Void
 	{
 		if (loadingFill == null || loadingText == null) return;
 		final stageWidth:Float = openfl.Lib.current.stage.stageWidth;
 		final barWidth:Float = Math.min(760, Math.max(280, stageWidth - 80));
 		final clamped:Float = Math.max(0, Math.min(1, progress));
 		loadingFill.scaleX = Math.max(0.01, (barWidth * clamped) / loadingFill.width);
-		loadingText.text = 'Loading VS IMPOSTOR: LEGACY... ' + Std.int(clamped * 100) + '%';
+		if (completed >= 0 && total >= 0)
+			loadingText.text = 'Loading VS IMPOSTOR: LEGACY... ' + Std.int(clamped * 100) + '% (' + completed + '/' + total + ' assets)';
+		else
+			loadingText.text = 'Loading VS IMPOSTOR: LEGACY... ' + Std.int(clamped * 100) + '%';
 	}
 
 	@:nullSafety(Off)

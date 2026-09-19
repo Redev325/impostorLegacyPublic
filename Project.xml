@@ -71,7 +71,9 @@
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="startup"
 			include="vcr.ttf|vcr-srb.ttf" preload="false" />
 		<assets path="assets/legacy/images" rename="assets/images" library="startup"
-			include="logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml" preload="false" />
+			include="logoBumpin.png|logoBumpin.xml|alphabet.png|alphabet.xml" preload="false" />
+		<assets path="assets/embeds/images" rename="assets/images" library="startup"
+			include="cursor.png" preload="false" />
 		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="startup" preload="false" />
 		<assets path="assets/legacy/images/menu/title" rename="assets/images/menu/title" library="startup" preload="false" />
 
