@@ -47,16 +47,24 @@ class Init extends FlxState
 		}
 
 		startupAssets = [];
-		for (id in library.list())
-		{
-			final type:openfl.utils.AssetType =
-				if (library.exists(id, openfl.utils.AssetType.IMAGE)) openfl.utils.AssetType.IMAGE;
-				else if (library.exists(id, openfl.utils.AssetType.SOUND)) openfl.utils.AssetType.SOUND;
-				else if (library.exists(id, openfl.utils.AssetType.FONT)) openfl.utils.AssetType.FONT;
-				else if (library.exists(id, openfl.utils.AssetType.TEXT)) openfl.utils.AssetType.TEXT;
-				else openfl.utils.AssetType.BINARY;
+		final seen = new Map<String, Bool>();
+		final types = [
+			openfl.utils.AssetType.IMAGE,
+			openfl.utils.AssetType.SOUND,
+			openfl.utils.AssetType.MUSIC,
+			openfl.utils.AssetType.FONT,
+			openfl.utils.AssetType.TEXT,
+			openfl.utils.AssetType.BINARY
+		];
 
-			startupAssets.push({id: id, type: type});
+		for (type in types)
+		{
+			for (id in library.list(type))
+			{
+				if (seen.exists(id)) continue;
+				seen.set(id, true);
+				startupAssets.push({id: id, type: type});
+			}
 		}
 
 		if (startupAssets.length == 0)
@@ -86,7 +94,22 @@ class Init extends FlxState
 			startupActive++;
 			updateHtml5LoadingStatus('Loading startup asset: ' + asset.id);
 
-			openfl.Assets.loadAsset('startup:' + asset.id, asset.type)
+			final assetId = 'startup:' + asset.id;
+			final future = switch (asset.type)
+			{
+				case openfl.utils.AssetType.IMAGE:
+					openfl.Assets.loadBitmapData(assetId);
+				case openfl.utils.AssetType.SOUND, openfl.utils.AssetType.MUSIC:
+					openfl.Assets.loadSound(assetId);
+				case openfl.utils.AssetType.FONT:
+					openfl.Assets.loadFont(assetId);
+				case openfl.utils.AssetType.TEXT:
+					openfl.Assets.loadText(assetId);
+				default:
+					openfl.Assets.loadBytes(assetId);
+			};
+
+			future
 				.onComplete(function(_)
 				{
 					startupActive--;
