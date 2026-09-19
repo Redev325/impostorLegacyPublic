@@ -62,8 +62,8 @@
 		<log info="INCLUDING DLC!!" if="DLC" />
 
 		<!-- HTML5 startup: only title-screen assets are preloaded here. -->
-		<assets path="assets/legacy/data" rename="assets/data" library="title" include="introText.txt" preload="true" />
-		<assets path="assets/legacy/lang" rename="assets/lang" library="title" include="english.json" preload="true" />
+		<assets path="assets/legacy/data" rename="assets/data" library="title" include="introText.txt" preload="false" />
+		<assets path="assets/legacy/lang" rename="assets/lang" library="title" include="english.json" preload="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="title"
 			include="confirmMenu.ogg" preload="true" />
 		<assets path="assets/legacy/music" rename="assets/music" library="title"

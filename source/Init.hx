@@ -31,39 +31,95 @@ class Init extends FlxState
 		@:nullSafety(Off)
 	function loadStartupAssets():Void
 	{
-		final libraryName = "title";
-		if (openfl.Assets.getLibrary(libraryName) == null)
+		final tasks:Array<Dynamic> = [
+			{id: 'title:assets/data/introText.txt', kind: 'text', size: 994, label: 'intro text'},
+			{id: 'title:assets/lang/english.json', kind: 'text', size: 33293, label: 'language'},
+			{id: 'title:assets/fonts/vcr.ttf', kind: 'font', size: 142052, label: 'font'},
+			{id: 'title:assets/fonts/vcr-srb.ttf', kind: 'font', size: 84752, label: 'font'},
+			{id: 'title:assets/images/logoBumpin.png', kind: 'image', size: 1123455, label: 'title logo'},
+			{id: 'title:assets/images/logoBumpin.xml', kind: 'text', size: 2111, label: 'title logo data'},
+			{id: 'title:assets/images/alphabet.png', kind: 'image', size: 90659, label: 'alphabet'},
+			{id: 'title:assets/images/alphabet.xml', kind: 'text', size: 52874, label: 'alphabet data'},
+			{id: 'title:assets/images/cursor.png', kind: 'image', size: 1137, label: 'cursor'},
+			{id: 'title:assets/images/menu/common/starFG.png', kind: 'image', size: 2114, label: 'foreground stars'},
+			{id: 'title:assets/images/menu/common/starBG.png', kind: 'image', size: 1148, label: 'background stars'},
+			{id: 'title:assets/images/menu/title/startText.png', kind: 'image', size: 360521, label: 'start text'},
+			{id: 'title:assets/images/menu/title/startText.xml', kind: 'text', size: 4711, label: 'start text data'},
+			{id: 'title:assets/images/menu/title/funkin.png', kind: 'image', size: 45365, label: 'title graphic'}
+		];
+
+		final totalBytes:Float = [for (task in tasks) task.size].fold(0.0, (sum, value) -> sum + value);
+		final loadedBytes:Map<String, Float> = [];
+		final fraction:Map<String, Float> = [];
+
+		for (task in tasks)
 		{
-			updateHtml5LoadingError('Title asset library was not registered.');
-			return;
+			loadedBytes.set(task.id, 0);
+			fraction.set(task.id, 0);
 		}
 
-		updateHtml5Loading(0);
-		updateHtml5LoadingStatus('Loading title assets...');
+		var completed:Int = 0;
+		var failed:Bool = false;
 
-		openfl.Assets.loadLibrary(libraryName)
-			.onProgress(function(loaded:Int, total:Int)
-			{
-				if (total > 0)
-				{
-					final progress:Float = Math.max(0, Math.min(1, loaded / total));
-					updateHtml5Loading(progress);
-					updateHtml5LoadingStatus(
-						'Loading title assets... ' + Std.int(progress * 100) + '%'
-					);
-				}
-			})
-			.onComplete(function(_)
+		function updateProgressFor(id:String, label:String, loaded:Float, total:Float):Void
+		{
+			if (failed) return;
+			var ratio:Float = total > 0 ? loaded / total : 0;
+			if (ratio > 1) ratio = 1;
+			if (ratio < 0) ratio = 0;
+			fraction.set(id, ratio);
+			loadedBytes.set(id, loaded);
+			var progressBytes:Float = 0;
+			for (task in tasks) progressBytes += task.size * (fraction.get(task.id) ?? 0);
+			final progress:Float = totalBytes > 0 ? progressBytes / totalBytes : 0;
+			updateHtml5Loading(progress);
+			updateHtml5LoadingStatus('Loading ' + label + '... ' + Std.int(progress * 100) + '%');
+		}
+
+		function completeTask(id:String):Void
+		{
+			fraction.set(id, 1);
+			completed++;
+			final progressBytes:Float = [for (task in tasks) task.size * (fraction.get(task.id) ?? 0)].fold(0.0, (sum, value) -> sum + value);
+			final progress:Float = totalBytes > 0 ? progressBytes / totalBytes : 0;
+			updateHtml5Loading(progress);
+			if (completed >= tasks.length)
 			{
 				updateHtml5Loading(1);
 				updateHtml5LoadingStatus('Starting VS IMPOSTOR: LEGACY...');
 				removeHtml5Loading();
 				initializeGame();
-			})
-			.onError(function(error)
+			}
+		}
+
+		function failTask(id:String, label:String, error:Dynamic):Void
+		{
+			if (failed) return;
+			failed = true;
+			updateHtml5LoadingError('Failed to load ' + label + ': ' + Std.string(error));
+		}
+
+		for (task in tasks)
+		{
+			switch (task.kind)
 			{
-				updateHtml5LoadingError('Failed to load title assets. ' + Std.string(error));
-			});
+				case 'image':
+					openfl.Assets.loadBitmapData(task.id)
+						.onProgress(function(loaded:Int, total:Int) updateProgressFor(task.id, task.label, loaded, total))
+						.onComplete(function(_) completeTask(task.id))
+						.onError(function(error) failTask(task.id, task.label, error));
+				case 'font':
+					openfl.Assets.loadFont(task.id)
+						.onProgress(function(loaded:Int, total:Int) updateProgressFor(task.id, task.label, loaded, total))
+						.onComplete(function(_) completeTask(task.id))
+						.onError(function(error) failTask(task.id, task.label, error));
+				default:
+					openfl.Assets.loadText(task.id)
+						.onProgress(function(loaded:Int, total:Int) updateProgressFor(task.id, task.label, loaded, total))
+						.onComplete(function(_) completeTask(task.id))
+						.onError(function(error) failTask(task.id, task.label, error));
+			}
+		}
 	}
 
 	@:nullSafety(Off)
