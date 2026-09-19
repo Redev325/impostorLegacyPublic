@@ -7,40 +7,141 @@ import flixel.FlxG;
 import flixel.input.keyboard.FlxKey;
 
 /**
- * Initiation state that prepares backend classes and returns to menus when finished
- * 
- * There is no need to open this beyond the first time
+ * Initiation state that prepares backend classes and returns to menus when finished.
  */
 @:nullSafety(Strict)
 class Init extends FlxState
 {
 	override public function create():Void
 	{
+		#if html5
+		showHtml5Loading();
+
+		openfl.Assets.loadLibrary("startup")
+			.onProgress(function(loaded:Int, total:Int)
+			{
+				if (total > 0) updateHtml5Loading(loaded / total);
+			})
+			.onComplete(function(_)
+			{
+				updateHtml5Loading(1);
+				removeHtml5Loading();
+				initializeGame();
+			})
+			.onError(function(error)
+			{
+				updateHtml5LoadingError('Failed to load startup assets. ' + Std.string(error));
+			});
+		#else
 		initializeGame();
-	}
+		#end
 	}
 
+	#if html5
+	var loadingOverlay:Null<openfl.display.Sprite> = null;
+	var loadingTrack:Null<openfl.display.Shape> = null;
+	var loadingFill:Null<openfl.display.Shape> = null;
+	var loadingText:Null<openfl.text.TextField> = null;
+
+	@:nullSafety(Off)
+	function showHtml5Loading():Void
+	{
+		final stage = openfl.Lib.current.stage;
+		final width:Float = stage.stageWidth;
+		final height:Float = stage.stageHeight;
+		final barWidth:Float = Math.min(760, Math.max(280, width - 80));
+		final barX:Float = (width - barWidth) * 0.5;
+		final barY:Float = height * 0.5;
+
+		loadingOverlay = new openfl.display.Sprite();
+		loadingOverlay.graphics.beginFill(0x000000, 1);
+		loadingOverlay.graphics.drawRect(0, 0, width, height);
+		loadingOverlay.graphics.endFill();
+
+		loadingTrack = new openfl.display.Shape();
+		loadingTrack.graphics.beginFill(0x2A2A2A, 1);
+		loadingTrack.graphics.drawRoundRect(0, 0, barWidth, 18, 9, 9);
+		loadingTrack.graphics.endFill();
+		loadingTrack.x = barX;
+		loadingTrack.y = barY;
+		loadingOverlay.addChild(loadingTrack);
+
+		loadingFill = new openfl.display.Shape();
+		loadingFill.graphics.beginFill(0xFF4D6D, 1);
+		loadingFill.graphics.drawRoundRect(0, 0, 1, 18, 9, 9);
+		loadingFill.graphics.endFill();
+		loadingFill.x = barX;
+		loadingFill.y = barY;
+		loadingOverlay.addChild(loadingFill);
+
+		loadingText = new openfl.text.TextField();
+		loadingText.defaultTextFormat = new openfl.text.TextFormat("_sans", 18, 0xFFFFFF, true);
+		loadingText.width = barWidth;
+		loadingText.height = 60;
+		loadingText.x = barX;
+		loadingText.y = barY - 45;
+		loadingText.text = "Loading VS IMPOSTOR: LEGACY... 0%";
+		loadingText.selectable = false;
+		loadingText.mouseEnabled = false;
+		loadingOverlay.addChild(loadingText);
+
+		stage.addChild(loadingOverlay);
+	}
+
+	@:nullSafety(Off)
+	function updateHtml5Loading(progress:Float):Void
+	{
+		if (loadingFill == null || loadingText == null) return;
+
+		final stageWidth:Float = openfl.Lib.current.stage.stageWidth;
+		final barWidth:Float = Math.min(760, Math.max(280, stageWidth - 80));
+		final clamped:Float = Math.max(0, Math.min(1, progress));
+
+		loadingFill.scaleX = Math.max(0.01, (barWidth * clamped) / loadingFill.width);
+		loadingText.text = 'Loading VS IMPOSTOR: LEGACY... ' + Std.int(clamped * 100) + '%';
+	}
+
+	@:nullSafety(Off)
+	function updateHtml5LoadingError(message:String):Void
+	{
+		if (loadingText != null)
+			loadingText.text = message + '\nRefresh the page to try again.';
+	}
+
+	@:nullSafety(Off)
+	function removeHtml5Loading():Void
+	{
+		if (loadingOverlay != null && loadingOverlay.parent != null)
+			loadingOverlay.parent.removeChild(loadingOverlay);
+
+		loadingTrack = null;
+		loadingFill = null;
+		loadingText = null;
+		loadingOverlay = null;
+	}
+	#end
 
 	function initializeGame():Void
 	{
 		// load settings/save
 		funkin.input.Controls.init();
-		
+
 		ClientPrefs.load();
-		
+
 		funkin.data.Highscore.load();
-		
-		if (FlxG.save.data.weekCompleted != null) funkin.states.StoryMenuState.weekCompleted = FlxG.save.data.weekCompleted;
-		
+
+		if (FlxG.save.data.weekCompleted != null)
+			funkin.states.StoryMenuState.weekCompleted = FlxG.save.data.weekCompleted;
+
 		FlxSprite.defaultAntialiasing = ClientPrefs.globalAntialiasing;
-		
+
 		// Discord RPC disabled for HTML5
-		
+
 		#if MODS_ALLOWED
 		funkin.Mods.pushGlobalMods();
 		funkin.Mods.loadTopMod();
 		#end
-		
+
 		FlxG.fixedTimestep = false;
 		FlxG.game.focusLostFramerate = 60;
 		FlxG.sound.muteKeys = ClientPrefs.muteKeys;
@@ -49,33 +150,35 @@ class Init extends FlxState
 		FlxG.keys.preventDefaultKeys = [TAB];
 		FlxG.mouse.visible = false;
 		FlxG.plugins.drawOnTop = true;
-		
+
 		FlxG.scaleMode = new funkin.backend.FunkinRatioScaleMode();
 		FlxG.signals.preStateSwitch.add((cast FlxG.scaleMode : funkin.backend.FunkinRatioScaleMode).resetSize);
-		
+
 		FlxG.sound.music = new extensions.flixel.FlxSoundEx();
 		FlxG.sound.music.persist = true;
-		
+
 		funkin.data.Lang.reloadLangFile();
-		
+
 		funkin.backend.plugins.HotReloadPlugin.init();
 		funkin.backend.plugins.DebugTextPlugin.init();
 		funkin.backend.plugins.FullScreenPlugin.init();
 		funkin.scripts.FunkinScript.init();
-		
+
 		#if VIDEOS_ALLOWED
 		funkin.video.FunkinVideoSprite.init();
 		#end
-		
+
 		#if FEATURE_DEBUG_TRACY
 		funkin.utils.WindowUtil.initTracy();
 		#end
-		
+
 		funkin.scripting.PluginsManager.prepareSignals();
 		funkin.scripting.PluginsManager.populate();
-				
+
+		FunkinAssets.cache.currentTrackedSounds.addPermanentKey('assets/music/freakyMenu.ogg');
+
 		super.create();
-		
+
 		final nextState:Class<FlxState> = Main.startMeta.skipSplash || !ClientPrefs.toggleSplashScreen ? Main.startMeta.initialState : Splash;
 		FlxG.switchState(() -> Type.createInstance(nextState, []));
 	}
