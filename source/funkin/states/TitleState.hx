@@ -310,11 +310,7 @@ class TitleState extends MusicBeatState
 				switch (sickBeats)
 				{
 					case 1:
-						#if !html5
 						FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
-						#else
-						if (FunkinAssets.exists(Paths.music('freakyMenu'))) FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
-						#end
 						
 						if (ClientPrefs.finaleState != ACTIVE) FlxG.sound.music.fadeIn(4, 0, 0.7);
 					case 2:
