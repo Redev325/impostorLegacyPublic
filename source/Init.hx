@@ -16,22 +16,7 @@ class Init extends FlxState
 	{
 		#if html5
 		showHtml5Loading();
-
-		openfl.Assets.loadLibrary("startup")
-			.onProgress(function(loaded:Int, total:Int)
-			{
-				if (total > 0) updateHtml5Loading(loaded / total);
-			})
-			.onComplete(function(_)
-			{
-				updateHtml5Loading(1);
-				removeHtml5Loading();
-				initializeGame();
-			})
-			.onError(function(error)
-			{
-				updateHtml5LoadingError('Failed to load startup assets. ' + Std.string(error));
-			});
+		loadStartupAssets();
 		#else
 		initializeGame();
 		#end
@@ -42,6 +27,93 @@ class Init extends FlxState
 	var loadingTrack:Null<openfl.display.Shape> = null;
 	var loadingFill:Null<openfl.display.Shape> = null;
 	var loadingText:Null<openfl.text.TextField> = null;
+
+	var startupAssets:Array<{id:String, type:openfl.utils.AssetType}> = [];
+	var startupNext:Int = 0;
+	var startupActive:Int = 0;
+	var startupCompleted:Int = 0;
+	var startupFailed:Bool = false;
+
+	static inline final STARTUP_CONCURRENCY:Int = 6;
+
+	@:nullSafety(Off)
+	function loadStartupAssets():Void
+	{
+		final library = openfl.Assets.getLibrary("startup");
+		if (library == null)
+		{
+			updateHtml5LoadingError('Startup asset library was not registered.');
+			return;
+		}
+
+		startupAssets = [];
+		for (id in library.list())
+		{
+			final type:openfl.utils.AssetType =
+				if (library.exists(id, openfl.utils.AssetType.IMAGE)) openfl.utils.AssetType.IMAGE;
+				else if (library.exists(id, openfl.utils.AssetType.SOUND)) openfl.utils.AssetType.SOUND;
+				else if (library.exists(id, openfl.utils.AssetType.FONT)) openfl.utils.AssetType.FONT;
+				else if (library.exists(id, openfl.utils.AssetType.TEXT)) openfl.utils.AssetType.TEXT;
+				else openfl.utils.AssetType.BINARY;
+
+			startupAssets.push({id: id, type: type});
+		}
+
+		if (startupAssets.length == 0)
+		{
+			updateHtml5LoadingError('No startup assets were found.');
+			return;
+		}
+
+		startupNext = 0;
+		startupActive = 0;
+		startupCompleted = 0;
+		startupFailed = false;
+
+		updateHtml5Loading(0);
+		updateHtml5LoadingStatus('Loading startup assets... 0/' + startupAssets.length);
+		pumpStartupLoads();
+	}
+
+	@:nullSafety(Off)
+	function pumpStartupLoads():Void
+	{
+		if (startupFailed) return;
+
+		while (startupActive < STARTUP_CONCURRENCY && startupNext < startupAssets.length)
+		{
+			final asset = startupAssets[startupNext++];
+			startupActive++;
+			updateHtml5LoadingStatus('Loading startup asset: ' + asset.id);
+
+			openfl.Assets.loadAsset('startup:' + asset.id, asset.type)
+				.onComplete(function(_)
+				{
+					startupActive--;
+					startupCompleted++;
+
+					final progress:Float = startupCompleted / startupAssets.length;
+					updateHtml5Loading(progress);
+					updateHtml5LoadingStatus('Loaded startup assets: ' + startupCompleted + '/' + startupAssets.length);
+
+					if (startupCompleted >= startupAssets.length)
+					{
+						removeHtml5Loading();
+						initializeGame();
+					}
+					else
+					{
+						pumpStartupLoads();
+					}
+				})
+				.onError(function(error)
+				{
+					startupActive--;
+					startupFailed = true;
+					updateHtml5LoadingError('Failed startup asset: ' + asset.id + '\\n' + Std.string(error));
+				});
+		}
+	}
 
 	@:nullSafety(Off)
 	function showHtml5Loading():Void
@@ -86,6 +158,12 @@ class Init extends FlxState
 		loadingOverlay.addChild(loadingText);
 
 		stage.addChild(loadingOverlay);
+	}
+
+	@:nullSafety(Off)
+	function updateHtml5LoadingStatus(status:String):Void
+	{
+		if (loadingText != null) loadingText.text = status;
 	}
 
 	@:nullSafety(Off)
