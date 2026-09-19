@@ -129,45 +129,6 @@ class Init extends FlxState
 				});
 		}
 		refresh();
-	}>, index:Int):Void
-	{
-		if (index >= assets.length)
-		{
-			updateHtml5Loading(1);
-			removeHtml5Loading();
-			initializeGame();
-			return;
-		}
-
-		final item = assets[index];
-		updateHtml5Loading(index / assets.length);
-		var future:Dynamic = switch (item.type)
-		{
-			case openfl.utils.AssetType.IMAGE: openfl.Assets.loadBitmapData(item.id, true);
-			case openfl.utils.AssetType.FONT: openfl.Assets.loadFont(item.id, true);
-			case openfl.utils.AssetType.SOUND, openfl.utils.AssetType.MUSIC: openfl.Assets.loadSound(item.id, true);
-			case openfl.utils.AssetType.TEXT: openfl.Assets.loadText(item.id);
-			default: openfl.Assets.loadBytes(item.id);
-		};
-		future
-			.onProgress(function(loaded:Int, total:Int)
-			{
-				if (total > 0)
-				{
-					final assetProgress = Math.max(0, Math.min(1, loaded / total));
-					updateHtml5Loading((index + assetProgress) / assets.length);
-				}
-			})
-			.onComplete(function(_)
-			{
-				updateHtml5Loading((index + 1) / assets.length);
-				loadHtml5AssetList(assets, index + 1);
-			})
-			.onError(function(error)
-			{
-				updateHtml5LoadingError('Failed to load ' + item.id + ': ' + Std.string(error));
-			});
-	}
 
 	var loadingOverlay:Null<openfl.display.Sprite> = null;
 	var loadingTrack:Null<openfl.display.Shape> = null;
