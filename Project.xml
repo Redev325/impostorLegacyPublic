@@ -157,7 +157,9 @@
 	<haxeflag name="--macro" value="include('funkin')" />
 	<haxeflag name="--macro" value="include('flixel', true, ['flixel.addons.nape.*','flixel.addons.editors.*','flixel.addons.tile.FlxRayCastTilemap','flixel.system.macros'])" />
 
-	<haxeflag name="-dce no" />
+	<!-- Release HTML5 builds use full dead-code elimination to reduce JS parse/startup cost. -->
+	<haxeflag name="-dce full" if="html5" />
+	<haxeflag name="-dce no" unless="html5" />
 
 	<!-- ______________________________ Haxedefines _____________________________ -->
 
