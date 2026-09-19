@@ -14,7 +14,7 @@
 	<!--Use the HaxeFlixel loading screen on native targets and HTML5 too. -->
 	<!-- Use the real HaxeFlixel loading screen now that the default library contains only startup/menu assets. -->
 		<!-- Use the standard HaxeFlixel blue loading screen on every target. -->
-	<app preloader="flixel.system.FlxPreloader" unless="html5" />
+	<app preloader="flixel.system.FlxPreloader" />
 
 	<!--Minimum without FLX_NO_GAMEPAD: 11.8, without FLX_NO_NATIVE_CURSOR: 11.2-->
 	<set name="SWF_VERSION" value="11.8" />
@@ -64,8 +64,8 @@
 		<assets path="assets/legacy/lang" rename="assets/lang" library="title" include="english.json" preload="true" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="title"
 			include="confirmMenu.ogg" preload="true" />
-		<assets path="assets/legacy/music" rename="assets/music" library="menuMusic"
-			include="freakyMenu.ogg|finaleMenu.ogg" preload="true" />
+		<assets path="assets/legacy/music" rename="assets/music" library="title"
+			include="freakyMenu.ogg" preload="true" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="title"
 			include="vcr.ttf|vcr-srb.ttf" preload="true" />
 		<assets path="assets/legacy/images" rename="assets/images" library="title"
@@ -83,7 +83,9 @@
 		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" preload="true" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="mainmenu"
 			include="cancelMenu.ogg|scrollMenu.ogg" preload="true" />
-				<!-- Everything else stays outside startup and main-menu loading. -->
+		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu" include="finaleMenu.ogg" preload="true" />
+
+		<!-- Everything else stays outside startup and main-menu loading. -->
 		<assets path="assets/legacy/data" rename="assets/data" library="gameplay" exclude="introText.txt" />
 		<assets path="assets/legacy/lang" rename="assets/lang" library="gameplay" exclude="english.json" />
 		<assets path="assets/legacy/scripts" rename="assets/scripts" library="gameplay" />
@@ -102,9 +104,8 @@
 			exclude="vcr.ttf|vcr-srb.ttf" />
 
 		<library name="default" preload="false" />
-		<library name="title" preload="false" />
+		<library name="title" preload="true" />
 		<library name="mainmenu" preload="false" />
-		<library name="menuMusic" preload="false" />
 		<library name="embedded" preload="false" />
 		<library name="gameplay" preload="false" />
 		<library name="music" preload="false" />
