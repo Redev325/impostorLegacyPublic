@@ -12,11 +12,108 @@ import flixel.input.keyboard.FlxKey;
 @:nullSafety(Strict)
 class Init extends FlxState
 {
-	override public function create():Void
+		override public function create():Void
 	{
+		#if html5
+		showHtml5TitleLoading();
+		openfl.Assets.loadLibrary("title")
+			.onProgress(function(loaded:Int, total:Int)
+			{
+				if (total > 0) updateHtml5TitleLoading(loaded / total);
+			})
+			.onComplete(function(_)
+			{
+				updateHtml5TitleLoading(1);
+				removeHtml5TitleLoading();
+				initializeGame();
+			})
+			.onError(function(error)
+			{
+				updateHtml5TitleLoadingError('Failed to load title assets: ' + Std.string(error));
+			});
+		#else
 		initializeGame();
+		#end
 	}
 
+	#if html5
+	var html5LoadingOverlay:Null<openfl.display.Sprite> = null;
+	var html5LoadingBar:Null<openfl.display.Shape> = null;
+	var html5LoadingText:Null<openfl.text.TextField> = null;
+
+	@:nullSafety(Off)
+	function showHtml5TitleLoading():Void
+	{
+		final stage = openfl.Lib.current.stage;
+		final width:Float = stage.stageWidth;
+		final height:Float = stage.stageHeight;
+		final barWidth:Float = Math.min(760, Math.max(280, width - 80));
+		final barHeight:Float = 7;
+		final barX:Float = (width - barWidth) * 0.5;
+		final barY:Float = height - 28;
+
+		html5LoadingOverlay = new openfl.display.Sprite();
+		html5LoadingOverlay.graphics.beginFill(0x00345E, 1);
+		html5LoadingOverlay.graphics.drawRect(0, 0, width, height);
+		html5LoadingOverlay.graphics.endFill();
+
+		final track = new openfl.display.Shape();
+		track.graphics.beginFill(0x173F68, 1);
+		track.graphics.drawRect(4, 0, barWidth - 8, barHeight);
+		track.graphics.endFill();
+		track.x = barX;
+		track.y = barY;
+		html5LoadingOverlay.addChild(track);
+
+		html5LoadingBar = new openfl.display.Shape();
+		html5LoadingBar.graphics.beginFill(0x5F6AFF, 1);
+		html5LoadingBar.graphics.drawRect(0, 0, 1, barHeight);
+		html5LoadingBar.graphics.endFill();
+		html5LoadingBar.x = barX + 4;
+		html5LoadingBar.y = barY;
+		html5LoadingOverlay.addChild(html5LoadingBar);
+
+		html5LoadingText = new openfl.text.TextField();
+		html5LoadingText.defaultTextFormat = new openfl.text.TextFormat("_sans", 12, 0x5F6AFF);
+		html5LoadingText.width = 300;
+		html5LoadingText.height = 24;
+		html5LoadingText.x = 2;
+		html5LoadingText.y = barY - 13;
+		html5LoadingText.text = "VS IMPOSTOR LEGACY 0%";
+		html5LoadingText.selectable = false;
+		html5LoadingText.mouseEnabled = false;
+		html5LoadingOverlay.addChild(html5LoadingText);
+
+		stage.addChild(html5LoadingOverlay);
+	}
+
+	@:nullSafety(Off)
+	function updateHtml5TitleLoading(progress:Float):Void
+	{
+		if (html5LoadingBar == null || html5LoadingText == null) return;
+		final stageWidth:Float = openfl.Lib.current.stage.stageWidth;
+		final barWidth:Float = Math.min(760, Math.max(280, stageWidth - 80));
+		final clamped:Float = Math.max(0, Math.min(1, progress));
+		html5LoadingBar.scaleX = Math.max(0.001, ((barWidth - 8) * clamped));
+		html5LoadingText.text = 'VS IMPOSTOR LEGACY ' + Std.int(clamped * 100) + '%';
+	}
+
+	@:nullSafety(Off)
+	function updateHtml5TitleLoadingError(message:String):Void
+	{
+		if (html5LoadingText != null) html5LoadingText.text = message;
+	}
+
+	@:nullSafety(Off)
+	function removeHtml5TitleLoading():Void
+	{
+		if (html5LoadingOverlay != null && html5LoadingOverlay.parent != null)
+			html5LoadingOverlay.parent.removeChild(html5LoadingOverlay);
+		html5LoadingOverlay = null;
+		html5LoadingBar = null;
+		html5LoadingText = null;
+	}
+	#end
 
 	function initializeGame():Void
 	{
