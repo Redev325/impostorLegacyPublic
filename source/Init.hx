@@ -59,7 +59,7 @@ class Init extends FlxState
 
 		for (type in types)
 		{
-			for (id in library.list(type))
+			for (id in library.list(cast type))
 			{
 				if (seen.exists(id)) continue;
 				seen.set(id, true);
@@ -95,18 +95,18 @@ class Init extends FlxState
 			updateHtml5LoadingStatus('Loading startup asset: ' + asset.id);
 
 			final assetId = 'startup:' + asset.id;
-			final future = switch (asset.type)
+			final future:openfl.utils.Future<Dynamic> = switch (asset.type)
 			{
 				case openfl.utils.AssetType.IMAGE:
-					openfl.Assets.loadBitmapData(assetId);
+					cast openfl.Assets.loadBitmapData(assetId);
 				case openfl.utils.AssetType.SOUND, openfl.utils.AssetType.MUSIC:
-					openfl.Assets.loadSound(assetId);
+					cast openfl.Assets.loadSound(assetId);
 				case openfl.utils.AssetType.FONT:
-					openfl.Assets.loadFont(assetId);
+					cast openfl.Assets.loadFont(assetId);
 				case openfl.utils.AssetType.TEXT:
-					openfl.Assets.loadText(assetId);
+					cast openfl.Assets.loadText(assetId);
 				default:
-					openfl.Assets.loadBytes(assetId);
+					cast openfl.Assets.loadBytes(assetId);
 			};
 
 			future
