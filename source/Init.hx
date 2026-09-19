@@ -129,6 +129,7 @@ class Init extends FlxState
 				});
 		}
 		refresh();
+	}
 
 	var loadingOverlay:Null<openfl.display.Sprite> = null;
 	var loadingTrack:Null<openfl.display.Shape> = null;
