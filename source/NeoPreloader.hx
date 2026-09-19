@@ -70,7 +70,7 @@ class NeoPreloader extends FlxBasePreloader
 		final clamped = Math.max(0, Math.min(1, percent));
 		final barWidth:Float = track.width;
 		fill.scaleX = Math.max(0.0001, clamped);
-		fill.x = track.x - barWidth + barWidth * (1 - clamped);
+		fill.x = track.x;
 		label.text = "Loading VS IMPOSTOR: LEGACY... " + Std.int(clamped * 100) + "%";
 	}
 
