@@ -14,6 +14,7 @@ import flixel.util.FlxDestroyUtil.IFlxDestroyable;
 @:nullSafety(Strict)
 class ScriptGroup implements IFlxDestroyable
 {
+	static final EMPTY_EXCLUSIONS:Array<String> = [];
 	public var scriptShareables:Sharables = new Sharables();
 	
 	/**
@@ -82,13 +83,14 @@ class ScriptGroup implements IFlxDestroyable
 	@:inheritDoc(funkin.scripts.FunkinScript.call)
 	public function call(event:String, ?args:Array<Dynamic>, ignoreStops:Bool = false, ?exclusions:Array<String>):Dynamic
 	{
-		exclusions ??= [];
+		final hasExclusions:Bool = exclusions != null && exclusions.length > 0;
+		if (exclusions == null) exclusions = EMPTY_EXCLUSIONS;
 		
 		var returnVal:Dynamic = ScriptConstants.CONTINUE_FUNC;
 		
 		for (i in members)
 		{
-			if (i == null || !i.exists(event) || exclusions.contains(i.name)) continue;
+			if (i == null || !i.exists(event) || (hasExclusions && exclusions.contains(i.name))) continue;
 			
 			var ret:Dynamic = i.call(event, args)?.returnValue;
 			
