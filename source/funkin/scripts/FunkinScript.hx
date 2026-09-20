@@ -18,6 +18,13 @@ using crowplexus.iris.utils.Ansi;
 @:access(funkin.states.PlayState)
 class FunkinScript extends IrisEx implements IFlxDestroyable
 {
+#if html5
+	/**
+	 * Browser builds keep immutable packaged script source in memory so repeated
+	 * script construction does not re-read the asset manifest.
+	 */
+	static final HTML5_SCRIPT_SOURCE_CACHE:Map<String, String> = [];
+#end
 	/**
 	 * List of all accepted hscript extensions
 	 */
@@ -125,8 +132,22 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		name ??= file;
 		
 		modFolder ??= Paths.getModFolder(file, 'scripts');
-		
+
+		#if html5
+			#if ASSET_REDIRECT
+			return new FunkinScript(FunkinAssets.getContent(file), name, additionalVars, shareables, modFolder);
+			#else
+			final cachedSource:Null<String> = HTML5_SCRIPT_SOURCE_CACHE.get(file);
+			if (cachedSource != null)
+				return new FunkinScript(cachedSource, name, additionalVars, shareables, modFolder);
+
+			final source:String = FunkinAssets.getContent(file);
+			HTML5_SCRIPT_SOURCE_CACHE.set(file, source);
+			return new FunkinScript(source, name, additionalVars, shareables, modFolder);
+			#end
+		#else
 		return new FunkinScript(FunkinAssets.getContent(file), name, additionalVars, shareables, modFolder);
+		#end
 	}
 	
 	/**
