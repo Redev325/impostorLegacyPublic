@@ -32,6 +32,10 @@ class TitleState extends MusicBeatState
 	
 	var skippedIntro:Bool = false;
 	var transitioning:Bool = false;
+
+	#if html5
+	var mainMenuLoading:Bool = false;
+	#end
 	
 	var introEndingText:Array<String> = ['VS', 'IMPOSTOR', 'LEGACY'];
 	var randomIntroText:Array<String> = [];
@@ -202,9 +206,7 @@ class TitleState extends MusicBeatState
 				#end
 				
 				FlxTimer.wait(1, () -> {
-					MainMenuState.fromTitle = true;
-					FlxG.switchState(MainMenuState.new);
-					closedState = true;
+					loadMainMenuAndSwitch();
 				});
 			}
 		}
@@ -217,6 +219,45 @@ class TitleState extends MusicBeatState
 		super.update(elapsed);
 	}
 	
+	/**
+	 * Loads the HTML5 Main Menu library asynchronously before entering
+	 * MainMenuState. This keeps existing synchronous Paths calls safe.
+	 */
+	function loadMainMenuAndSwitch():Void
+	{
+		#if html5
+		if (mainMenuLoading)
+			return;
+
+		mainMenuLoading = true;
+
+		final mainMenuFuture = openfl.Assets.loadLibrary('mainmenu');
+
+		mainMenuFuture.onError(function(error:Dynamic)
+		{
+			trace('ERROR: Failed to load mainmenu library: ' + error);
+
+			// Permit another attempt if the browser load fails.
+			mainMenuLoading = false;
+			transitioning = false;
+		});
+
+		mainMenuFuture.onComplete(function(_)
+		{
+			// All mainmenu assets are now available to synchronous Paths calls.
+			MainMenuState.fromTitle = true;
+			closedState = true;
+
+			FlxG.switchState(MainMenuState.new);
+		});
+		#else
+		MainMenuState.fromTitle = true;
+		closedState = true;
+
+		FlxG.switchState(MainMenuState.new);
+		#end
+	}
+
 	function createCoolText(textArray:Array<String>, offset:Float = 0)
 	{
 		if (textGroup == null) return;
