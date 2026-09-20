@@ -202,21 +202,9 @@ class TitleState extends MusicBeatState
 				#end
 				
 				FlxTimer.wait(1, () -> {
-					#if html5
-					openfl.Assets.loadLibrary('mainmenu')
-						.onComplete(function(_) {
-							MainMenuState.fromTitle = true;
-							FlxG.switchState(MainMenuState.new);
-							closedState = true;
-						})
-						.onError(function(error) {
-							trace('Failed to load main menu assets: ' + Std.string(error));
-						});
-					#else
 					MainMenuState.fromTitle = true;
 					FlxG.switchState(MainMenuState.new);
 					closedState = true;
-					#end
 				});
 			}
 		}
