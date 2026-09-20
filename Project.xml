@@ -94,14 +94,14 @@
 		<assets path="assets/legacy/videos" rename="assets/videos" library="embedded" if="html5" />
 		<assets path="content/securitydlc" rename="content/securitydlc" library="embedded" embed="false" if="DLC" />
 		<assets path="assets/legacy/images" rename="assets/images" library="gameplay" if="html5"
-			exclude="menu*|icons*|awards*|logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml" preload="false" />
+			exclude="menu*|icons*|awards*|logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="gameplay"
-			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" preload="false" />
+			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" />
 		<assets path="assets/legacy/music" rename="assets/music" library="music"
-			exclude="freakyMenu.ogg|finaleMenu.ogg" preload="false" />
+			exclude="freakyMenu.ogg|finaleMenu.ogg" />
 		<assets path="assets/legacy/songs" rename="assets/songs" library="music" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="fonts"
-			exclude="vcr.ttf|vcr-srb.ttf" preload="false" />
+			exclude="vcr.ttf|vcr-srb.ttf" />
 
 		<library name="default" />
 		<library name="title" preload="true" />
