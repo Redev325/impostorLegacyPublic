@@ -94,9 +94,11 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		function log(x:String, ?pos:haxe.PosInfos, level:ErrorSeverity)
 		{
 			final prefix:String = ErrorSeverityTools.getPrefix(level);
-			
+
+			#if !html5
 			DebugTextPlugin.addText(formatPosInfos(pos.fileName, pos.lineNumber, x, prefix == '' ? '' : '$prefix:'), Logger.getHexColourFromSeverity(Severity.fromIris(level)));
-			
+			#end
+
 			Iris.logLevel(level, x, pos);
 		}
 		
