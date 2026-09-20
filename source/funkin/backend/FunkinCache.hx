@@ -91,7 +91,9 @@ class FunkinCache
 			}
 		}
 		
+		#if !html5
 		openfl.system.System.gc();
+		#end
 		#if cpp
 		cpp.vm.Gc.compact();
 		#end
