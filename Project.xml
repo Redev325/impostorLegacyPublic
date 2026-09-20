@@ -66,9 +66,8 @@
 		<assets path="assets/legacy/data" rename="assets/data" library="title" include="introText.txt" />
 		<assets path="assets/legacy/lang" rename="assets/lang" library="title" include="english.json" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="title"
-			include="confirmMenu.ogg" preload="false" />
-		<assets path="assets/legacy/music" rename="assets/music" library="title"
-			include="freakyMenu.ogg" preload="false" />
+			include="confirmMenu.ogg" preload="true" />
+		
 		<assets path="assets/legacy/images" rename="assets/images" library="title"
 			include="logoBumpin.png|logoBumpin.xml|alphabet.png|alphabet.xml" preload="true" />
 		<assets path="assets/embeds/images" rename="assets/images" library="title"
@@ -79,15 +78,15 @@
 			include="startText.png|startText.xml|funkin.png" preload="true" />
 
 		<!-- Main menu assets are loaded asynchronously after the title screen. -->
-		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" preload="false" />
-		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" preload="false" />
-		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" preload="false" />
+		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" />
+		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" />
+		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="mainmenu"
-			include="cancelMenu.ogg|scrollMenu.ogg" preload="false" />
+			include="cancelMenu.ogg|scrollMenu.ogg" />
 		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu"
-			include="finaleMenu.ogg" preload="false" />
+			include="freakyMenu.ogg|finaleMenu.ogg" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="mainmenu"
-			include="vcr.ttf|vcr-srb.ttf" preload="false" />
+			include="vcr.ttf|vcr-srb.ttf" />
 
 		<!-- Everything else stays outside startup and main-menu loading. -->
 		<assets path="assets/legacy/data" rename="assets/data" library="gameplay" exclude="introText.txt" />
