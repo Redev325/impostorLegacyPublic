@@ -106,7 +106,9 @@ class TitleState extends MusicBeatState
 	{
 		if (!initialized)
 		{
+			#if !html5
 			FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
+			#end
 		}
 		
 		Conductor.bpm = 102;
@@ -332,9 +334,11 @@ class TitleState extends MusicBeatState
 				switch (sickBeats)
 				{
 					case 1:
+						#if !html5
 						FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
 						
 						if (ClientPrefs.finaleState != ACTIVE) FlxG.sound.music.fadeIn(4, 0, 0.7);
+						#end
 					case 2:
 						createCoolText(['MOTORFROG']);
 					case 4:
