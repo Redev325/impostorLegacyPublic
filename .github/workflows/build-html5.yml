@@ -18,6 +18,67 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libwayland-dev libwayland-bin wayland-protocols libasound2-dev libpulse-dev libdbus-1-dev libudev-dev libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxfixes-dev libxxf86vm-dev libxss-dev libxkbcommon-dev libxt-dev libxv-dev libdrm-dev libgbm-dev libgl-dev libgles-dev libegl1-mesa-dev libglu1-mesa-dev libibus-1.0-dev libsamplerate0-dev libsndio-dev libpipewire-0.3-dev libspa-0.2-dev libsdl2-dev
+      - name: Install web asset optimization tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg optipng parallel
+
+      - name: Prepare compressed web assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "=== Optimizing large sprite sheets losslessly ==="
+          mapfile -d '' SHEETS < <(
+            find assets/legacy/images -type f -iname '*.png' -size +512k -print0 |
+            while IFS= read -r -d '' png; do
+              base="${png%.png}"
+              if [ -f "${base}.xml" ] || [ -f "${base}.txt" ]; then
+                printf '%s\0' "$png"
+              fi
+            done
+          )
+
+          if [ "${#SHEETS[@]}" -gt 0 ]; then
+            printf '%s\0' "${SHEETS[@]}" |
+              parallel --null --jobs 2 --halt soon,fail=1                 'optipng -quiet -strip all -o2 "{}" >/dev/null 2>&1'
+            echo "Optimized sprite sheets: ${#SHEETS[@]}"
+          else
+            echo "No large sprite sheets required optimization."
+          fi
+
+          echo "=== Converting non-OGG audio to OGG for web builds ==="
+          mapfile -d '' AUDIO < <(
+            find assets -type f \(
+              -iname '*.wav' -o -iname '*.mp3' -o -iname '*.flac' -o               -iname '*.m4a' -o -iname '*.aac'
+            \) -print0
+          )
+
+          if [ "${#AUDIO[@]}" -gt 0 ]; then
+            if grep -RIna --include='*.hx' --include='*.hxs' --include='*.hscript'               --include='*.json' --include='*.txt' --include='*.xml'               -E '\\.(wav|mp3|flac|m4a|aac)([^A-Za-z0-9_]|$)'               source assets content >/tmp/non_ogg_refs.txt 2>/dev/null; then
+              echo "Non-OGG asset references were found; converted files will be kept alongside originals."
+            else
+              : >/tmp/non_ogg_refs.txt
+            fi
+
+            for input in "${AUDIO[@]}"; do
+              output="${input%.*}.ogg"
+              ffmpeg -hide_banner -loglevel error -y -i "$input"                 -c:a libvorbis -q:a 4 "$output"
+              if ! grep -Fq "$input" /tmp/non_ogg_refs.txt 2>/dev/null; then
+                rm -f "$input"
+              fi
+            done
+            echo "Converted non-OGG audio files: ${#AUDIO[@]}"
+          else
+            echo "All repository audio is already in efficient OGG form."
+          fi
+
+          echo "=== Web asset summary ==="
+          printf 'PNG files: '
+          find assets/legacy/images -type f -iname '*.png' | wc -l
+          printf 'OGG files: '
+          find assets -type f -iname '*.ogg' | wc -l
+
       - name: Setup Haxe Environment
         uses: krdlab/setup-haxe@v1
         with:
@@ -132,7 +193,7 @@ jobs:
           java-version: '17'
       - name: Compile to Web Port
         run: |
-          haxelib run lime build html5 -final
+          haxelib run lime build html5 -final -Dwebgl
       - name: Make Lean HTML5 Package
         shell: bash
         run: |
