@@ -72,15 +72,16 @@ class Init extends FlxState
 	#if html5
 	function beginTitleLibraryLoad():Void
 	{
-		titleLoadingText = new FlxText(
+		final loadingText:FlxText = new FlxText(
 			0,
 			FlxG.height * 0.5 - 20,
 			FlxG.width,
 			'Loading title assets... 0%',
 			20
 		);
-		titleLoadingText.setFormat(null, 20, FlxColor.WHITE, CENTER);
-		add(titleLoadingText);
+		loadingText.setFormat(null, 20, FlxColor.WHITE, CENTER);
+		titleLoadingText = loadingText;
+		add(loadingText);
 
 		// The HaxeFlixel blue preloader has already completed. This is a
 		// separate, post-preloader library load and does not replace it.
