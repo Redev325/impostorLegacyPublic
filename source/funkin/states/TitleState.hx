@@ -109,11 +109,6 @@ class TitleState extends MusicBeatState
 			#if !html5
 			FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
 			#end
-			#if html5
-			// HTML5 autoplay is gesture-gated; show the title immediately and
-			// let the player's first input begin the normal transition.
-			skipIntro();
-			#end
 		}
 		
 		Conductor.bpm = 102;
@@ -159,6 +154,13 @@ class TitleState extends MusicBeatState
 			logo.alpha = 0.001;
 			titleText.alpha = 0.001;
 		}
+		
+		#if html5
+		// The title library is already loaded by Init. Show the title
+		// immediately; browser audio still waits for user interaction.
+		if (!initialized)
+			skipIntro();
+		#end
 		
 		if (initialized)
 		{
