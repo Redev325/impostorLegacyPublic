@@ -155,12 +155,6 @@ class TitleState extends MusicBeatState
 			titleText.alpha = 0.001;
 		}
 		
-		#if html5
-		// The title library is already loaded by Init. Show the title
-		// immediately; browser audio still waits for user interaction.
-		if (!initialized)
-			skipIntro();
-		#end
 		
 		if (initialized)
 		{
