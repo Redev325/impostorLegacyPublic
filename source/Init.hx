@@ -5,6 +5,7 @@ import funkin.FunkinAssets;
 import flixel.FlxState;
 import flixel.FlxG;
 import flixel.input.keyboard.FlxKey;
+import openfl.utils.Assets;
 
 /**
  * Initiation state that prepares backend classes and returns to menus when finished.
@@ -12,14 +13,14 @@ import flixel.input.keyboard.FlxKey;
 @:nullSafety(Strict)
 class Init extends FlxState
 {
-		override public function create():Void
+	override public function create():Void
 	{
 		initializeGame();
 	}
 
 	function initializeGame():Void
 	{
-		// load settings/save
+		// Load settings/save before any state assets are needed.
 		funkin.input.Controls.init();
 
 		ClientPrefs.load();
@@ -53,6 +54,29 @@ class Init extends FlxState
 		FlxG.sound.music = new extensions.flixel.FlxSoundEx();
 		FlxG.sound.music.persist = true;
 
+		super.create();
+
+		#if html5
+		// The blue HaxeFlixel preloader has already finished at this point.
+		// Load the title library asynchronously so the preloader never waits
+		// for title images/fonts/audio.
+		Assets.loadLibrary('title')
+			.onError(function(error:Dynamic)
+			{
+				trace('ERROR: Failed to load title library: ' + error);
+			})
+			.onComplete(function(_)
+			{
+				finishInitialization();
+			});
+		#else
+		finishInitialization();
+		#end
+	}
+
+	function finishInitialization():Void
+	{
+		// These systems need the title/game asset manifest to be available.
 		funkin.data.Lang.reloadLangFile();
 
 		funkin.backend.plugins.HotReloadPlugin.init();
@@ -72,8 +96,6 @@ class Init extends FlxState
 		funkin.scripting.PluginsManager.populate();
 
 		FunkinAssets.cache.currentTrackedSounds.addPermanentKey('assets/music/freakyMenu.ogg');
-
-		super.create();
 
 		final nextState:Class<FlxState> = Main.startMeta.skipSplash || !ClientPrefs.toggleSplashScreen ? Main.startMeta.initialState : Splash;
 		FlxG.switchState(() -> Type.createInstance(nextState, []));
