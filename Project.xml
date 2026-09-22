@@ -79,20 +79,20 @@
 
 		<!-- Main menu assets are loaded asynchronously after the title screen. -->
 		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" embed="false" />
-		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" />
-		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" />
+		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" embed="false" />
+		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" embed="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="mainmenu"
 			include="cancelMenu.ogg|scrollMenu.ogg" embed="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu"
 			include="freakyMenu.ogg|finaleMenu.ogg" embed="false" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="mainmenu"
-			include="vcr.ttf|vcr-srb.ttf" />
+			include="vcr.ttf|vcr-srb.ttf" embed="false" />
 
 		<!-- Everything else stays outside startup and main-menu loading. -->
 		<assets path="assets/legacy/data" rename="assets/data" library="gameplay" exclude="introText.txt" embed="false" />
 		<assets path="assets/legacy/lang" rename="assets/lang" library="gameplay" exclude="english.json" embed="false" />
 		<assets path="assets/legacy/scripts" rename="assets/scripts" library="gameplay" embed="false" />
-		<assets path="assets/legacy/shaders" rename="assets/shaders" library="gameplay" />
+		<assets path="assets/legacy/shaders" rename="assets/shaders" library="gameplay" embed="false" />
 		<assets path="assets/embeds" rename="assets" library="embedded" embed="false" />
 		<assets path="assets/legacy/videos" rename="assets/videos" library="embedded" if="html5" embed="false" />
 		<assets path="content/securitydlc" rename="content/securitydlc" library="embedded" embed="false" if="DLC" />
@@ -100,7 +100,8 @@
 			exclude="menu*|icons*|awards*|logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml"
 			embed="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="gameplay"
-			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" />
+			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg"
+			embed="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="music"
 			exclude="freakyMenu.ogg|finaleMenu.ogg"
 			embed="false" />
