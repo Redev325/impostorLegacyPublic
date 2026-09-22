@@ -55,8 +55,8 @@
 	<set name="BUILD_DIR" value="export/32bit" if="32bits" />
 	<set name="BUILD_DIR" value="${BUILD_DIR}-tracy" if="FEATURE_DEBUG_TRACY"/>
 
-	<assets path="LEGACY.md" rename="CHANGELOG.md"/>
-	<assets path="content/mods-go-here.txt"/>
+	<assets path="LEGACY.md" rename="CHANGELOG.md" library="boot" />
+	<assets path="content/mods-go-here.txt" library="boot" />
 	
 	<section unless="ASSET_REDIRECT">
 		<log info="INCLUDING ASSETS!!" />
@@ -66,16 +66,16 @@
 		<assets path="assets/legacy/data" rename="assets/data" library="title" include="introText.txt" />
 		<assets path="assets/legacy/lang" rename="assets/lang" library="title" include="english.json" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="title"
-			include="confirmMenu.ogg" preload="true" />
+			include="confirmMenu.ogg" />
 		
 		<assets path="assets/legacy/images" rename="assets/images" library="title"
-			include="logoBumpin.png|logoBumpin.xml|alphabet.png|alphabet.xml" preload="true" />
+			include="logoBumpin.png|logoBumpin.xml|alphabet.png|alphabet.xml" />
 		<assets path="assets/embeds/images" rename="assets/images" library="title"
-			include="cursor.png" preload="true" />
+			include="cursor.png" />
 		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="title"
-			include="starFG.png|starBG.png" preload="true" />
+			include="starFG.png|starBG.png" />
 		<assets path="assets/legacy/images/menu/title" rename="assets/images/menu/title" library="title"
-			include="startText.png|startText.xml|funkin.png" preload="true" />
+			include="startText.png|startText.xml|funkin.png" />
 
 		<!-- Main menu assets are loaded asynchronously after the title screen. -->
 		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" />
@@ -84,7 +84,7 @@
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="mainmenu"
 			include="cancelMenu.ogg|scrollMenu.ogg" />
 		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu"
-			include="freakyMenu.ogg|finaleMenu.ogg" />
+			include="finaleMenu.ogg" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="mainmenu"
 			include="vcr.ttf|vcr-srb.ttf" />
 
@@ -107,9 +107,10 @@
 			exclude="vcr.ttf|vcr-srb.ttf" />
 
 		<library name="default" />
-		<library name="title" preload="true" />
+		<library name="boot" preload="true" />
+		<library name="title" preload="false" />
 		<library name="mainmenu" preload="false" />
-		<library name="embedded" />
+		<library name="embedded" preload="false" />
 		<library name="gameplay" preload="false" />
 		<library name="music" preload="false" />
 		<library name="fonts" preload="false" />
