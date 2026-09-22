@@ -113,7 +113,7 @@
 		<library name="default" />
 		<library name="title" preload="true" />
 		<library name="mainmenu" preload="false" />
-		<library name="embedded" />
+		<library name="embedded" preload="false" />
 		<library name="gameplay" preload="false" />
 		<library name="music" preload="false" />
 		<library name="fonts" preload="false" />
