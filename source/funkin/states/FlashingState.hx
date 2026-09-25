@@ -64,6 +64,7 @@ You may change this anytime in the Options menu.
 		}
 		
 		super.update(elapsed);
+	}
 
 	function switchToTitle():Void
 	{
