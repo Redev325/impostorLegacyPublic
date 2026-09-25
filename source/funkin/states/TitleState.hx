@@ -87,11 +87,11 @@ class TitleState extends MusicBeatState
 		super.create();
 		
 		#if html5
-		// HTML5 can finish the warning screen before the intro music callback has
-		// started Conductor updates. Show the actual title immediately after the
-		// photosensitivity warning instead of leaving the intro at alpha 0.001.
+		// The photosensitivity warning should land directly on the visible title.
+		// Do not call skipIntro() here because that function also performs the
+		// normal intro camera flash and can be intercepted by scripts.
 		if (FlashingState.leftState)
-			skipIntro();
+			showTitleAfterWarning();
 		#end
 		
 		#if ASSET_REDIRECT
@@ -357,6 +357,22 @@ class TitleState extends MusicBeatState
 		}
 	}
 	
+	function showTitleAfterWarning():Void
+	{
+		ngSpr?.kill();
+		textGroup?.kill();
+
+		if (starFG != null && starBG != null)
+		{
+			starBG.alpha = 1;
+			starFG.alpha = 1;
+		}
+		if (logo != null) logo.alpha = 1;
+		if (titleText != null) titleText.alpha = 1;
+
+		skippedIntro = true;
+	}
+
 	public function skipIntro():Void
 	{
 		if (scriptGroup.call('onSkipIntro', []) != ScriptConstants.STOP_FUNC && !skippedIntro)
