@@ -76,6 +76,20 @@ class Init extends FlxState
 		super.create();
 
 		final nextState:Class<FlxState> = Main.startMeta.skipSplash || !ClientPrefs.toggleSplashScreen ? Main.startMeta.initialState : Splash;
+
+		#if html5
+		// Keep the standard HaxeFlixel blue preloader limited to the browser's
+		// actual application preload. Load the title library after that preloader
+		// finishes, then enter the title state once its assets are ready.
+		openfl.Assets.loadLibrary('title')
+			.onComplete(function(_) {
+				FlxG.switchState(() -> Type.createInstance(nextState, []));
+			})
+			.onError(function(error) {
+				trace('Failed to load title asset library: ' + Std.string(error));
+			});
+		#else
 		FlxG.switchState(() -> Type.createInstance(nextState, []));
+		#end
 	}
 }
