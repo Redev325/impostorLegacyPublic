@@ -250,7 +250,7 @@ jobs:
           }
           HX
 
-          haxe -cp "$LIME_SRC" -main ManifestInspector --run /tmp/ManifestInspector.hx "$MANIFEST_DIR" > /tmp/manifest-report.tsv
+          haxe -cp /tmp -cp "$LIME_SRC" -main ManifestInspector --run "$MANIFEST_DIR" > /tmp/manifest-report.tsv
 
           echo "===== MANIFEST SUMMARY ====="
           awk -F '\\t' '$1 == "MANIFEST" {printf "%s: %s assets\\n", $2, $4}' /tmp/manifest-report.tsv
