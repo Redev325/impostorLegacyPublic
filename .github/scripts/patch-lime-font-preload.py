@@ -12,91 +12,92 @@ if not candidates:
 path = candidates[0]
 source = path.read_text()
 
-# Lime has two HTML5 font-generation paths:
-# - getAssetData() for ordinary/unpacked libraries
-# - getPackedAssetData() for packed libraries
-# Both historically forced HTML5 fonts to preload=true.
-ordinary_pattern = re.compile(
-    r'(?P<indent>\t+)if \(asset\.type == (?:FONT|AssetType\.FONT)\)\s*\{'
-    r'\s*assetData\.className = "__ASSET__" \+ asset\.flatName;\s*'
-    r'assetData\.preload = true;'
-    r'(?P<tail>\s*\}\s*else)',
-    re.MULTILINE,
-)
-
-ordinary_replacement = (
-    '\\g<indent>if (asset.type == FONT)\n'
-    '\\g<indent>{\n'
-    '\\g<indent}\tassetData.className = "__ASSET__" + asset.flatName;\n'
-    '\\g<indent}\tif (libraries.exists(library))\n'
-    '\\g<indent}\t{\n'
-    '\\g<indent}\t\tassetData.preload = libraries[library].preload;\n'
-    '\\g<indent}\t}\n'
-    '\\g<indent>}\\g<tail>'
-)
-
-match = ordinary_pattern.search(source)
-if match:
-    source = source[:match.start()] + ordinary_replacement.replace(
-        '\\g<indent>', match.group('indent')
-    ).replace('\\g<tail>', match.group('tail')) + source[match.end():]
-    print("Patched ordinary HTML5 font preload path.")
-elif "assetData.preload = libraries[library].preload;" in source:
-    print("Ordinary HTML5 font preload path already patched.")
-else:
-    raise SystemExit("Could not find ordinary HTML5 font preload block")
-
-packed_pattern = re.compile(
-    r'(?P<indent>\t+)if \(project\.target == HTML5 && asset\.type == (?:FONT|AssetType\.FONT)\)\s*\{'
-    r'\s*assetData\.className = "__ASSET__" \+ asset\.flatName;\s*'
-    r'assetData\.preload = true;\s*\}',
-    re.MULTILINE,
-)
-
-packed_replacement_template = (
-    "{indent}if (project.target == HTML5 && asset.type == FONT)\n"
-    "{indent}{{\n"
-    "{indent}\tassetData.className = \"__ASSET__\" + asset.flatName;\n"
-    "{indent}\tassetData.preload = library.preload;\n"
-    "{indent}}}"
-)
-
-match = packed_pattern.search(source)
-if match:
-    replacement = packed_replacement_template.format(indent=match.group('indent'))
-    source = source[:match.start()] + replacement + source[match.end():]
-    print("Patched packed HTML5 font preload path.")
-elif "assetData.preload = library.preload;" in source:
-    print("Packed HTML5 font preload path already patched.")
-else:
-    raise SystemExit("Could not find packed HTML5 font preload block")
-
-# Verify the actual two font blocks, rather than using a broad DOTALL search
-# that can accidentally span unrelated code later in the file.
-html5_start = source.find("else if (project.target == HTML5)")
-if html5_start < 0:
-    raise SystemExit("Could not locate Lime HTML5 branch after patching")
-
-html5_end = source.find("\n\t\telse\n", html5_start)
-if html5_end < 0:
-    html5_end = len(source)
-html5_branch = source[html5_start:html5_end]
-
-font_block = re.search(
-    r'if \(asset\.type == FONT\)\s*\{.*?\}',
-    html5_branch,
+# HTML5 fonts are handled by two different Lime functions. In both places
+# upstream Lime forces preload=true, which makes deferred font libraries part
+# of the blue HTML5 preloader. Replace only that forced assignment.
+ordinary = re.compile(
+    r'(?P<block>'
+    r'(?P<indent>\s*)if\s*\(asset\.type\s*==\s*(?:FONT|AssetType\.FONT)\)\s*\{'
+    r'.*?'
+    r'(?P<preload_indent>\s*)assetData\.preload\s*=\s*true;'
+    r'.*?\})',
     re.DOTALL,
 )
-if not font_block or "assetData.preload = true;" in font_block.group(0):
-    raise SystemExit("Ordinary HTML5 font block still forces preload=true")
 
-packed_start = source.find("if (project.target == HTML5 && asset.type == FONT)")
-if packed_start < 0:
-    raise SystemExit("Could not locate packed HTML5 font block after patching")
-packed_end = source.find("\n\t\t\telse", packed_start)
-packed_block = source[packed_start:packed_end if packed_end >= 0 else len(source)]
-if "assetData.preload = true;" in packed_block:
-    raise SystemExit("Packed HTML5 font block still forces preload=true")
+packed = re.compile(
+    r'(?P<block>'
+    r'(?P<indent>\s*)if\s*\(project\.target\s*==\s*HTML5\s*&&\s*asset\.type\s*==\s*(?:FONT|AssetType\.FONT)\)\s*\{'
+    r'.*?'
+    r'(?P<preload_indent>\s*)assetData\.preload\s*=\s*true;'
+    r'.*?\})',
+    re.DOTALL,
+)
 
-print(f"Verified both Lime HTML5 font preload paths: {path}")
+def patch_ordinary(match):
+    block = match.group("block")
+    indent = match.group("indent").split("\n")[-1]
+    body_indent = match.group("preload_indent").split("\n")[-1]
+    replacement = f"{body_indent}if (libraries.exists(library))\\n{body_indent}{{\\n{body_indent}\\tassetData.preload = libraries[library].preload;\\n{body_indent}}}"
+    return block.replace(
+        f"{match.group('preload_indent')}assetData.preload = true;",
+        replacement,
+        1,
+    )
+
+def patch_packed(match):
+    block = match.group("block")
+    body_indent = match.group("preload_indent").split("\n")[-1]
+    replacement = f"{body_indent}assetData.preload = library.preload;"
+    return block.replace(
+        f"{match.group('preload_indent')}assetData.preload = true;",
+        replacement,
+        1,
+    )
+
+ordinary_matches = list(ordinary.finditer(source))
+ordinary_changed = 0
+for match in reversed(ordinary_matches):
+    block = match.group("block")
+    if "assetData.preload = true;" in block:
+        start, end = match.span("block")
+        source = source[:start] + patch_ordinary(match) + source[end:]
+        ordinary_changed += 1
+
+packed_matches = list(packed.finditer(source))
+packed_changed = 0
+for match in reversed(packed_matches):
+    block = match.group("block")
+    if "assetData.preload = true;" in block:
+        start, end = match.span("block")
+        source = source[:start] + patch_packed(match) + source[end:]
+        packed_changed += 1
+
 path.write_text(source)
+
+print(f"Lime AssetHelper: {path}")
+print(f"Ordinary HTML5 font blocks patched: {ordinary_changed}")
+print(f"Packed HTML5 font blocks patched: {packed_changed}")
+
+# Verify only the font blocks themselves. Do not inspect the whole file or
+# require a particular surrounding branch spelling.
+remaining = []
+for match in re.finditer(
+    r'if\s*\(asset\.type\s*==\s*(?:FONT|AssetType\.FONT)\)\s*\{.*?\}',
+    source,
+    re.DOTALL,
+):
+    if "assetData.preload = true;" in match.group(0):
+        remaining.append("ordinary")
+
+for match in re.finditer(
+    r'if\s*\(project\.target\s*==\s*HTML5\s*&&\s*asset\.type\s*==\s*(?:FONT|AssetType\.FONT)\)\s*\{.*?\}',
+    source,
+    re.DOTALL,
+):
+    if "assetData.preload = true;" in match.group(0):
+        remaining.append("packed")
+
+if remaining:
+    raise SystemExit("Forced HTML5 font preload remains in: " + ", ".join(remaining))
+
+print("Verified: no HTML5 font block still forces preload=true.")
