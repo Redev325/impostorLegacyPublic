@@ -5,6 +5,10 @@ on:
     workflows: ["Build HTML5 Web Port"]
     types: [completed]
 
+concurrency:
+  group: html5-pages-deploy
+  cancel-in-progress: true
+
 permissions:
   actions: read
   contents: read
