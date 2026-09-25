@@ -60,22 +60,22 @@
 		<log info="INCLUDING DLC!!" if="DLC" />
 
 		<!-- HTML5 startup: only title-screen assets are preloaded here. -->
-		<assets path="assets/legacy/data" rename="assets/data" include="introText.txt" preload="true" />
-		<assets path="assets/legacy/lang" rename="assets/lang" include="english.json" preload="true" />
+		<assets path="assets/legacy/data" rename="assets/data" include="introText.txt" preload="true" embed="true" />
+		<assets path="assets/legacy/lang" rename="assets/lang" include="english.json" preload="true" embed="true" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds"
-			include="confirmMenu.ogg" preload="true" />
+			include="confirmMenu.ogg" preload="true" embed="true" />
 		<assets path="assets/legacy/music" rename="assets/music"
-			include="freakyMenu.ogg" preload="true" />
+			include="freakyMenu.ogg" preload="true" embed="true" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts"
-			include="vcr.ttf|vcr-srb.ttf" preload="true" />
+			include="vcr.ttf|vcr-srb.ttf" preload="true" embed="true" />
 		<assets path="assets/legacy/images" rename="assets/images"
-			include="logoBumpin.png|logoBumpin.xml|alphabet.png|alphabet.xml" preload="true" />
+			include="logoBumpin.png|logoBumpin.xml|alphabet.png|alphabet.xml" preload="true" embed="true" />
 		<assets path="assets/embeds/images" rename="assets/images"
-			include="cursor.png" preload="true" />
+			include="cursor.png" preload="true" embed="true" />
 		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common"
-			include="starFG.png|starBG.png" preload="true" />
+			include="starFG.png|starBG.png" preload="true" embed="true" />
 		<assets path="assets/legacy/images/menu/title" rename="assets/images/menu/title"
-			include="startText.png|startText.xml|funkin.png" preload="true" />
+			include="startText.png|startText.xml|funkin.png" preload="true" embed="true" />
 
 		<!-- Main menu assets are loaded only when the title screen hands off to the menu. -->
 		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" preload="false" embed="false" />
