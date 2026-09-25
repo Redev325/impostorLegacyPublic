@@ -104,7 +104,7 @@
 			exclude="vcr.ttf|vcr-srb.ttf" preload="false" embed="false" />
 
 		<library name="default" preload="false" />
-		<library name="title" preload="true" />
+		<library name="title" preload="false" />
 		<library name="mainmenu" preload="false" />
 		<library name="embedded" preload="false" />
 		<library name="gameplay" preload="false" />
