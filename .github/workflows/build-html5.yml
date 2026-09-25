@@ -32,6 +32,14 @@ jobs:
         run: |
           haxelib run hxpkg setup
           haxelib run hxpkg install
+      - name: Build Lime native tools
+        run: |
+          cd .haxelib/lime/git
+          git submodule sync --recursive
+          git submodule update --init --recursive --force
+          cd ../../..
+          haxelib run lime rebuild cpp -release
+
       - name: Disable native-only video backend for HTML5
         run: |
           cat > source/funkin/video/FunkinVideoSprite.hx <<'EOF'
