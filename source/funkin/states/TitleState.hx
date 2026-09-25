@@ -86,6 +86,14 @@ class TitleState extends MusicBeatState
 		
 		super.create();
 		
+		#if html5
+		// HTML5 can finish the warning screen before the intro music callback has
+		// started Conductor updates. Show the actual title immediately after the
+		// photosensitivity warning instead of leaving the intro at alpha 0.001.
+		if (FlashingState.leftState)
+			skipIntro();
+		#end
+		
 		#if ASSET_REDIRECT
 		if (Paths.fileExists('images/cursor.png'))
 			FlxG.mouse.load(openfl.display.BitmapData.fromFile(Paths.getPath('images/cursor.png')));
