@@ -68,19 +68,8 @@ You may change this anytime in the Options menu.
 
 	function switchToTitle():Void
 	{
-		#if html5
-		// The title library is already loaded after the blue preloader, but load it
-		// again here as a safe synchronization point before creating TitleState.
-		openfl.Assets.loadLibrary('title')
-			.onComplete(function(_) {
-				FlxG.switchState(TitleState.new);
-			})
-			.onError(function(error) {
-				trace('Failed to reload title asset library: ' + Std.string(error));
-				FlxG.switchState(TitleState.new);
-			});
-		#else
+		// Init already finished loading the title library before this warning was
+		// shown, so do not start another asynchronous library load here.
 		FlxG.switchState(TitleState.new);
-		#end
 	}
 }
