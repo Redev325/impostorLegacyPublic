@@ -45,16 +45,18 @@ You may change this anytime in the Options menu.
 				FlxTween.tween(warnText, {alpha: 0}, 1,
 				{
 					onComplete: function(twn:FlxTween) {
-						FlxG.switchState(TitleState.new);
+						switchToTitle();
 					}
 				});
 			}
 			else
 			{
-				FlxFlicker.flicker(warnText, 1, 0.1, false, true, function(flk:FlxFlicker) {
-					new FlxTimer().start(0.5, function(tmr:FlxTimer) {
-						FlxG.switchState(TitleState.new);
-					});
+				// Do not rely on FlxFlicker's completion callback for the state change.
+				// On HTML5 that callback can leave the warning screen faded out while
+				// the game remains on an otherwise black state.
+				FlxFlicker.flicker(warnText, 1, 0.1, false, true);
+				new FlxTimer().start(1.5, function(tmr:FlxTimer) {
+					switchToTitle();
 				});
 			}
 			
@@ -62,5 +64,23 @@ You may change this anytime in the Options menu.
 		}
 		
 		super.update(elapsed);
+
+	function switchToTitle():Void
+	{
+		#if html5
+		// The title library is already loaded after the blue preloader, but load it
+		// again here as a safe synchronization point before creating TitleState.
+		openfl.Assets.loadLibrary('title')
+			.onComplete(function(_) {
+				FlxG.switchState(TitleState.new);
+			})
+			.onError(function(error) {
+				trace('Failed to reload title asset library: ' + Std.string(error));
+				FlxG.switchState(TitleState.new);
+			});
+		#else
+		FlxG.switchState(TitleState.new);
+		#end
+	}
 	}
 }
