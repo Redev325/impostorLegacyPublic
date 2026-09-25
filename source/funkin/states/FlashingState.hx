@@ -83,5 +83,4 @@ You may change this anytime in the Options menu.
 		FlxG.switchState(TitleState.new);
 		#end
 	}
-	}
 }
