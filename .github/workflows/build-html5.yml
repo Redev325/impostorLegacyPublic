@@ -315,7 +315,39 @@ jobs:
               for r in rows:
                   if r["preload"]:
                       all_active.append((r["size"], manifest, r))
-          for size, manifest, r in sorted(all_active, reverse=True)[:100]:
+          print("===== GLOBAL PRELOAD BYTE CHECKPOINTS (MANIFEST/ASSET ORDER) =====")
+          global_active = []
+          for manifest, rows in rows_by_manifest.items():
+              for r in rows:
+                  if r["preload"]:
+                      global_active.append((manifest, r))
+          global_total = sum(r["size"] for _, r in global_active)
+          print(f"Global preload-flagged bytes: {global_total}")
+          if global_total > 0:
+              for checkpoint in (6, 42, 49, 73):
+                  target = global_total * checkpoint / 100.0
+                  cumulative = 0
+                  chosen_manifest, chosen = global_active[-1]
+                  for manifest, r in global_active:
+                      cumulative += r["size"]
+                      if cumulative >= target:
+                          chosen_manifest, chosen = manifest, r
+                          break
+                  start = max(0, cumulative - chosen["size"])
+                  lo = start / global_total * 100.0
+                  hi = cumulative / global_total * 100.0
+                  print(
+                      f"GLOBAL CHECKPOINT {checkpoint}% -> {chosen_manifest} | "
+                      f"asset {chosen['index']} | {chosen['id']} | {chosen['path']} | "
+                      f"{chosen['type']} | {chosen['size']} bytes | cumulative {lo:.1f}%..{hi:.1f}%"
+                  )
+
+          print("===== TOP PRELOAD-FLAGGED ASSETS BY DECLARED SIZE =====")
+          for size, manifest, r in sorted(
+              all_active,
+              key=lambda item: (item[0], item[1], item[2]["index"]),
+              reverse=True
+          )[:100]:
               print(f"{size}\t{manifest}\t{r['id']}\t{r['path']}\t{r['type']}\tpreload={str(r['preload']).lower()}\tembed={str(r['embed']).lower()}")
 
           print("===== SUSPICIOUS PRELOAD-FLAGGED ASSETS =====")
