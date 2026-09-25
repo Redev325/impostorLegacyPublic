@@ -32,6 +32,90 @@ jobs:
         run: |
           haxelib run hxpkg setup
           haxelib run hxpkg install
+      - name: Disable native-only video backend for HTML5
+        run: |
+          cat > source/funkin/video/FunkinVideoSprite.hx <<'EOF'
+          package funkin.video;
+          import flixel.FlxSprite;
+          class FunkinVideoSprite extends FlxSprite
+          {
+            public static final looping:String = ':input-repeat=65535';
+            public static final muted:String = ':no-audio';
+            public var tiedToGame:Bool = true;
+            public var time(get, set):Float;
+            public var length(get, never):Float;
+            public var playing(get, never):Bool;
+            public var percent(get, never):Float;
+            var _time:Float = 0;
+            var _playing:Bool = false;
+            public function new(x:Float = 0, y:Float = 0, oneTimeUse:Bool = true) super(x, y);
+            public static function init():Void {}
+            public function delayAndStart(delay:Float = 0):Void {}
+            public function onEnd(func:Void->Void, once:Bool = false, priority:Int = 0):Void {}
+            public function onStart(func:Void->Void, once:Bool = false, priority:Int = 0):Void {}
+            public function onFormat(func:Void->Void, once:Bool = false, priority:Int = 0):Void {}
+            public function load(location:Dynamic, ?options:Array<String>):Bool return false;
+            public function play():Void _playing = false;
+            public function pause():Void _playing = false;
+            public function resume():Void _playing = false;
+            public function stop():Void _playing = false;
+            inline function get_time():Float return _time;
+            inline function set_time(value:Float):Float { _time = value; return value; }
+            inline function get_length():Float return 0;
+            inline function get_playing():Bool return _playing;
+            inline function get_percent():Float return 0;
+          }
+          EOF
+      - name: Apply HTML5 compatibility patches
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+          def edit(path, fn):
+              p = Path(path); s = p.read_text(); out = fn(s)
+              if out == s: raise SystemExit(f'No change made to {path}; expected source pattern was not found')
+              p.write_text(out)
+          edit('source/funkin/Paths.hx', lambda s: s.replace("\tpublic static function getModFolder(path:String, ?exclude:String):String\n", "\t#if html5\n\tpublic static inline function mods(?mod:String = ''):String\n\t{\n\t\treturn MODS_DIRECTORY + '/' + (mod ?? '');\n\t}\n\t#end\n\n\tpublic static function getModFolder(path:String, ?exclude:String):String\n", 1).replace("return (!FileSystem.exists(path) && Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);", "return (Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);", 1))
+          Path('source/funkin/data/CosmicubeData.hx').write_text('''package funkin.data;\ntypedef CosmicubeMetadata = { var title:String; var ?currency:String; var ?mod:String; var ?fileName:String; }\ntypedef ShopItemData = { var ?requirement:Dynamic; var ?week:String; var ?song:String; var ?completionExcluded:Bool; var type:String; var price:Int; var ?title:String; var ?hint:String; var ?description:String; var node:NodeData; var ?fileName:String; var ?color:Dynamic; var ?icon:String; var ?currency:String; }\nenum ShopRequirement { WEEK(week:String, ?accuracy:Float); SONG(song:String, ?accuracy:Float, ?rank:String); COMPLETION(percent:Float); GLOBAL_COMPLETION(percent:Float); UPDOG_SAVE; SCRIPTED; NONE; }\nclass CosmicubeData {\n public static var currentMeta(get, never):Null<CosmicubeMetadata>; public static var currentCurrency(get, never):String; public static var currentMoney(get, set):Int; public static var cosmicubeList:Array<String> = []; public static var cosmicubeMetas:Map<String,CosmicubeMetadata> = []; public static var cosmicubeItems:Map<String,Array<ShopItemData>> = []; public static var fallbackMeta:CosmicubeMetadata = {title:'Unknown',currency:'beans',fileName:'idk'};\n public static function reload(hard:Bool=true):Void { if(!hard && cosmicubeList.length>0)return; cosmicubeList.resize(0); cosmicubeMetas.clear(); cosmicubeItems.clear(); } static function getShopItems(dir:String, meta:CosmicubeMetadata):Array<ShopItemData> return [];\n inline static function get_currentMeta():CosmicubeMetadata { reload(false); var meta=cosmicubeMetas.get(ClientPrefs.activeCosmicube); return meta==null?fallbackMeta:meta; } inline static function get_currentCurrency():String return currentMeta?.currency ?? ''; static function get_currentMoney():Int return getMoney(currentCurrency); static function set_currentMoney(money:Int):Int return setMoney(currentCurrency,money);\n public static inline function getMoney(currency:Null<String>):Int { if(currency==null||currency.length==0)return 0; if(!ClientPrefs.money.exists(currency))ClientPrefs.money.set(currency,0); return ClientPrefs.money.get(currency); } public static inline function setMoney(currency:Null<String>,money:Int):Int { if(currency==null||currency.length==0)return 0; ClientPrefs.money.set(currency,money); return money; }\n}\n''')
+          edit('source/funkin/states/editors/ChartEditorState.hx', lambda s: s.replace('import openfl.events.Event;\n','import openfl.events.Event;\nimport openfl.media.Sound;\n',1).replace("File.getContent(Paths.getCorePath('$path.txt'))","FunkinAssets.getContent(Paths.getCorePath('$path.txt'))",1))
+          Path('source/funkin/utils/FileUtil.hx').write_text('''package funkin.utils;\nimport openfl.net.FileFilter;\ntypedef BrowseOptions = { var ?typeFilter:Array<FileFilter>; var ?title:String; var ?defaultSearch:String; }\n@:nullSafety class FileUtil { public static function browseForFile(options:BrowseOptions,?onSelect:String->Void,?onCancel:Void->Void):Void { if(onCancel!=null)onCancel(); } public static function browseForMultipleFiles(options:BrowseOptions,?onSelect:Array<String>->Void,?onCancel:Void->Void):Void { if(onCancel!=null)onCancel(); } public static function saveFile(data:Dynamic,?fileName:String,?onSelect:String->Void,?onCancel:Void->Void):Void { if(onCancel!=null)onCancel(); } public static function saveFileToPath(data:Dynamic,path:String,ensureDirectory:Bool=true):Bool return false; }\n''')
+          def replace_function(text,name,replacement):
+              m=re.search(r'(?m)^(\s*(?:public\s+)?static\s+function\s+'+re.escape(name)+r'\s*\([^\n]*\)[^\n]*\n)',text)
+              if not m: raise SystemExit(f'Could not find function {name}')
+              start=m.start(); brace=text.find('{',m.end()-1)
+              if brace<0: raise SystemExit(f'Could not find opening brace for {name}')
+              depth=0; in_str=None; esc=False; end=None
+              for i in range(brace,len(text)):
+                  c=text[i]
+                  if in_str:
+                      if esc: esc=False
+                      elif c=='\\': esc=True
+                      elif c==in_str: in_str=None
+                  else:
+                      if c in ('\"',"'"): in_str=c
+                      elif c=='{': depth+=1
+                      elif c=='}':
+                          depth-=1
+                          if depth==0: end=i+1; break
+              if end is None: raise SystemExit(f'Could not find closing brace for {name}')
+              return text[:start]+replacement+text[end:]
+          cp=Path('source/funkin/data/ClientPrefs.hx'); s=cp.read_text(); s=replace_function(s,'backupSave',"\tpublic static function backupSave(name:String='funkin'):Void { }\n"); s=replace_function(s,'tryBindingSave',"\tpublic static function tryBindingSave(name:String='funkin'):Void { FlxG.save.bind(name,CoolUtil.getSavePath(),function(data:String,exception:haxe.Exception) { if(exception!=null) trace('save binding failed: ${exception.message}'); return {}; }); }\n"); s=replace_function(s,'attemptLoadBackup',"\tpublic static function attemptLoadBackup(name:String='funkin'):Dynamic { return {}; }\n"); cp.write_text(s)
+          mods=Path('source/funkin/Mods.hx'); s=mods.read_text(); s=re.sub(r'(?m)^\s*File\.saveContent\([^\n]*\);\s*$','\t// modsList.txt saving disabled for HTML5',s); s=s.replace('FileSystem.exists(path + fileToFind)','FunkinAssets.exists(path + fileToFind)'); mods.write_text(s)
+          fnaf=Path('source/funkin/states/FNAFState.hx'); s=fnaf.read_text(); s=s.replace('Sys.exit(0);','// browser build does not terminate the process'); s=s.replace('var tmp = Sys.getEnv("TEMP");','var tmp = ".";'); s=s.replace('sys.io.File.saveBytes(dest, bytes);','// native video file write disabled for browser'); leftovers=[x for x in ('Sys.getEnv("TEMP")','sys.io.File.saveBytes','Sys.exit(0);') if x in s]
+          if leftovers: raise SystemExit('FNAF native code still present: '+', '.join(leftovers))
+          fnaf.write_text(s)
+          edit('source/funkin/backend/CrashHandler.hx', lambda s: s.replace('final cl = Type.getClass(FlxG.state);','final cl:Null<Class<Dynamic>> = null;',1))
+          edit('source/funkin/backend/DebugDisplay.hx', lambda s: s.replace('var className = Type.getClassName(Type.getClass(FlxG.state));','var className:String = \'Unknown\';',1))
+          edit('source/funkin/data/ClientPrefs.hx',lambda s:s.replace('funkin.api.DiscordClient.check();','// Discord RPC disabled for HTML5'))
+          # Init.hx already contains the HTML5-safe Discord change in the repository; do not fail if there is nothing left to patch.
+          init_path=Path('source/Init.hx')
+          init_text=init_path.read_text()
+          init_new=init_text.replace('DiscordClient.check();','// Discord RPC disabled for HTML5')
+          if init_new != init_text: init_path.write_text(init_new)
+          edit('source/funkin/utils/CoolUtil.hx',lambda s:s.replace('FlxG.error("Platform is not supported for CoolUtil.openFolder");','trace("Platform is not supported for CoolUtil.openFolder");'))
+          edit('source/Splash.hx',lambda s:re.sub(r'(?s)(\tfunction logoFunc\(\)\n\t\{).*?(\n\t\}\n)',r'\1\n\t\tfinish();\n\t\2',s,count=1))
+          edit('source/funkin/objects/menu/CosmicubeNode.hx',lambda s:re.sub(r'(?s)(inline function hasUpdogSaveData\(\):Bool\n\t\{).*?(\n\t\}\n)',r'\1\n\t\treturn false;\n\t\2',s,count=1))
+          PY
       - name: Verify HTML5 compatibility patches
         run: |
           set -e
