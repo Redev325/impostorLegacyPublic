@@ -76,37 +76,6 @@ class Init extends FlxState
 		super.create();
 
 		final nextState:Class<FlxState> = Main.startMeta.skipSplash || !ClientPrefs.toggleSplashScreen ? Main.startMeta.initialState : Splash;
-		#if html5
-		// The blue HaxeFlixel preloader handles only the small default startup
-		// assets. Load the title library after that preloader completes, before
-		// entering the title or photosensitivity warning state.
-		loadTitleLibrary(nextState);
-		#else
 		FlxG.switchState(() -> Type.createInstance(nextState, []));
-		#end
 	}
-
-	#if html5
-	function loadTitleLibrary(nextState:Class<FlxState>, attempt:Int = 0):Void
-	{
-		openfl.Assets.loadLibrary('title')
-			.onComplete(function(_) {
-				FlxG.switchState(() -> Type.createInstance(nextState, []));
-			})
-			.onError(function(error) {
-				trace('Title asset library load failed (attempt ' + (attempt + 1) + '): ' + Std.string(error));
-				if (attempt < 2)
-				{
-					// Remove the failed library before retrying so Lime creates a
-					// fresh AssetLibrary instead of returning the already-failed one.
-					openfl.Assets.unloadLibrary('title');
-					haxe.Timer.delay(() -> loadTitleLibrary(nextState, attempt + 1), 400);
-				}
-				else
-				{
-					FlxG.switchState(() -> Type.createInstance(nextState, []));
-				}
-			});
-	}
-	#end
 }
