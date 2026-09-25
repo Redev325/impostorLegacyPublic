@@ -12,42 +12,71 @@ if not candidates:
 path = candidates[0]
 source = path.read_text()
 
-# Lime's HTML5 AssetHelper has changed its enum spelling between versions
-# (FONT vs AssetType.FONT) and its indentation has changed. Match the actual
-# structure rather than relying on one exact whitespace block.
-pattern = re.compile(
-    r'(?P<prefix>\t*\t*if \(asset\.type == (?:FONT|AssetType\.FONT)\)\s*\{'
-    r'\s*assetData\.className = "__ASSET__" \+ asset\.flatName;\s*)'
-    r'assetData\.preload = true;'
-    r'(?P<suffix>\s*\}\s*else)',
+# Lime has TWO HTML5 font paths:
+# 1) getAssetData() for ordinary/unpacked libraries
+# 2) getPackedAssetData() for packed libraries
+# Both used to force fonts to preload=true. Patch both paths.
+ordinary_pattern = re.compile(
+    r'(?P<indent>\t*)if \(asset\.type == (?:FONT|AssetType\.FONT)\)\s*\{'
+    r'\s*assetData\.className = "__ASSET__" \+ asset\.flatName;\s*'
+    r'(?P<preload>assetData\.preload = true;)'
+    r'\s*\}\s*else',
     re.MULTILINE,
 )
 
-match = pattern.search(source)
+# In getAssetData(), the parameter named library is the resolved library name.
+ordinary_replacement = (
+    '\\g<indent>if (asset.type == FONT)\n'
+    '\\g<indent>{\n'
+    '\\g<indent>\tassetData.className = "__ASSET__" + asset.flatName;\n'
+    '\\g<indent>\tif (libraries.exists(library))\n'
+    '\\g<indent>\t{\n'
+    '\\g<indent>\t\tassetData.preload = libraries[library].preload;\n'
+    '\\g<indent>\t}\n'
+    '\\g<indent>}\n'
+    '\\g<indent>else'
+)
 
-if match:
-    replacement = (
-        match.group("prefix")
-        + 'if (asset.library != null && libraries.exists(asset.library))\n'
-        + '\t\t\t\t{\n'
-        + '\t\t\t\t\tassetData.preload = libraries[asset.library].preload;\n'
-        + '\t\t\t\t}\n'
-        + '\t\t\t\telse if (libraries.exists(DEFAULT_LIBRARY_NAME))\n'
-        + '\t\t\t\t{\n'
-        + '\t\t\t\t\tassetData.preload = libraries[DEFAULT_LIBRARY_NAME].preload;\n'
-        + '\t\t\t\t}'
-        + match.group("suffix")
-    )
-    path.write_text(source[:match.start()] + replacement + source[match.end():])
-    print(f"Patched Lime HTML5 font preload behavior in {path}")
-else:
-    # Make repeated workflow runs harmless.
-    if "assetData.preload = libraries[asset.library].preload;" in source:
-        print(f"Lime font preload patch already present: {path}")
-    else:
-        start = source.find("else if (project.target == HTML5)")
-        if start >= 0:
-            preview = source[start:start + 900]
-            print("Lime HTML5 AssetHelper preview:")
-            print(preview)
-        raise SystemExit("Could not find Lime HTML5 font preload block")
+# Patch ONLY the first matching HTML5 font block (getAssetData).
+match = ordinary_pattern.search(source)
+if match and "libraries.exists(library)" not in match.group(0):
+    source = source[:match.start()] + ordinary_pattern.sub(ordinary_replacement, match.group(0), count=1) + source[match.end():]
+    print("Patched ordinary HTML5 font preload path.")
+
+# Packed-library font path uses the Library object directly.
+packed_pattern = re.compile(
+    r'(?P<indent>\t*)if \(project\.target == HTML5 && asset\.type == (?:FONT|AssetType\.FONT)\)\s*\{'
+    r'\s*assetData\.className = "__ASSET__" \+ asset\.flatName;\s*'
+    r'(?P<preload>assetData\.preload = true;)\s*\}',
+    re.MULTILINE,
+)
+packed_replacement = (
+    '\\g<indent>if (project.target == HTML5 && asset.type == FONT)\n'
+    '\\g<indent>{\n'
+    '\\g<indent>\tassetData.className = "__ASSET__" + asset.flatName;\n'
+    '\\g<indent>\tassetData.preload = library.preload;\n'
+    '\\g<indent>}'
+)
+
+match = packed_pattern.search(source)
+if match and "assetData.preload = library.preload;" not in match.group(0):
+    source = source[:match.start()] + packed_pattern.sub(packed_replacement, match.group(0), count=1) + source[match.end():]
+    print("Patched packed HTML5 font preload path.")
+
+# Verify the forced-preload implementations are gone from both branches.
+forced_blocks = re.findall(
+    r'if \((?:project\.target == HTML5 && )?asset\.type == (?:FONT|AssetType\.FONT)\).*?assetData\.preload = true;',
+    source,
+    flags=re.DOTALL,
+)
+if forced_blocks:
+    raise SystemExit("A forced HTML5 font preload block remains in Lime AssetHelper.hx")
+
+if (
+    "libraries.exists(library)" not in source
+    and "assetData.preload = library.preload;" not in source
+):
+    raise SystemExit("Lime font preload patch was not applied")
+
+path.write_text(source)
+print(f"Using Lime AssetHelper.hx: {path}")
