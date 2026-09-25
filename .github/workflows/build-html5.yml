@@ -182,6 +182,163 @@ jobs:
                   for size, name in sorted(rows, reverse=True)[:100]:
                       print(f'{size}\t{name}')
           PY
+      - name: Diagnose HTML5 preloader asset checkpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUTPUT_DIR="export/release/html5/bin"
+          MANIFEST_DIR="$OUTPUT_DIR/manifest"
+
+          echo "===== PROJECT LIBRARY PRELOAD FLAGS ====="
+          grep -nE '<library name=.*preload=' Project.xml || true
+
+          echo "===== DECODED HTML5 ASSET MANIFESTS ====="
+          LIME_SRC="$(find .haxelib/lime -type d -name src -print -quit 2>/dev/null || true)"
+          if [ -z "$LIME_SRC" ]; then
+            echo "ERROR: Could not find Lime src directory for manifest decoding."
+            exit 1
+          fi
+
+          cat > /tmp/ManifestInspector.hx <<'HX'
+          import haxe.io.Path;
+          import sys.FileSystem;
+          import sys.io.File;
+          import lime.utils.AssetManifest;
+
+          class ManifestInspector
+          {
+            static function clean(value:Dynamic):String
+            {
+              if (value == null) return "";
+              return StringTools.replace(StringTools.replace(Std.string(value), "\\t", "\\\\t"), "\\n", "\\\\n");
+            }
+
+            static function field(asset:Dynamic, name:String):String
+            {
+              return Reflect.hasField(asset, name) ? clean(Reflect.field(asset, name)) : "";
+            }
+
+            static function main():Void
+            {
+              final dir = Sys.args()[0];
+              var files = FileSystem.readDirectory(dir);
+              files.sort(Reflect.compare);
+              for (file in files)
+              {
+                if (!StringTools.endsWith(file, ".json")) continue;
+                final full = Path.join([dir, file]);
+                try
+                {
+                  final manifest:AssetManifest = AssetManifest.parse(File.getContent(full), "");
+                  Sys.println("MANIFEST\\t" + file + "\\t" + clean(manifest.name) + "\\t" + manifest.assets.length);
+                  for (index in 0...manifest.assets.length)
+                  {
+                    final asset = manifest.assets[index];
+                    Sys.println("ASSET\\t" + file + "\\t" + index + "\\t" +
+                      field(asset, "id") + "\\t" + field(asset, "path") + "\\t" +
+                      field(asset, "type") + "\\t" + field(asset, "size") + "\\t" +
+                      field(asset, "preload") + "\\t" + field(asset, "embed") + "\\t" +
+                      field(asset, "group"));
+                  }
+                }
+                catch (e:Dynamic)
+                {
+                  Sys.println("ERROR\\t" + file + "\\t" + clean(e));
+                }
+              }
+            }
+          }
+          HX
+
+          haxe -cp "$LIME_SRC" -main ManifestInspector --run /tmp/ManifestInspector.hx "$MANIFEST_DIR" > /tmp/manifest-report.tsv
+
+          echo "===== MANIFEST SUMMARY ====="
+          awk -F '\\t' '$1 == "MANIFEST" {printf "%s: %s assets\\n", $2, $4}' /tmp/manifest-report.tsv
+
+          echo "===== PRELOAD BYTE CHECKPOINTS ====="
+          python3 - "$OUTPUT_DIR" /tmp/manifest-report.tsv <<'PY'
+          import sys
+          from pathlib import Path
+
+          root = Path(sys.argv[1])
+          report = Path(sys.argv[2])
+          rows_by_manifest = {}
+          errors = []
+
+          for line in report.read_text().splitlines():
+              parts = line.split("\\t")
+              if not parts: continue
+              if parts[0] == "ERROR":
+                  errors.append(parts)
+                  continue
+              if parts[0] != "ASSET" or len(parts) < 10:
+                  continue
+              manifest, index, asset_id, path, typ, size, preload, embed, group = parts[1:10]
+              try: size_i = int(size or 0)
+              except ValueError: size_i = 0
+              rows_by_manifest.setdefault(manifest, []).append({
+                  "index": int(index), "id": asset_id, "path": path, "type": typ,
+                  "size": size_i, "preload": preload.lower() == "true", "embed": embed.lower() == "true", "group": group
+              })
+
+          for manifest, rows in sorted(rows_by_manifest.items()):
+              active = [r for r in rows if r["preload"]]
+              if not active:
+                  continue
+              total = sum(r["size"] for r in active)
+              print(f"--- {manifest}: {len(active)} preload-flagged assets, declared bytes={total} ---")
+              if total <= 0:
+                  print("WARNING: preload-flagged assets have zero declared total bytes")
+                  continue
+              for checkpoint in (6, 42, 49, 73):
+                  target = total * checkpoint / 100.0
+                  cumulative = 0
+                  chosen = active[-1]
+                  for r in active:
+                      cumulative += r["size"]
+                      if cumulative >= target:
+                          chosen = r
+                          break
+                  start = max(0, cumulative - chosen["size"])
+                  lo = start / total * 100 if total else 0
+                  hi = cumulative / total * 100 if total else 0
+                  print(f"CHECKPOINT {checkpoint}% -> asset {chosen['index']} | {chosen['id']} | {chosen['path']} | {chosen['type']} | {chosen['size']} bytes | cumulative {lo:.1f}%..{hi:.1f}%")
+
+          print("===== TOP PRELOAD-FLAGGED ASSETS BY DECLARED SIZE =====")
+          all_active = []
+          for manifest, rows in rows_by_manifest.items():
+              for r in rows:
+                  if r["preload"]:
+                      all_active.append((r["size"], manifest, r))
+          for size, manifest, r in sorted(all_active, reverse=True)[:100]:
+              print(f"{size}\t{manifest}\t{r['id']}\t{r['path']}\t{r['type']}\tpreload={str(r['preload']).lower()}\tembed={str(r['embed']).lower()}")
+
+          print("===== SUSPICIOUS PRELOAD-FLAGGED ASSETS =====")
+          suspicious = 0
+          for manifest, rows in sorted(rows_by_manifest.items()):
+              for r in rows:
+                  if not r["preload"]: continue
+                  rel = r["path"].lstrip("./")
+                  actual = root / rel
+                  if not actual.exists():
+                      print(f"MISSING\t{manifest}\t{r['id']}\t{r['path']}")
+                      suspicious += 1
+                  else:
+                      actual_size = actual.stat().st_size
+                      if actual_size == 0:
+                          print(f"ZERO_BYTES\t{manifest}\t{r['id']}\t{r['path']}")
+                          suspicious += 1
+                      elif r["size"] and actual_size != r["size"]:
+                          print(f"SIZE_MISMATCH\t{manifest}\t{r['id']}\t{r['path']}\tdeclared={r['size']}\tactual={actual_size}")
+                          suspicious += 1
+          if suspicious == 0:
+              print("No missing, zero-byte, or declared-size-mismatch preload assets found.")
+          if errors:
+              print("===== MANIFEST PARSE ERRORS =====")
+              for parts in errors:
+                  print("\\t".join(parts))
+          PY
+
       - name: Report largest HTML5 assets after cleanup
         shell: bash
         run: |
