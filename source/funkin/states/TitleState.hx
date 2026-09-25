@@ -102,10 +102,19 @@ class TitleState extends MusicBeatState
 	{
 		if (!initialized)
 		{
-			// Title audio is part of the default preloaded library on HTML5,
-			// so it can be accessed synchronously after the blue preloader finishes.
+			#if html5
+			openfl.Assets.loadSound('title:assets/sounds/confirmMenu.ogg').onComplete(function(_)
+			{
+				openfl.Assets.loadSound('title:assets/music/freakyMenu.ogg').onComplete(function(_)
+				{
+					if (!closedState) FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
+				});
+			});
+			#else
 			FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
+			#end
 		}
+		
 		Conductor.bpm = 102;
 		Conductor.bpmChangeMap.resize(0);
 		
@@ -193,7 +202,14 @@ class TitleState extends MusicBeatState
 					titleText.offset.set(278, 2);
 				}
 				
+				#if html5
+				openfl.Assets.loadSound('title:assets/sounds/confirmMenu.ogg').onComplete(function(_)
+				{
+					FlxG.sound.play(Paths.sound('confirmMenu'), 0.7);
+				});
+				#else
 				FlxG.sound.play(Paths.sound('confirmMenu'), 0.7);
+				#end
 				
 				FlxTimer.wait(1, () -> {
 					#if html5
