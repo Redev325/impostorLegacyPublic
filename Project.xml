@@ -52,7 +52,7 @@
 	<set name="BUILD_DIR" value="export/32bit" if="32bits" />
 	<set name="BUILD_DIR" value="${BUILD_DIR}-tracy" if="FEATURE_DEBUG_TRACY"/>
 
-	<assets path="LEGACY.md" rename="CHANGELOG.md"/>
+	<assets path="LEGACY.md" rename="CHANGELOG.md" if="desktop"/>
 	<assets path="content/mods-go-here.txt"/>
 	
 	<section unless="ASSET_REDIRECT">
@@ -104,7 +104,7 @@
 			exclude="vcr.ttf|vcr-srb.ttf" preload="false" embed="false" />
 
 		<library name="default" preload="false" />
-		<library name="title" preload="true" />
+		<library name="title" preload="false" />
 		<library name="mainmenu" preload="false" />
 		<library name="embedded" preload="false" />
 		<library name="gameplay" preload="false" />
