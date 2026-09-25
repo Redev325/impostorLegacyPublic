@@ -135,7 +135,7 @@ jobs:
           ! grep -R -n -E 'Sys\.getEnv\("TEMP"\)|sys\.io\.File\.saveBytes|Sys\.exit\(0\);' source/funkin/states/FNAFState.hx
           ! grep -R -n -E 'Type\.getClass\(FlxG\.state\)|Type\.getClassName\(Type\.getClass\(FlxG\.state\)\)' source/funkin/backend/CrashHandler.hx source/funkin/backend/DebugDisplay.hx
       - name: Setup Java for production web compilation
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
