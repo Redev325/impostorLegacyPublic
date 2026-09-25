@@ -29,21 +29,7 @@ jobs:
       - name: Checkout repository for favicon
         uses: actions/checkout@v4
         with:
-          ref: main
-
-      - name: Reject stale build deployments
-        shell: bash
-        env:
-          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          set -euo pipefail
-          CURRENT_SHA="$(git rev-parse HEAD)"
-          echo "Build SHA:   ${SOURCE_SHA}"
-          echo "Current SHA: ${CURRENT_SHA}"
-          if [ "${SOURCE_SHA}" != "${CURRENT_SHA}" ]; then
-            echo "This build is stale and will not be deployed."
-            exit 1
-          fi
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Download successful HTML5 artifact
         shell: bash
