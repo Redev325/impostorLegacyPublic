@@ -257,6 +257,19 @@ jobs:
           haxe -cp /tmp -cp "$LIME_SRC" -main ManifestInspector -neko /tmp/ManifestInspector.n
           neko /tmp/ManifestInspector.n "$MANIFEST_DIR" > /tmp/manifest-report.tsv
 
+          echo "===== GENERATED PRELOADER LIBRARY REGISTRATION ====="
+          PRELOADER_FILES="$(find export/release/html5 -type f \( -name 'ManifestResources.hx' -o -name 'ApplicationMain.hx' \) -print 2>/dev/null | sort || true)"
+          if [ -n "$PRELOADER_FILES" ]; then
+            printf '%s\n' "$PRELOADER_FILES"
+            while IFS= read -r file; do
+              echo "--- $file ---"
+              grep -nE 'preloadLibraries|preloadLibraryNames|addLibrary(Name)?\(' "$file" || true
+            done <<< "$PRELOADER_FILES"
+          else
+            echo "No generated ManifestResources.hx/ApplicationMain.hx files found."
+            find export/release/html5 -maxdepth 5 -type f \( -name '*.hx' -o -name '*.json' \) -print 2>/dev/null | head -100 || true
+          fi
+
           echo "===== MANIFEST SUMMARY ====="
           awk -F '\\t' '$1 == "MANIFEST" {printf "%s: %s assets\\n", $2, $4}' /tmp/manifest-report.tsv
 
@@ -355,18 +368,20 @@ jobs:
           for manifest, rows in sorted(rows_by_manifest.items()):
               for r in rows:
                   if not r["preload"]: continue
-                  rel = r["path"].lstrip("./")
+                  rel = (r["path"] or r["id"] or "").lstrip("./")
+                  if not rel or rel == "CHANGELOG.md":
+                      continue
                   actual = root / rel
-                  if not actual.exists():
-                      print(f"MISSING\t{manifest}\t{r['id']}\t{r['path']}")
+                  if not actual.exists() or not actual.is_file():
+                      print(f"MISSING\t{manifest}\t{r['id']}\t{rel}")
                       suspicious += 1
                   else:
                       actual_size = actual.stat().st_size
                       if actual_size == 0:
-                          print(f"ZERO_BYTES\t{manifest}\t{r['id']}\t{r['path']}")
+                          print(f"ZERO_BYTES\t{manifest}\t{r['id']}\t{rel}")
                           suspicious += 1
                       elif r["size"] and actual_size != r["size"]:
-                          print(f"SIZE_MISMATCH\t{manifest}\t{r['id']}\t{r['path']}\tdeclared={r['size']}\tactual={actual_size}")
+                          print(f"SIZE_MISMATCH\t{manifest}\t{r['id']}\t{rel}\tdeclared={r['size']}\tactual={actual_size}")
                           suspicious += 1
           if suspicious == 0:
               print("No missing, zero-byte, or declared-size-mismatch preload assets found.")
