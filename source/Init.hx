@@ -109,5 +109,4 @@ class Init extends FlxState
 			});
 	}
 	#end
-	}
 }
