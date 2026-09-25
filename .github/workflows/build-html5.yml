@@ -32,6 +32,11 @@ jobs:
         run: |
           haxelib run hxpkg setup
           haxelib run hxpkg install
+      - name: Patch Lime HTML5 font preload behavior
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/patch-lime-font-preload.py
+
       - name: Build Lime native tools
         run: |
           cd .haxelib/lime/git
@@ -123,11 +128,6 @@ jobs:
           edit('source/Splash.hx',lambda s:re.sub(r'(?s)(\tfunction logoFunc\(\)\n\t\{).*?(\n\t\}\n)',r'\1\n\t\tfinish();\n\t\2',s,count=1))
           edit('source/funkin/objects/menu/CosmicubeNode.hx',lambda s:re.sub(r'(?s)(inline function hasUpdogSaveData\(\):Bool\n\t\{).*?(\n\t\}\n)',r'\1\n\t\treturn false;\n\t\2',s,count=1))
           PY
-      - name: Patch Lime HTML5 font preload behavior
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/patch-lime-font-preload.py
-
       - name: Verify HTML5 compatibility patches
         run: |
           set -e
