@@ -193,11 +193,15 @@ jobs:
           grep -nE '<library name=.*preload=' Project.xml || true
 
           echo "===== DECODED HTML5 ASSET MANIFESTS ====="
-          LIME_SRC="$(find .haxelib/lime -type d -name src -print -quit 2>/dev/null || true)"
-          if [ -z "$LIME_SRC" ]; then
-            echo "ERROR: Could not find Lime src directory for manifest decoding."
+          LIME_MANIFEST="$(find .haxelib/lime -type f -path '*/src/lime/utils/AssetManifest.hx' -print -quit 2>/dev/null || true)"
+          if [ -z "$LIME_MANIFEST" ]; then
+            echo "ERROR: Could not find Lime AssetManifest.hx for manifest decoding."
+            find .haxelib/lime -type f -name AssetManifest.hx -print || true
             exit 1
           fi
+          LIME_SRC="$(printf '%s' "$LIME_MANIFEST" | sed 's#/lime/utils/AssetManifest\.hx$##')"
+          echo "Using Lime sources: $LIME_SRC"
+          echo "Using AssetManifest: $LIME_MANIFEST"
 
           cat > /tmp/ManifestInspector.hx <<'HX'
           import haxe.io.Path;
