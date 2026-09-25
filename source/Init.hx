@@ -97,6 +97,9 @@ class Init extends FlxState
 				trace('Title asset library load failed (attempt ' + (attempt + 1) + '): ' + Std.string(error));
 				if (attempt < 2)
 				{
+					// Remove the failed library before retrying so Lime creates a
+					// fresh AssetLibrary instead of returning the already-failed one.
+					openfl.Assets.unloadLibrary('title');
 					haxe.Timer.delay(() -> loadTitleLibrary(nextState, attempt + 1), 400);
 				}
 				else
