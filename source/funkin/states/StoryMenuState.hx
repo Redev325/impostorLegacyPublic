@@ -51,9 +51,6 @@ class StoryMenuState extends AmongUIState
 		PlayState.chartingMode = false;
 		
 		FunkinAssets.cache.clearStoredMemory();
-		#if html5
-		FunkinAssets.loadHtml5Libraries(['gameplay'], function() {});
-		#end
 		// FunkinAssets.cache.clearUnusedMemory();
 		
 		maze = new StoryNode('root');
@@ -161,6 +158,13 @@ class StoryMenuState extends AmongUIState
 			
 			var week:WeekData = WeekData.weeksLoaded.get(weekID);
 			var node:NodeData = week.node;
+			
+			// The finale has no node in its original data, but it is the next
+			// Story Mode week after Week 4.
+			if (node == null && weekID == 'week4Finale')
+			{
+				node = {parent: 'week4', direction: 'east'};
+			}
 			
 			if (node != null)
 			{
@@ -292,11 +296,9 @@ class StoryMenuState extends AmongUIState
 		}
 		
 		#if html5
-		// Load only this week's first song. The gameplay library is loaded in
-		// the Story Mode menu so entering a week does not download all music.
-		FunkinAssets.loadHtml5SongAssets(PlayState.storyMeta.playlist[0], function() {
-			FunkinAssets.loadHtml5Libraries(['gameplay'], startWeek);
-		});
+		// Gameplay visuals are already preloaded. Load only the selected song's
+		// chart/audio/text before entering PlayState.
+		FunkinAssets.loadHtml5SongAssets(PlayState.storyMeta.playlist[0], startWeek);
 		#else
 		startWeek();
 		#end

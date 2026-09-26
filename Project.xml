@@ -102,17 +102,17 @@
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="menus" include="AmaticSC-Bold.ttf" preload="true" embed="false" />
 
 		<!-- Everything else stays outside startup and main-menu loading. -->
-		<assets path="assets/legacy/data" rename="assets/data" library="gameplay" exclude="introText.txt" preload="false" embed="false" />
-		<assets path="assets/legacy/lang" rename="assets/lang" library="gameplay" exclude="english.json" preload="false" embed="false" />
-		<assets path="assets/legacy/scripts" rename="assets/scripts" library="gameplay" preload="false" embed="false" />
+		<assets path="assets/legacy/data" rename="assets/data" library="gameplay" exclude="introText.txt" preload="true" embed="false" />
+		<assets path="assets/legacy/lang" rename="assets/lang" library="gameplay" exclude="english.json" preload="true" embed="false" />
+		<assets path="assets/legacy/scripts" rename="assets/scripts" library="gameplay" preload="true" embed="false" />
 		<assets path="assets/legacy/shaders" rename="assets/shaders" library="gameplay" preload="false" embed="false" />
 		<assets path="assets/embeds" rename="assets" library="embedded" preload="false" embed="false" />
 		<assets path="assets/legacy/videos" rename="assets/videos" library="embedded" if="html5" preload="false" embed="false" />
 		<assets path="content/securitydlc" rename="content/securitydlc" library="embedded" embed="false" if="DLC" />
 		<assets path="assets/legacy/images" rename="assets/images" library="gameplay" if="html5"
-			exclude="menu*|icons*|awards*|currency*|logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml" preload="false" embed="false" />
+			exclude="menu*|icons*|awards*|currency*|logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml" preload="true" embed="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="gameplay"
-			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg|clickText.ogg|cosmicubePop.ogg|equip.ogg|equipPet.ogg|getbeans.ogg|hover.ogg|kill.ogg|locked.ogg|menu/looksie.ogg|panelAppear.ogg|panelDisappear.ogg|select.ogg|shopbuy.ogg|unlockSong.ogg" preload="false" embed="false" />
+			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg|clickText.ogg|cosmicubePop.ogg|equip.ogg|equipPet.ogg|getbeans.ogg|hover.ogg|kill.ogg|locked.ogg|menu/looksie.ogg|panelAppear.ogg|panelDisappear.ogg|select.ogg|shopbuy.ogg|unlockSong.ogg" preload="true" embed="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="music"
 			exclude="freakyMenu.ogg|finaleMenu.ogg" preload="false" embed="false" />
 		<assets path="assets/legacy/songs" rename="assets/songs" library="music" preload="false" embed="false" />
@@ -124,7 +124,7 @@
 		<library name="mainmenu" preload="true" />
 		<library name="menus" preload="true" />
 		<library name="embedded" preload="false" />
-		<library name="gameplay" preload="false" />
+		<library name="gameplay" preload="true" />
 		<library name="music" preload="false" />
 		<library name="fonts" preload="false" />
 	</section>

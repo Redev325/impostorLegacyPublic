@@ -843,9 +843,7 @@ class FreeplayState extends AmongUIState
 		}
 		
 		#if html5
-		FunkinAssets.loadHtml5SongAssets(song, function() {
-			FunkinAssets.loadHtml5Libraries(['gameplay'], startSong);
-		});
+		FunkinAssets.loadHtml5SongAssets(song, startSong);
 		#else
 		startSong();
 		#end
