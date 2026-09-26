@@ -51,6 +51,9 @@ class StoryMenuState extends AmongUIState
 		PlayState.chartingMode = false;
 		
 		FunkinAssets.cache.clearStoredMemory();
+		#if html5
+		FunkinAssets.loadHtml5Libraries(['gameplay'], function() {});
+		#end
 		// FunkinAssets.cache.clearUnusedMemory();
 		
 		maze = new StoryNode('root');
@@ -289,10 +292,11 @@ class StoryMenuState extends AmongUIState
 		}
 		
 		#if html5
-		// Story Mode reaches PlayState directly, so make sure the deferred
-		// gameplay and music libraries are loaded before Chart.fromSong() and
-		// PlayState.create() try to read their assets synchronously.
-		FunkinAssets.loadHtml5Libraries(['gameplay', 'music'], startWeek);
+		// Load only this week's first song. The gameplay library is loaded in
+		// the Story Mode menu so entering a week does not download all music.
+		FunkinAssets.loadHtml5SongAssets(PlayState.storyMeta.playlist[0], function() {
+			FunkinAssets.loadHtml5Libraries(['gameplay'], startWeek);
+		});
 		#else
 		startWeek();
 		#end

@@ -825,18 +825,32 @@ class FreeplayState extends AmongUIState
 	
 	public static function loadSong(song:String, silent:Bool = false):Void
 	{
-		// PlayState.storyMeta.difficulty = 1; // This would be 2 but I just made them all normal difficulty because -hard was annoying lol
+		function startSong():Void
+		{
+			final ret = PlayState.prepareForSong(song);
+			
+			if (ret != null)
+			{
+				trace('THIS CHART IS INVALID! FUCK!');
+				return;
+			}
+			
+			final switchToCharter:Bool = (FlxG.keys.pressed.SHIFT && ClientPrefs.inDevMode);
+			
+			if (switchToCharter) ChartEditorState._song = PlayState.SONG;
+			
+			FlxG.switchState(switchToCharter ? ChartEditorState.new : PlayState.new);
+		}
 		
-		final ret = PlayState.prepareForSong(song);
-		
-		if (ret != null) return trace('THIS CHART IS INVALID! FUCK!');
-		
-		final switchToCharter:Bool = (FlxG.keys.pressed.SHIFT && ClientPrefs.inDevMode);
-		
-		if (switchToCharter) ChartEditorState._song = PlayState.SONG;
-		
-		FlxG.switchState(switchToCharter ? ChartEditorState.new : PlayState.new);
+		#if html5
+		FunkinAssets.loadHtml5SongAssets(song, function() {
+			FunkinAssets.loadHtml5Libraries(['gameplay'], startSong);
+		});
+		#else
+		startSong();
+		#end
 	}
+
 	
 	override function destroy()
 	{

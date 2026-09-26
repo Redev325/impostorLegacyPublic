@@ -94,6 +94,77 @@ class FunkinAssets
 		#end
 	}
 
+	/**
+	 * Loads only the assets belonging to one song from the deferred HTML5
+	 * music library. This avoids downloading every song when one week starts.
+	 */
+	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void):Void
+	{
+		#if html5
+			final prefix:String = 'music:' + Paths.getCorePath('songs/' + Paths.sanitize(songName)) + '/';
+			final assets:Array<String> = [];
+			
+			for (asset in Assets.list())
+			{
+				if (asset.startsWith(prefix)) assets.push(asset);
+			}
+			
+			if (assets.length == 0)
+			{
+				Logger.log('No HTML5 song assets found for ' + songName + ' (' + prefix + ')', ERROR);
+				onComplete();
+				return;
+			}
+			
+			var index:Int = 0;
+			function loadNext():Void
+			{
+				if (index >= assets.length)
+				{
+					onComplete();
+					return;
+				}
+				
+				final assetId:String = assets[index++];
+				final lower:String = assetId.toLowerCase();
+				
+				if (lower.endsWith('.json') || lower.endsWith('.txt') || lower.endsWith('.hx') || lower.endsWith('.xml'))
+				{
+					Assets.loadText(assetId).onComplete(function(_) loadNext()).onError(function(error) {
+						Logger.log('Failed to load HTML5 song text ' + assetId + '\\nException: ' + error, ERROR);
+						loadNext();
+					});
+				}
+				else if (lower.endsWith('.ogg') || lower.endsWith('.wav') || lower.endsWith('.mp3'))
+				{
+					Assets.loadSound(assetId).onComplete(function(_) loadNext()).onError(function(error) {
+						Logger.log('Failed to load HTML5 song audio ' + assetId + '\\nException: ' + error, ERROR);
+						loadNext();
+					});
+				}
+				else if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg'))
+				{
+					Assets.loadBitmapData(assetId).onComplete(function(_) loadNext()).onError(function(error) {
+						Logger.log('Failed to load HTML5 song image ' + assetId + '\\nException: ' + error, ERROR);
+						loadNext();
+					});
+				}
+				else
+				{
+					Assets.loadBytes(assetId).onComplete(function(_) loadNext()).onError(function(error) {
+						Logger.log('Failed to load HTML5 song asset ' + assetId + '\\nException: ' + error, ERROR);
+						loadNext();
+					});
+				}
+			}
+			
+			loadNext();
+		#else
+			onComplete();
+		#end
+	}
+
+
 	static function resolveHtml5AssetId(path:String, ?type:AssetType):Null<String>
 	{
 		// Respect an already-qualified Lime asset ID.
