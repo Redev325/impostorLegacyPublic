@@ -56,7 +56,9 @@ class StoryMenuState extends AmongUIState
 		maze = new StoryNode('root');
 		cruiser = new StoryCruiser();
 		
+		#if !html5
 		DiscordClient.changePresence("Story Menu");
+		#end
 		
 		PlayState.missLimit = false;
 		FlxG.mouse.visible = true;
@@ -64,7 +66,9 @@ class StoryMenuState extends AmongUIState
 		persistentUpdate = true;
 		
 		initStory();
+		#if !html5
 		initStateScript();
+		#end
 		
 		highscore_string = Lang.str('highscore');
 		
@@ -137,7 +141,9 @@ class StoryMenuState extends AmongUIState
 		FlxG.camera.follow(cruiser, TOPDOWN, .15);
 		FlxG.camera.snapToTarget();
 		
+		#if !html5
 		scriptGroup.call('onCreatePost', []);
+		#end
 	}
 	
 	public function initStory():Void
