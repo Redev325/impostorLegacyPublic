@@ -261,7 +261,7 @@ class StoryMenuState extends AmongUIState
 	
 	public static function loadWeek(week:WeekData):Void
 	{
-		if (week == null) return;
+		if (week == null || week.songs == null || week.songs.length == 0) return;
 		
 		var playlist:Array<String> = [for (song in week.songs) song[0]];
 		
@@ -271,9 +271,31 @@ class StoryMenuState extends AmongUIState
 		PlayState.storyMeta.misses = 0;
 		PlayState.storyMeta.score = 0;
 		
-		PlayState.SONG = Chart.fromSong(PlayState.storyMeta.playlist[0], PlayState.storyMeta.difficulty);
+		// Keep the selected week's asset directory active. This matters for
+		// mod/DLC weeks and is harmless for the core Legacy weeks.
+		WeekData.setDirectoryFromWeek(week);
 		
-		FlxG.switchState(PlayState.new);
+		function startWeek():Void
+		{
+			try
+			{
+				PlayState.SONG = Chart.fromSong(PlayState.storyMeta.playlist[0], PlayState.storyMeta.difficulty);
+				FlxG.switchState(PlayState.new);
+			}
+			catch (e)
+			{
+				Logger.log('Failed to load Story Mode song ' + PlayState.storyMeta.playlist[0] + '\\nException: ' + e, ERROR);
+			}
+		}
+		
+		#if html5
+		// Story Mode reaches PlayState directly, so make sure the deferred
+		// gameplay and music libraries are loaded before Chart.fromSong() and
+		// PlayState.create() try to read their assets synchronously.
+		FunkinAssets.loadHtml5Libraries(['gameplay', 'music'], startWeek);
+		#else
+		startWeek();
+		#end
 	}
 	
 	var wasPressingCruiser:Bool = false;
