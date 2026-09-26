@@ -115,7 +115,63 @@
 			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg|clickText.ogg|cosmicubePop.ogg|equip.ogg|equipPet.ogg|getbeans.ogg|hover.ogg|kill.ogg|locked.ogg|menu/looksie.ogg|panelAppear.ogg|panelDisappear.ogg|select.ogg|shopbuy.ogg|unlockSong.ogg" preload="true" embed="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="music"
 			exclude="freakyMenu.ogg|finaleMenu.ogg" preload="false" embed="false" />
-		<assets path="assets/legacy/songs" rename="assets/songs" library="music" preload="false" embed="false" />
+		<!-- Songs are split into one deferred library per song so HTML5 can load only the selected track. -->
+		<assets path="assets/legacy/songs/armed" rename="assets/songs/armed" library="song_armed" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/ashes" rename="assets/songs/ashes" library="song_ashes" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/blackout" rename="assets/songs/blackout" library="song_blackout" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/boiling-point" rename="assets/songs/boiling-point" library="song_boiling-point" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/chewmate" rename="assets/songs/chewmate" library="song_chewmate" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/chippin" rename="assets/songs/chippin" library="song_chippin" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/chipping" rename="assets/songs/chipping" library="song_chipping" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/chlorophyll" rename="assets/songs/chlorophyll" library="song_chlorophyll" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/crewicide" rename="assets/songs/crewicide" library="song_crewicide" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/d'low" rename="assets/songs/d'low" library="song_d_low" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/danger" rename="assets/songs/danger" library="song_danger" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/defeat" rename="assets/songs/defeat" library="song_defeat" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/delusion" rename="assets/songs/delusion" library="song_delusion" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/double-kill" rename="assets/songs/double-kill" library="song_double-kill" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/double-trouble" rename="assets/songs/double-trouble" library="song_double-trouble" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/drippypop" rename="assets/songs/drippypop" library="song_drippypop" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/ejected" rename="assets/songs/ejected" library="song_ejected" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/esculent" rename="assets/songs/esculent" library="song_esculent" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/finale" rename="assets/songs/finale" library="song_finale" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/greatest-plan" rename="assets/songs/greatest-plan" library="song_greatest-plan" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/heartbeat" rename="assets/songs/heartbeat" library="song_heartbeat" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/identity-crisis" rename="assets/songs/identity-crisis" library="song_identity-crisis" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/idk" rename="assets/songs/idk" library="song_idk" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/inflorescence" rename="assets/songs/inflorescence" library="song_inflorescence" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/insane-streamer" rename="assets/songs/insane-streamer" library="song_insane-streamer" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/lemon-lime" rename="assets/songs/lemon-lime" library="song_lemon-lime" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/lights-down" rename="assets/songs/lights-down" library="song_lights-down" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/magmatic" rename="assets/songs/magmatic" library="song_magmatic" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/mando" rename="assets/songs/mando" library="song_mando" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/meltdown" rename="assets/songs/meltdown" library="song_meltdown" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/monotone-attack" rename="assets/songs/monotone-attack" library="song_monotone-attack" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/neurotic" rename="assets/songs/neurotic" library="song_neurotic" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/o2" rename="assets/songs/o2" library="song_o2" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/oversight" rename="assets/songs/oversight" library="song_oversight" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/ow" rename="assets/songs/ow" library="song_ow" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/pinkwave" rename="assets/songs/pinkwave" library="song_pinkwave" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/pretender" rename="assets/songs/pretender" library="song_pretender" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/reactor" rename="assets/songs/reactor" library="song_reactor" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/reinforcements" rename="assets/songs/reinforcements" library="song_reinforcements" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/rivals" rename="assets/songs/rivals" library="song_rivals" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/roomcode" rename="assets/songs/roomcode" library="song_roomcode" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/sabotage" rename="assets/songs/sabotage" library="song_sabotage" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/sauces-moogus" rename="assets/songs/sauces-moogus" library="song_sauces-moogus" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/stargazer" rename="assets/songs/stargazer" library="song_stargazer" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/sussus-moogus" rename="assets/songs/sussus-moogus" library="song_sussus-moogus" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/sussus-nuzzus" rename="assets/songs/sussus-nuzzus" library="song_sussus-nuzzus" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/sussus-toogus" rename="assets/songs/sussus-toogus" library="song_sussus-toogus" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/sussy-bussy" rename="assets/songs/sussy-bussy" library="song_sussy-bussy" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/titular" rename="assets/songs/titular" library="song_titular" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/tomongus-tuesday" rename="assets/songs/tomongus-tuesday" library="song_tomongus-tuesday" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/top-10" rename="assets/songs/top-10" library="song_top-10" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/torture" rename="assets/songs/torture" library="song_torture" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/turbulence" rename="assets/songs/turbulence" library="song_turbulence" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/victory" rename="assets/songs/victory" library="song_victory" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/voting-time" rename="assets/songs/voting-time" library="song_voting-time" preload="false" embed="false" />
+		<assets path="assets/legacy/songs/who" rename="assets/songs/who" library="song_who" preload="false" embed="false" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="fonts"
 			exclude="vcr.ttf|vcr-srb.ttf" preload="false" embed="false" />
 
@@ -126,6 +182,62 @@
 		<library name="embedded" preload="false" />
 		<library name="gameplay" preload="true" />
 		<library name="music" preload="false" />
+		<library name="song_armed" preload="false" />
+		<library name="song_ashes" preload="false" />
+		<library name="song_blackout" preload="false" />
+		<library name="song_boiling-point" preload="false" />
+		<library name="song_chewmate" preload="false" />
+		<library name="song_chippin" preload="false" />
+		<library name="song_chipping" preload="false" />
+		<library name="song_chlorophyll" preload="false" />
+		<library name="song_crewicide" preload="false" />
+		<library name="song_d_low" preload="false" />
+		<library name="song_danger" preload="false" />
+		<library name="song_defeat" preload="false" />
+		<library name="song_delusion" preload="false" />
+		<library name="song_double-kill" preload="false" />
+		<library name="song_double-trouble" preload="false" />
+		<library name="song_drippypop" preload="false" />
+		<library name="song_ejected" preload="false" />
+		<library name="song_esculent" preload="false" />
+		<library name="song_finale" preload="false" />
+		<library name="song_greatest-plan" preload="false" />
+		<library name="song_heartbeat" preload="false" />
+		<library name="song_identity-crisis" preload="false" />
+		<library name="song_idk" preload="false" />
+		<library name="song_inflorescence" preload="false" />
+		<library name="song_insane-streamer" preload="false" />
+		<library name="song_lemon-lime" preload="false" />
+		<library name="song_lights-down" preload="false" />
+		<library name="song_magmatic" preload="false" />
+		<library name="song_mando" preload="false" />
+		<library name="song_meltdown" preload="false" />
+		<library name="song_monotone-attack" preload="false" />
+		<library name="song_neurotic" preload="false" />
+		<library name="song_o2" preload="false" />
+		<library name="song_oversight" preload="false" />
+		<library name="song_ow" preload="false" />
+		<library name="song_pinkwave" preload="false" />
+		<library name="song_pretender" preload="false" />
+		<library name="song_reactor" preload="false" />
+		<library name="song_reinforcements" preload="false" />
+		<library name="song_rivals" preload="false" />
+		<library name="song_roomcode" preload="false" />
+		<library name="song_sabotage" preload="false" />
+		<library name="song_sauces-moogus" preload="false" />
+		<library name="song_stargazer" preload="false" />
+		<library name="song_sussus-moogus" preload="false" />
+		<library name="song_sussus-nuzzus" preload="false" />
+		<library name="song_sussus-toogus" preload="false" />
+		<library name="song_sussy-bussy" preload="false" />
+		<library name="song_titular" preload="false" />
+		<library name="song_tomongus-tuesday" preload="false" />
+		<library name="song_top-10" preload="false" />
+		<library name="song_torture" preload="false" />
+		<library name="song_turbulence" preload="false" />
+		<library name="song_victory" preload="false" />
+		<library name="song_voting-time" preload="false" />
+		<library name="song_who" preload="false" />
 		<library name="fonts" preload="false" />
 	</section>
 
