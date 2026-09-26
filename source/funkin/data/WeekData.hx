@@ -162,7 +162,23 @@ class WeekData
 		var txtPath = Paths.getPath('data/weeks/weekList.txt');
 		if (!FunkinAssets.exists(txtPath)) txtPath = Paths.getPath('weeks/weekList.txt');
 		
-		final sexList:Array<String> = CoolUtil.coolTextFile(txtPath);
+		var sexList:Array<String> = CoolUtil.coolTextFile(txtPath);
+
+		#if html5
+		// The HTML5 package does not contain the old weekList.txt file. The
+		// actual core week files live under assets/data/weeks, so discover them
+		// directly from the Lime/OpenFL asset library instead of relying on the
+		// desktop FileSystem path layout (assets/weeks/...).
+		if (sexList.length == 0)
+		{
+			final coreWeeksDirectory:String = Paths.getCorePath('data/weeks');
+			for (file in FunkinAssets.readDirectory(coreWeeksDirectory))
+			{
+				if (!file.endsWith('.json')) continue;
+				sexList.push(file.withoutExtension());
+			}
+		}
+		#end
 		
 		for (i in 0...sexList.length)
 		{
@@ -224,6 +240,22 @@ class WeekData
 						addWeek(file.withoutExtension(), path, directories[i], i, originalLength);
 					}
 				}
+			}
+		}
+		#end
+
+		#if html5
+		// HTML5 core weeks are stored in the menus library at data/weeks.
+		// Load them explicitly using asset-library paths so Story Mode and
+		// Freeplay both see the real week JSON files.
+		final html5WeeksDirectory:String = Paths.getCorePath('data/weeks');
+		if (FunkinAssets.exists(html5WeeksDirectory))
+		{
+			for (file in FunkinAssets.readDirectory(html5WeeksDirectory))
+			{
+				if (!file.endsWith('.json')) continue;
+				final weekId:String = file.withoutExtension();
+				addWeek(weekId, Path.join([html5WeeksDirectory, file]), Paths.getCorePath(), 0, 1);
 			}
 		}
 		#end
