@@ -34,14 +34,18 @@ class CosmicubeSelectState extends AmongUIState
 		CosmicubeData.reload();
 		CosmeticsSubstate.preloadForFreeplay();
 		
+		#if !html5
 		DiscordClient.changePresence("Cosmicube Menu");
+		#end
 		
 		var prevMod:Null<String> = Mods.currentModDirectory;
 		Mods.currentModDirectory = null;
 		
 		persistentUpdate = true;
 		
+		#if !html5
 		initStateScript();
+		#end
 		
 		add(upperBar);
 		add(backButton).revive();
@@ -74,7 +78,9 @@ class CosmicubeSelectState extends AmongUIState
 		
 		select(0);
 		
+		#if !html5
 		scriptGroup.call('onCreatePost', []);
+		#end
 	}
 	
 	override function closeSubState():Void
