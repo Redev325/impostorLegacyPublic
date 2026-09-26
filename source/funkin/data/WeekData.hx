@@ -247,18 +247,16 @@ class WeekData
 		#end
 
 		#if html5
-		// HTML5 core weeks are stored in the preloaded menus library at
-		// data/weeks. Load the actual JSON files directly; the old desktop
-		// weekList.txt/assets/weeks layout is not present in this package.
+		// HTML5 core weeks are virtual assets inside the preloaded menus
+		// library. Directories are not AssetType entries, so do NOT gate this
+		// scan with FunkinAssets.exists(directory). Just enumerate the virtual
+		// directory and load each JSON week that it contains.
 		final html5WeeksDirectory:String = Paths.getCorePath('data/weeks');
-		if (FunkinAssets.exists(html5WeeksDirectory))
+		for (file in FunkinAssets.readDirectory(html5WeeksDirectory))
 		{
-			for (file in FunkinAssets.readDirectory(html5WeeksDirectory))
-			{
-				if (!file.endsWith('.json')) continue;
-				final weekId:String = file.withoutExtension();
-				addWeek(weekId, Path.join([html5WeeksDirectory, file]), Paths.getCorePath(), 0, 1);
-			}
+			if (!file.endsWith('.json')) continue;
+			final weekId:String = file.withoutExtension();
+			addWeek(weekId, Path.join([html5WeeksDirectory, file]), Paths.getCorePath(), 0, 1);
 		}
 		#end
 		
