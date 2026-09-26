@@ -105,7 +105,7 @@
 
 		<library name="default" preload="false" />
 		<library name="title" preload="false" />
-		<library name="mainmenu" preload="false" />
+		<library name="mainmenu" preload="true" />
 		<library name="embedded" preload="false" />
 		<library name="gameplay" preload="false" />
 		<library name="music" preload="false" />
