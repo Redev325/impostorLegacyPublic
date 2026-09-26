@@ -417,7 +417,21 @@ class MainMenuState extends MusicBeatState
 		// menu library completely before constructing any of those states.
 		openfl.Assets.loadLibrary('menus')
 			.onComplete(function(_) {
-				switchToSelectionState();
+				openfl.Assets.loadLibrary('gameplay')
+					.onComplete(function(_) {
+						openfl.Assets.loadLibrary('fonts')
+							.onComplete(function(_) {
+								switchToSelectionState();
+							})
+							.onError(function(error) {
+								trace('Failed to load font assets: ' + Std.string(error));
+								lockMovement = false;
+							});
+					})
+					.onError(function(error) {
+						trace('Failed to load gameplay menu data: ' + Std.string(error));
+						lockMovement = false;
+					});
 			})
 			.onError(function(error) {
 				trace('Failed to load secondary menu assets: ' + Std.string(error));
