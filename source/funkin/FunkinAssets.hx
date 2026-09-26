@@ -301,6 +301,23 @@ class FunkinAssets
 	}
 	
 	/**
+	 * Returns the platform font name for a font asset.
+	 *
+	 * On HTML5, resolve through the preloaded library set first so a duplicate
+	 * runtime-only font cannot trigger Lime's synchronous-access error.
+	 */
+	public static function getFontName(path:String):String
+	{
+		#if html5
+		final resolved = resolveHtml5AssetId(path, FONT);
+		if (resolved != null) return Assets.getFont(resolved).fontName;
+		return path;
+		#else
+		return Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path;
+		#end
+	}
+
+	/**
 	 * Constructs a Sound instance out of a `OGG Vorbis` file providing dramatically faster load times on larger files.
 	 * 
 	 * These do not support `.wav` and should be using sparingly
