@@ -89,6 +89,7 @@
 		<!-- Secondary menu content is loaded on demand after the main menu. -->
 		<assets path="assets/legacy/images/menu/story" rename="assets/images/menu/story" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/images/menu/freeplay" rename="assets/images/menu/freeplay" library="menus" preload="true" embed="false" />
+		<assets path="assets/legacy/images/menu/cosmicube" rename="assets/images/menu/cosmicube" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/data/weeks" rename="assets/data/weeks" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/data/cosmicube" rename="assets/data/cosmicube" library="menus" preload="true" embed="false" />
