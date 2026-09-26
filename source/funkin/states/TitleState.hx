@@ -317,15 +317,22 @@ class TitleState extends MusicBeatState
 		if (!closedState)
 		{
 			sickBeats++;
+			#if !html5
 			scriptGroup.set('curBeat', sickBeats);
+			#end
 		}
 		
 		#if !html5
 		if (!isHardcodedState() || scriptGroup.call('onBeatHit', []) == ScriptConstants.STOP_FUNC) return;
 		#end
 		
-		// just in case
-		if (isHardcodedState())
+		// HTML5 starts the title without loading the gameplay script library.
+		// Keep the built-in title animation running without consulting scripts.
+		var runHardcodedBeat:Bool = true;
+		#if !html5
+		runHardcodedBeat = isHardcodedState();
+		#end
+		if (runHardcodedBeat)
 		{
 			if (logo != null)
 			{
