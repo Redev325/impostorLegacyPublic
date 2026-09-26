@@ -91,6 +91,8 @@
 		<assets path="assets/legacy/images/menu/freeplay" rename="assets/images/menu/freeplay" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/images/menu/cosmicube" rename="assets/images/menu/cosmicube" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="menus" preload="true" embed="false" />
+		<!-- Currency icons are used by the secondary menu UI (AmongUIState, FreeplayCard, CosmicubeCard). Keep them in the preloaded menu library so Paths.image() can retrieve them synchronously on HTML5. -->
+		<assets path="assets/legacy/images/currency" rename="assets/images/currency" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/data/weeks" rename="assets/data/weeks" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/data/cosmicube" rename="assets/data/cosmicube" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/data/awards.json" rename="assets/data/awards.json" library="menus" preload="true" embed="false" />
@@ -105,7 +107,7 @@
 		<assets path="assets/legacy/videos" rename="assets/videos" library="embedded" if="html5" preload="false" embed="false" />
 		<assets path="content/securitydlc" rename="content/securitydlc" library="embedded" embed="false" if="DLC" />
 		<assets path="assets/legacy/images" rename="assets/images" library="gameplay" if="html5"
-			exclude="menu*|icons*|awards*|logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml" preload="false" embed="false" />
+			exclude="menu*|icons*|awards*|currency*|logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml" preload="false" embed="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="gameplay"
 			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" preload="false" embed="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="music"
