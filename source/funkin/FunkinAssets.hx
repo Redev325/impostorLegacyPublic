@@ -23,19 +23,46 @@ class FunkinAssets
 	 */
 	public static final cache:FunkinCache = new FunkinCache();
 
+	static final HTML5_PRELOADED_LIBRARIES:Array<String> = ['title', 'mainmenu', 'menus'];
 	static final HTML5_LIBRARIES:Array<String> = ['title', 'mainmenu', 'menus', 'embedded', 'gameplay', 'music', 'fonts'];
 
 	#if html5
+	/**
+	 * Resolve an asset to the library that is actually ready for synchronous
+	 * access in the HTML5 build.
+	 *
+	 * Lime's unqualified Assets.exists(path) can report an asset from a
+	 * runtime-only library (for example gameplay:assets/images/currency/beans.png)
+	 * even when the same asset also exists in a preloaded menu library. Choosing
+	 * that runtime copy makes Assets.getBitmapData/getSound/getText throw the
+	 * "exists, but only asynchronously" error. Prefer preloaded libraries first.
+	 */
 	static function resolveHtml5AssetId(path:String, ?type:AssetType):Null<String>
 	{
-		if (Assets.exists(path, type)) return path;
+		// Respect an already-qualified Lime asset ID.
+		if (path.indexOf(':') > 0)
+		{
+			return Assets.exists(path, type) ? path : null;
+		}
+
+		// Prefer libraries registered with the preloader.
+		for (library in HTML5_PRELOADED_LIBRARIES)
+		{
+			if (!Assets.hasLibrary(library)) continue;
+			final id = library + ':' + path;
+			if (Assets.exists(id, type)) return id;
+		}
+
+		// Only fall back to runtime libraries when no preloaded copy exists.
 		for (library in HTML5_LIBRARIES)
 		{
 			if (!Assets.hasLibrary(library)) continue;
 			final id = library + ':' + path;
 			if (Assets.exists(id, type)) return id;
 		}
-		return null;
+
+		// Finally accept a genuinely default/unqualified asset.
+		return Assets.exists(path, type) ? path : null;
 	}
 	#end
 	
@@ -83,15 +110,13 @@ class FunkinAssets
 		#if (MODS_ALLOWED || ASSET_REDIRECT)
 		if (FileSystem.exists(path)) return File.getBytes(path);
 		#end
-		if (Assets.exists(path)) return Assets.getBytes(path);
 		#if html5
 		final resolved = resolveHtml5AssetId(path);
 		if (resolved != null) return Assets.getBytes(resolved);
+		#else
+		if (Assets.exists(path)) return Assets.getBytes(path);
 		#end
-		else
-		{
-			throw 'Couldnt find file at path [$path]';
-		}
+		throw 'Couldnt find file at path [$path]';
 	}
 	
 	/**
@@ -101,17 +126,14 @@ class FunkinAssets
 	{
 		#if (MODS_ALLOWED || ASSET_REDIRECT)
 		if (FileSystem.exists(path)) return File.getContent(path);
-		else
 		#end
-		if (Assets.exists(path)) return Assets.getText(path);
 		#if html5
 		final resolved = resolveHtml5AssetId(path, TEXT);
 		if (resolved != null) return Assets.getText(resolved);
+		#else
+		if (Assets.exists(path)) return Assets.getText(path);
 		#end
-		else
-		{
-			throw 'Couldnt find file at path [$path]';
-		}
+		throw 'Couldnt find file at path [$path]';
 	}
 	
 	/**
@@ -121,18 +143,16 @@ class FunkinAssets
 	 */
 	public static function getBitmapData(path:String, useCache:Bool = true):Null<BitmapData>
 	{
-		var bitmap:Null<BitmapData> = null;
-		#if (MODS_ALLOWED || ASSET_REDIRECT) if (FileSystem.exists(path)) bitmap = BitmapData.fromFile(path);
-		else #end if (Assets.exists(path, IMAGE)) bitmap = Assets.getBitmapData(path, useCache);
-		#if html5
-		if (bitmap == null)
-		{
-			final resolved = resolveHtml5AssetId(path, IMAGE);
-			if (resolved != null) bitmap = Assets.getBitmapData(resolved, useCache);
-		}
+		#if (MODS_ALLOWED || ASSET_REDIRECT)
+		if (FileSystem.exists(path)) return BitmapData.fromFile(path);
 		#end
-		
-		return bitmap;
+		#if html5
+		final resolved = resolveHtml5AssetId(path, IMAGE);
+		if (resolved != null) return Assets.getBitmapData(resolved, useCache);
+		return null;
+		#else
+		return Assets.exists(path, IMAGE) ? Assets.getBitmapData(path, useCache) : null;
+		#end
 	}
 	
 	/**
@@ -142,13 +162,12 @@ class FunkinAssets
 	{
 		#if (MODS_ALLOWED || ASSET_REDIRECT)
 		if (FileSystem.exists(path)) return true;
-		else
 		#end
-		if (Assets.exists(path, type)) return true;
 		#if html5
-		if (type == null ? resolveHtml5AssetId(path) != null : resolveHtml5AssetId(path, type) != null) return true;
+		return (type == null ? resolveHtml5AssetId(path) != null : resolveHtml5AssetId(path, type) != null);
+		#else
+		return Assets.exists(path, type);
 		#end
-		else return false;
 	}
 	
 	/**
@@ -260,14 +279,17 @@ class FunkinAssets
 		
 		var sound:Null<Sound> = null;
 		
-		#if (MODS_ALLOWED || ASSET_REDIRECT) if (FileSystem.exists(key)) sound = Sound.fromFile(key);
-		else #end if (Assets.exists(key, SOUND)) sound = Assets.getSound(key, true);
+		#if (MODS_ALLOWED || ASSET_REDIRECT)
+		if (FileSystem.exists(key)) sound = Sound.fromFile(key);
+		#end
 		#if html5
 		if (sound == null)
 		{
 			final resolved = resolveHtml5AssetId(key, SOUND);
 			if (resolved != null) sound = Assets.getSound(resolved, true);
 		}
+		#else
+		if (sound == null && Assets.exists(key, SOUND)) sound = Assets.getSound(key, true);
 		#end
 		
 		if (sound != null)
