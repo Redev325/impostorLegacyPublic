@@ -59,7 +59,9 @@ class MainMenuState extends MusicBeatState
 	{
 		Mods.currentModDirectory = null;
 		
+		#if !html5
 		DiscordClient.changePresence("In the Menus");
+		#end
 		Lang.reloadLangFile();
 		
 		persistentUpdate = persistentDraw = true;
@@ -67,7 +69,9 @@ class MainMenuState extends MusicBeatState
 		if (ClientPrefs.finaleState == ACTIVE) FunkinSound.playMusic(Paths.music('finaleMenu'), 0);
 		else if (FlxG.sound.music == null) FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
 		
+		#if !html5
 		initStateScript();
+		#end
 		
 		starFG = new FlxBackdrop(Paths.image('menu/common/starFG'));
 		add(starFG);
@@ -174,7 +178,9 @@ class MainMenuState extends MusicBeatState
 		var shinies:Int = ProgressionUtil.getShinies();
 		for (i => shiny in menuShinies) shiny.visible = (i < shinies);
 		
+		#if !html5
 		scriptGroup.call('onCreatePost', []);
+		#end
 	}
 	
 	var backpanel:FlxSprite;
@@ -491,6 +497,8 @@ class MainMenuState extends MusicBeatState
 		
 		super.update(elapsed);
 		
+		#if !html5
 		scriptGroup.call('onUpdatePost', [elapsed]);
+		#end
 	}
 }
