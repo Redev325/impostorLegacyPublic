@@ -84,6 +84,8 @@
 		<assets path="assets/legacy/images/menu/common/controls" rename="assets/images/menu/common/controls" library="mainmenu" preload="true" embed="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="mainmenu"
 			include="cancelMenu.ogg|scrollMenu.ogg" preload="true" embed="false" />
+		<assets path="assets/legacy/sounds" rename="assets/sounds" library="menus"
+			include="clickText.ogg|confirmMenu.ogg|cosmicubePop.ogg|equip.ogg|equipPet.ogg|getbeans.ogg|hover.ogg|kill.ogg|locked.ogg|menu/looksie.ogg|panelAppear.ogg|panelDisappear.ogg|select.ogg|shopbuy.ogg|unlockSong.ogg" preload="true" embed="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu" include="finaleMenu.ogg" preload="true" embed="false" />
 
 		<!-- Secondary menu content is loaded on demand after the main menu. -->
@@ -110,7 +112,7 @@
 		<assets path="assets/legacy/images" rename="assets/images" library="gameplay" if="html5"
 			exclude="menu*|icons*|awards*|currency*|logoBumpin.png|logoBumpin.xml|cursor.png|alphabet.png|alphabet.xml" preload="false" embed="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="gameplay"
-			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg" preload="false" embed="false" />
+			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg|clickText.ogg|cosmicubePop.ogg|equip.ogg|equipPet.ogg|getbeans.ogg|hover.ogg|kill.ogg|locked.ogg|menu/looksie.ogg|panelAppear.ogg|panelDisappear.ogg|select.ogg|shopbuy.ogg|unlockSong.ogg" preload="false" embed="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="music"
 			exclude="freakyMenu.ogg|finaleMenu.ogg" preload="false" embed="false" />
 		<assets path="assets/legacy/songs" rename="assets/songs" library="music" preload="false" embed="false" />
