@@ -412,29 +412,36 @@ class MainMenuState extends MusicBeatState
 	function switchToSelection()
 	{
 		#if html5
-		// Story, Freeplay, Cosmicube and the other secondary menus use assets
-		// that are intentionally outside the main-menu preload. Load that small
-		// menu library completely before constructing any of those states.
-		openfl.Assets.loadLibrary('menus')
+		// Make every secondary-menu library explicitly ready before constructing
+		// the target state. This keeps Lime/OpenFL from exposing a manifest entry
+		// as "async-only" to Flixel during AmongUIState.create().
+		openfl.Assets.loadLibrary('mainmenu')
 			.onComplete(function(_) {
-				openfl.Assets.loadLibrary('gameplay')
+				openfl.Assets.loadLibrary('menus')
 					.onComplete(function(_) {
-						openfl.Assets.loadLibrary('fonts')
+						openfl.Assets.loadLibrary('gameplay')
 							.onComplete(function(_) {
-								switchToSelectionState();
+								openfl.Assets.loadLibrary('fonts')
+									.onComplete(function(_) {
+										switchToSelectionState();
+									})
+									.onError(function(error) {
+										trace('Failed to load font assets: ' + Std.string(error));
+										lockMovement = false;
+									});
 							})
 							.onError(function(error) {
-								trace('Failed to load font assets: ' + Std.string(error));
+								trace('Failed to load gameplay menu data: ' + Std.string(error));
 								lockMovement = false;
 							});
 					})
 					.onError(function(error) {
-						trace('Failed to load gameplay menu data: ' + Std.string(error));
+						trace('Failed to load secondary menu assets: ' + Std.string(error));
 						lockMovement = false;
 					});
 			})
 			.onError(function(error) {
-				trace('Failed to load secondary menu assets: ' + Std.string(error));
+				trace('Failed to load main menu assets: ' + Std.string(error));
 				lockMovement = false;
 			});
 		#else
