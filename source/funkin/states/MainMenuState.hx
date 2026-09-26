@@ -411,6 +411,25 @@ class MainMenuState extends MusicBeatState
 	
 	function switchToSelection()
 	{
+		#if html5
+		// Story, Freeplay, Cosmicube and the other secondary menus use assets
+		// that are intentionally outside the main-menu preload. Load that small
+		// menu library completely before constructing any of those states.
+		openfl.Assets.loadLibrary('menus')
+			.onComplete(function(_) {
+				switchToSelectionState();
+			})
+			.onError(function(error) {
+				trace('Failed to load secondary menu assets: ' + Std.string(error));
+				lockMovement = false;
+			});
+		#else
+		switchToSelectionState();
+		#end
+	}
+
+	function switchToSelectionState():Void
+	{
 		switch (curMenuItem)
 		{
 			case 0:
