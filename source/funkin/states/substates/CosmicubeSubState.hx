@@ -75,7 +75,9 @@ class CosmicubeSubState extends MusicBeatSubstate
 		CosmicubeData.reload(false);
 		CosmeticsSubstate.preloadForFreeplay();
 		
+		#if DISCORD_ALLOWED
 		DiscordClient.changePresence("Cosmicube Menu");
+		#end
 		
 		this.meta = (CosmicubeData.cosmicubeMetas.get(cosmicube) ?? CosmicubeData.fallbackMeta);
 		
@@ -111,7 +113,9 @@ class CosmicubeSubState extends MusicBeatSubstate
 		maze.camera = cubeCamera;
 		
 		initCosmicube(cosmicube);
+		#if !html5
 		initStateScript();
+		#end
 		
 		pane = new FlxSpriteGroup();
 		pane.camera = overlayCamera;
@@ -189,7 +193,9 @@ class CosmicubeSubState extends MusicBeatSubstate
 		FlxTween.tween(cubeCamera, {alpha: 1, y: cubeCamera.y - 120}, .35, {ease: FlxEase.circOut});
 		FlxTween.tween(awardCamera, {alpha: 1}, .35, {ease: FlxEase.circOut});
 		
+		#if !html5
 		scriptGroup.call('onCreatePost', []);
+		#end
 	}
 	
 	public function closeTween():Void
