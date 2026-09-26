@@ -177,7 +177,9 @@ class FreeplayState extends AmongUIState
 		FunkinAssets.cache.clearStoredMemory();
 		// FunkinAssets.cache.clearUnusedMemory();
 		
+		#if !html5
 		DiscordClient.changePresence("Freeplay Menu");
+		#end
 		
 		funkin.data.CosmicubeData.reload();
 		
@@ -186,7 +188,9 @@ class FreeplayState extends AmongUIState
 		persistentUpdate = true;
 		FlxG.mouse.visible = true;
 		
-		initStateScript(); // unnecessary
+		#if !html5
+		initStateScript();
+		#end
 		
 		add(upperBar);
 		add(backButton).revive();
@@ -233,7 +237,9 @@ class FreeplayState extends AmongUIState
 		sectionText.zIndex = 20;
 		add(sectionText);
 		
+		#if !html5
 		scriptGroup.call('onCreatePost', []);
+		#end
 		changeSection(0, false);
 	}
 	
@@ -247,7 +253,9 @@ class FreeplayState extends AmongUIState
 			cachedCards = new FlxTypedGroup();
 		}
 		
+		#if !html5
 		scriptGroup.call('onSectionChange', [curMonth]);
+		#end
 		var num = 0;
 		
 		week_songs = [];
@@ -304,7 +312,9 @@ class FreeplayState extends AmongUIState
 			
 		animateUnlock();
 		refreshZ();
+		#if !html5
 		scriptGroup.call('onSectionPost', [curMonth]);
+		#end
 	}
 	
 	function animateUnlock(fast:Bool = false):Void
@@ -449,7 +459,9 @@ class FreeplayState extends AmongUIState
 		
 		changePortrait(change);
 		
+		#if !html5
 		scriptGroup.call('onSongChange', [song.songName]);
+		#end
 		intendedScore = Highscore.getScore(song.songName, 1);
 		intendedRating = Highscore.getRating(song.songName, 1);
 	}
@@ -463,7 +475,9 @@ class FreeplayState extends AmongUIState
 		
 		localCurrency = (song.lock == 'shop' && ws_lock[curSelect] ? song.currency : CosmicubeData.currentCurrency);
 		
+		#if !html5
 		scriptGroup.call('onPortraitChange', [porty, prevPort]);
+		#end
 		if (prevPort != porty)
 		{
 			portrait.loadGraphic(Paths.image(ext + 'portraits/' + porty)); // animation.play(week_songs[curSelect][2]);
