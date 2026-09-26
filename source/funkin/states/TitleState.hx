@@ -80,7 +80,9 @@ class TitleState extends MusicBeatState
 		
 		randomIntroText = FlxG.random.getObject(getIntroText());
 		
+		#if !html5
 		initStateScript();
+		#end
 		
 		startIntro();
 		
@@ -126,7 +128,11 @@ class TitleState extends MusicBeatState
 		Conductor.bpm = 102;
 		Conductor.bpmChangeMap.resize(0);
 		
-		if (isHardcodedState() && scriptGroup.call('onStartIntro') != ScriptConstants.STOP_FUNC)
+		var canStartIntro:Bool = true;
+		#if !html5
+		canStartIntro = isHardcodedState() && scriptGroup.call('onStartIntro') != ScriptConstants.STOP_FUNC;
+		#end
+		if (canStartIntro)
 		{
 			starBG = new FlxBackdrop(Paths.image('menu/common/starBG'));
 			starBG.alpha = 0.001;
@@ -177,7 +183,9 @@ class TitleState extends MusicBeatState
 			closedState = false;
 		}
 		
+		#if !html5
 		scriptGroup.call('onCreatePost', []);
+		#end
 	}
 	
 	override function update(elapsed:Float)
@@ -189,17 +197,23 @@ class TitleState extends MusicBeatState
 			starFG.x = FlxMath.lerp(starFG.x, starFG.x - 1, elapsed * 9);
 		}
 		
+		#if !html5
 		if (!isHardcodedState())
 		{
 			super.update(elapsed);
 			return;
 		}
+		#end
 		
 		final pressedEnter:Bool = FlxG.gamepads.lastActive?.justPressed.START || FlxG.keys.justPressed.ENTER || controls.ACCEPT || FlxG.mouse.justPressed;
 		
 		if (!transitioning && skippedIntro)
 		{
-			if (pressedEnter && scriptGroup.call('onEnter', []) != ScriptConstants.STOP_FUNC)
+			var acceptEnter:Bool = pressedEnter;
+			#if !html5
+			acceptEnter = pressedEnter && scriptGroup.call('onEnter', []) != ScriptConstants.STOP_FUNC;
+			#end
+			if (acceptEnter)
 			{
 				FlxG.camera.flash(ClientPrefs.flashing ? FlxColor.WHITE : 0x4CFFFFFF, 1);
 				transitioning = true;
@@ -306,7 +320,9 @@ class TitleState extends MusicBeatState
 			scriptGroup.set('curBeat', sickBeats);
 		}
 		
+		#if !html5
 		if (!isHardcodedState() || scriptGroup.call('onBeatHit', []) == ScriptConstants.STOP_FUNC) return;
+		#end
 		
 		// just in case
 		if (isHardcodedState())
@@ -375,7 +391,11 @@ class TitleState extends MusicBeatState
 
 	public function skipIntro():Void
 	{
-		if (scriptGroup.call('onSkipIntro', []) != ScriptConstants.STOP_FUNC && !skippedIntro)
+		var canSkipIntro:Bool = true;
+		#if !html5
+		canSkipIntro = scriptGroup.call('onSkipIntro', []) != ScriptConstants.STOP_FUNC;
+		#end
+		if (canSkipIntro && !skippedIntro)
 		{
 			ngSpr?.kill();
 			textGroup?.kill();
