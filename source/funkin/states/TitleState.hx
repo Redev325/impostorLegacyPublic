@@ -393,6 +393,9 @@ class TitleState extends MusicBeatState
 		if (logo != null) logo.alpha = 1;
 		if (titleText != null) titleText.alpha = 1;
 
+		// Restore the title-entry flash now that the title is fully visible.
+		FlxG.camera.flash(FlxColor.WHITE, 1);
+
 		skippedIntro = true;
 	}
 
