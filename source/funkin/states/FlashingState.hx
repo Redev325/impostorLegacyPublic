@@ -51,13 +51,17 @@ You may change this anytime in the Options menu.
 			}
 			else
 			{
-				// Do not rely on FlxFlicker's completion callback for the state change.
-				// On HTML5 that callback can leave the warning screen faded out while
-				// the game remains on an otherwise black state.
-				FlxFlicker.flicker(warnText, 1, 0.1, false, true);
-				new FlxTimer().start(1.5, function(tmr:FlxTimer) {
-					switchToTitle();
+				#if html5
+				// On HTML5, leave the warning immediately. The title screen handles
+				// its own visuals, so the warning transition cannot leave a black frame.
+				switchToTitle();
+				#else
+				FlxFlicker.flicker(warnText, 1, 0.1, false, true, function(flk:FlxFlicker) {
+					new FlxTimer().start(0.5, function(tmr:FlxTimer) {
+						switchToTitle();
+					});
 				});
+				#end
 			}
 			
 			leftState = true;
