@@ -269,7 +269,11 @@ class MainMenuState extends MusicBeatState
 		for (i in 0...menuButtons.length)
 		{
 			var btn = menuButtons[i];
-			var icon = new FunkinSprite().loadAtlas('${ext}new buttons and stuff');
+			// Use a normal Sparrow atlas here. The custom FlxAnimate loader can
+			// leave frame metadata undefined in the HTML5 build, causing the
+			// JavaScript ".length" exception during main-menu creation.
+			var icon = new FunkinSprite();
+			icon.frames = Paths.getAtlasFrames('${ext}new buttons and stuff');
 			icon.animation.addByPrefix('idle', ICON_PREFIXES[i], 24, false);
 			icon.animation.play('idle');
 			icon.scale.set(r, r);
