@@ -235,7 +235,12 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		
 		set("StringTools", StringTools);
 		set("Date", Date);
+		#if sys
 		set("Sys", Sys);
+		#else
+		// Sys is not available in the HTML5 target.
+		set("Sys", null);
+		#end
 		
 		set("Type", Type);
 		set("script", this);
