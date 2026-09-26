@@ -37,6 +37,45 @@ class FunkinAssets
 	 * that runtime copy makes Assets.getBitmapData/getSound/getText throw the
 	 * "exists, but only asynchronously" error. Prefer preloaded libraries first.
 	 */
+	/**
+ 	 * Loads HTML5 asset libraries that are intentionally kept out of the
+ 	 * startup preloader. This lets menus stay fast while still making
+ 	 * gameplay assets available synchronously once a song starts.
+ 	 */
+	public static function loadHtml5Libraries(libraries:Array<String>, onComplete:Void->Void):Void
+	{
+		#if html5
+			final queue:Array<String> = libraries.copy();
+			
+			function loadNext():Void
+			{
+				if (queue.length == 0)
+				{
+					onComplete();
+					return;
+				}
+				
+				final library:String = queue.shift();
+				if (!Assets.hasLibrary(library))
+				{
+					Logger.log('HTML5 asset library not found: $library', WARN);
+					loadNext();
+					return;
+				}
+				
+				Assets.loadLibrary(library).onComplete(function(_) {
+					loadNext();
+				}).onError(function(error) {
+					Logger.log('Failed to load HTML5 asset library $library\\nException: $error', ERROR);
+				});
+			}
+			
+			loadNext();
+		#else
+			onComplete();
+		#end
+	}
+
 	static function resolveHtml5AssetId(path:String, ?type:AssetType):Null<String>
 	{
 		// Respect an already-qualified Lime asset ID.
