@@ -55,7 +55,13 @@ class FunkinAssets
 					return;
 				}
 				
-				final library:String = queue.shift();
+				final library:Null<String> = queue.shift();
+				if (library == null)
+				{
+					loadNext();
+					return;
+				}
+				
 				if (!Assets.hasLibrary(library))
 				{
 					Logger.log('HTML5 asset library not found: $library', WARN);
