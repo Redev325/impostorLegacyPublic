@@ -180,6 +180,7 @@ class WeekData
 		}
 		#end
 		
+		#if !html5
 		for (i in 0...sexList.length)
 		{
 			for (j in 0...directories.length)
@@ -214,6 +215,7 @@ class WeekData
 			}
 		}
 		
+		#end
 		#if MODS_ALLOWED
 		for (i in 0...directories.length)
 		{
@@ -245,9 +247,9 @@ class WeekData
 		#end
 
 		#if html5
-		// HTML5 core weeks are stored in the menus library at data/weeks.
-		// Load them explicitly using asset-library paths so Story Mode and
-		// Freeplay both see the real week JSON files.
+		// HTML5 core weeks are stored in the preloaded menus library at
+		// data/weeks. Load the actual JSON files directly; the old desktop
+		// weekList.txt/assets/weeks layout is not present in this package.
 		final html5WeeksDirectory:String = Paths.getCorePath('data/weeks');
 		if (FunkinAssets.exists(html5WeeksDirectory))
 		{
