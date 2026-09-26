@@ -175,7 +175,15 @@ class MainMenuState extends MusicBeatState
 		
 		updateMenuSelection();
 		
+		#if html5
+		// ProgressionUtil.getShinies() scans gameplay/week data that is intentionally
+		// not loaded during HTML5 startup. Accessing that data here can produce an
+		// undefined.length error before the menu is drawn. The menu can safely start
+		// with its completion decorations hidden.
+		var shinies:Int = 0;
+		#else
 		var shinies:Int = ProgressionUtil.getShinies();
+		#end
 		for (i => shiny in menuShinies) shiny.visible = (i < shinies);
 		
 		#if !html5
