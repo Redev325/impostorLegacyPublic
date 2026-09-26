@@ -78,12 +78,12 @@
 			include="startText.png|startText.xml|funkin.png" preload="true" />
 
 		<!-- Main menu assets are loaded only when the title screen hands off to the menu. -->
-		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" preload="false" embed="false" />
-		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" preload="false" embed="false" />
-		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" preload="false" embed="false" />
+		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" preload="true" embed="false" />
+		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" preload="true" embed="false" />
+		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" preload="true" embed="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="mainmenu"
-			include="cancelMenu.ogg|scrollMenu.ogg" preload="false" embed="false" />
-		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu" include="finaleMenu.ogg" preload="false" embed="false" />
+			include="cancelMenu.ogg|scrollMenu.ogg" preload="true" embed="false" />
+		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu" include="finaleMenu.ogg" preload="true" embed="false" />
 
 		<!-- Everything else stays outside startup and main-menu loading. -->
 		<assets path="assets/legacy/data" rename="assets/data" library="gameplay" exclude="introText.txt" preload="false" embed="false" />
