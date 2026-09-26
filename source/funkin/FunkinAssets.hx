@@ -27,6 +27,10 @@ class FunkinAssets
 	static final HTML5_LIBRARIES:Array<String> = ['title', 'mainmenu', 'menus', 'embedded', 'gameplay', 'music', 'fonts'];
 
 	#if html5
+	static final html5LoadedLibraries:Map<String, Bool> = [];
+	#end
+
+	#if html5
 	/**
 	 * Resolve an asset to the library that is actually ready for synchronous
 	 * access in the HTML5 build.
@@ -69,10 +73,18 @@ class FunkinAssets
 					return;
 				}
 				
+				if (html5LoadedLibraries.exists(library))
+				{
+					loadNext();
+					return;
+				}
+				
 				Assets.loadLibrary(library).onComplete(function(_) {
+					html5LoadedLibraries.set(library, true);
 					loadNext();
 				}).onError(function(error) {
 					Logger.log('Failed to load HTML5 asset library $library\\nException: $error', ERROR);
+					loadNext();
 				});
 			}
 			
