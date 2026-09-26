@@ -81,9 +81,19 @@
 		<assets path="assets/legacy/images/menu/main" rename="assets/images/menu/main" library="mainmenu" preload="true" embed="false" />
 		<assets path="assets/legacy/images/icons" rename="assets/images/icons" library="mainmenu" preload="true" embed="false" />
 		<assets path="assets/legacy/images/awards" rename="assets/images/awards" library="mainmenu" preload="true" embed="false" />
+		<assets path="assets/legacy/images/menu/common/controls" rename="assets/images/menu/common/controls" library="mainmenu" preload="true" embed="false" />
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="mainmenu"
 			include="cancelMenu.ogg|scrollMenu.ogg" preload="true" embed="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="mainmenu" include="finaleMenu.ogg" preload="true" embed="false" />
+
+		<!-- Secondary menu content is loaded on demand after the main menu. -->
+		<assets path="assets/legacy/images/menu/story" rename="assets/images/menu/story" library="menus" preload="true" embed="false" />
+		<assets path="assets/legacy/images/menu/freeplay" rename="assets/images/menu/freeplay" library="menus" preload="true" embed="false" />
+		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="menus" preload="true" embed="false" />
+		<assets path="assets/legacy/data/weeks" rename="assets/data/weeks" library="menus" preload="true" embed="false" />
+		<assets path="assets/legacy/data/cosmicube" rename="assets/data/cosmicube" library="menus" preload="true" embed="false" />
+		<assets path="assets/legacy/data/awards.json" rename="assets/data/awards.json" library="menus" preload="true" embed="false" />
+		<assets path="assets/legacy/fonts" rename="assets/fonts" library="menus" include="AmaticSC-Bold.ttf" preload="true" embed="false" />
 
 		<!-- Everything else stays outside startup and main-menu loading. -->
 		<assets path="assets/legacy/data" rename="assets/data" library="gameplay" exclude="introText.txt" preload="false" embed="false" />
@@ -106,6 +116,7 @@
 		<library name="default" preload="false" />
 		<library name="title" preload="false" />
 		<library name="mainmenu" preload="true" />
+		<library name="menus" preload="false" />
 		<library name="embedded" preload="false" />
 		<library name="gameplay" preload="false" />
 		<library name="music" preload="false" />
