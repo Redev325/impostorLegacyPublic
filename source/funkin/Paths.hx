@@ -262,7 +262,11 @@ class Paths
 		
 		final path:String = findFileWithExts('fonts/$key', ['ttf', 'otf'], null, mode);
 		
+		#if html5
+		return FunkinAssets.getFontName(path);
+		#else
 		return (!FileSystem.exists(path) && Assets.exists(path, FONT) ? Assets.getFont(path).fontName : path);
+		#end
 	}
 	
 	public static function findFileWithExts(key:String, exts:Array<String>, ?parentFolder:String, mode:PathsTestMode = NORMAL):String
