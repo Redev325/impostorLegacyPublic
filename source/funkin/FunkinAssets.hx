@@ -181,8 +181,28 @@ class FunkinAssets
 		return FileSystem.exists(directory) ? FileSystem.readDirectory(directory) : []; // doing a check because i want this to maintain parity with ther assets variation
 		#else
 		if (directory.trim().length == 0) return [];
-		var dir = Assets.list().filter(string -> string.contains(directory));
-		return dir.map(string -> string.replace(directory, '').replace('/', ''));
+		
+		final result:Array<String> = [];
+		for (asset in Assets.list())
+		{
+			// Assets.list() returns library-qualified IDs such as
+			// "menus:assets/data/weeks/week1.json". Strip the library prefix
+			// before treating the remaining part as a virtual directory path.
+			var virtualPath:String = asset;
+			final colon:Int = virtualPath.indexOf(':');
+			if (colon > 0) virtualPath = virtualPath.substr(colon + 1);
+			
+			final prefix:String = directory.endsWith('/') ? directory : '$directory/';
+			if (!virtualPath.startsWith(prefix)) continue;
+			
+			final relative:String = virtualPath.substr(prefix.length);
+			if (relative.length == 0) continue;
+			
+			final slash:Int = relative.indexOf('/');
+			final child:String = slash == -1 ? relative : relative.substr(0, slash);
+			if (child.length > 0 && !result.contains(child)) result.push(child);
+		}
+		return result;
 		#end
 	}
 	
@@ -191,9 +211,16 @@ class FunkinAssets
 		#if (MODS_ALLOWED || ASSET_REDIRECT)
 		return FileSystem.isDirectory(directory);
 		#else
-		// this method is a bit chopped...
 		if (directory.trim().length == 0) return false;
-		return Assets.list().filter(path -> return path != directory && path.startsWith(directory)).length != 0;
+		final prefix:String = directory.endsWith('/') ? directory : '$directory/';
+		for (asset in Assets.list())
+		{
+			var virtualPath:String = asset;
+			final colon:Int = virtualPath.indexOf(':');
+			if (colon > 0) virtualPath = virtualPath.substr(colon + 1);
+			if (virtualPath.startsWith(prefix) && virtualPath.length > prefix.length) return true;
+		}
+		return false;
 		#end
 	}
 	
