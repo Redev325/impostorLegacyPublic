@@ -45,7 +45,7 @@ class AwardsState extends AmongUIState
 	var curSel:Int = 0;
 	var hoveredMouseSel:Int = -1;
 	var mouseControlActive:Bool = true;
-	var completion = ProgressionUtil.calculateCompletion();
+	var completion:Dynamic = {percent: 0.0};
 	
 	var turboGroup:TurboControlGroup;
 	var controlDOWN:TurboControl = TurboControl.fromControl('ui_down');
@@ -186,7 +186,11 @@ class AwardsState extends AmongUIState
 	
 	function refreshSelection()
 	{
+		#if html5
+		completion = {percent: 0.0};
+		#else
 		completion = ProgressionUtil.calculateCompletion();
+		#end
 		refreshCompletionText();
 		refreshIconAlphas();
 		
