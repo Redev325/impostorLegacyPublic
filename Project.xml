@@ -94,6 +94,7 @@
 		<!-- Currency icons are used by the secondary menu UI (AmongUIState, FreeplayCard, CosmicubeCard). Keep them in the preloaded menu library so Paths.image() can retrieve them synchronously on HTML5. -->
 		<assets path="assets/legacy/images/currency" rename="assets/images/currency" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/data/weeks" rename="assets/data/weeks" library="menus" preload="true" embed="false" />
+		<assets path="assets/legacy/scripts/storyNodes" rename="assets/scripts/storyNodes" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/data/cosmicube" rename="assets/data/cosmicube" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/data/awards.json" rename="assets/data/awards.json" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="menus" include="AmaticSC-Bold.ttf" preload="true" embed="false" />
