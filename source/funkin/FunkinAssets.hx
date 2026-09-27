@@ -111,45 +111,21 @@ class FunkinAssets
 	{
 		#if html5
 			final songPath:String = Paths.sanitize(songName);
-			final libraryName:String = 'song_' + songPath;
 			final chartPath:String = 'assets/songs/' + songPath + '/data/' + Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty);
 			final chartKey:String = songPath + ':' + PlayState.storyMeta.difficulty;
-
-			if (!Assets.hasLibrary(libraryName))
-			{
-				Logger.log('HTML5 Story Mode song library was not generated: ' + libraryName, ERROR);
-				onComplete();
-				return;
-			}
-
-			// Song libraries are already packaged by Project.xml. Load the selected
-			// library through Lime instead of waiting on raw Sound.load() browser
-			// events, which can leave Story Mode locked indefinitely on HTML5.
-			LimeAssets.loadLibrary(libraryName).onComplete(function(_) {
-				html5CurrentSongLibrary = libraryName;
-
-				try
-				{
-					final qualifiedChartPath:String = libraryName + ':' + chartPath;
-					if (!Assets.exists(qualifiedChartPath, TEXT))
-					{
-						Logger.log('HTML5 Story Mode chart was not found in ' + libraryName + ': ' + chartPath, ERROR);
-						onComplete();
-						return;
-					}
-
-					html5SongChartText.set(chartKey, Assets.getText(qualifiedChartPath));
-				}
-				catch (e)
-				{
-					Logger.log('Failed to read HTML5 Story Mode chart ' + chartPath + '\\nException: ' + e, ERROR);
-				}
-
-				onComplete();
-			}).onError(function(error) {
-				Logger.log('Failed to load HTML5 Story Mode song library ' + libraryName + '\\nException: ' + error, ERROR);
-				onComplete();
-			});
+			
+			// Only the chart is needed before changing states. Audio is streamed
+			// directly by PlayableSong after PlayState is visible, so a slow audio
+			// request can never trap the Story/Freeplay menu behind its lock.
+			new HTTPRequest<String>().load(chartPath)
+				.onComplete(function(text:String) {
+					html5SongChartText.set(chartKey, text);
+					onComplete();
+				})
+				.onError(function(error) {
+					Logger.log('Failed to load HTML5 song chart ' + chartPath + '\\nException: ' + error, ERROR);
+					onComplete();
+				});
 		#else
 			onComplete();
 		#end
