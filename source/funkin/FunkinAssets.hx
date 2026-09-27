@@ -6,6 +6,7 @@ import openfl.media.Sound;
 import openfl.utils.AssetType;
 import openfl.display.BitmapData;
 import openfl.Assets;
+import lime.utils.Assets as LimeAssets;
 
 import flixel.graphics.FlxGraphic;
 import flixel.system.FlxAssets;
@@ -80,7 +81,7 @@ class FunkinAssets
 					return;
 				}
 				
-				Assets.loadLibrary(library).onComplete(function(_) {
+				LimeAssets.loadLibrary(library).onComplete(function(_) {
 					html5LoadedLibraries.set(library, true);
 					loadNext();
 				}).onError(function(error) {
