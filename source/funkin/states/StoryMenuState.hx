@@ -262,11 +262,11 @@ class StoryMenuState extends AmongUIState
 		{
 			FlxG.sound.play(Paths.sound('panelAppear'), .5);
 			lockMovement = true;
-			loadWeek(node.meta);
+			loadWeek(node.meta, function() lockMovement = false);
 		}
 	}
 	
-	public static function loadWeek(week:WeekData):Void
+	public static function loadWeek(week:WeekData, ?onLoadFailed:Void->Void):Void
 	{
 		if (week == null || week.songs == null || week.songs.length == 0) return;
 		
@@ -291,7 +291,7 @@ class StoryMenuState extends AmongUIState
 					if (chartText == null)
 					{
 						Logger.log('HTML5 Story Mode chart was not cached for ' + PlayState.storyMeta.playlist[0], ERROR);
-						lockMovement = false;
+						onLoadFailed?.call();
 						return;
 					}
 					PlayState.SONG = Chart.fromData(FunkinAssets.parseJson(chartText));
@@ -303,7 +303,7 @@ class StoryMenuState extends AmongUIState
 			catch (e)
 			{
 				Logger.log('Failed to load Story Mode song ' + PlayState.storyMeta.playlist[0] + '\\nException: ' + e, ERROR);
-				lockMovement = false;
+				onLoadFailed?.call();
 			}
 		}
 		
