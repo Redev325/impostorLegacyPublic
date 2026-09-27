@@ -7,6 +7,8 @@ import openfl.utils.AssetType;
 import openfl.display.BitmapData;
 import openfl.Assets;
 import lime.utils.Assets as LimeAssets;
+import lime.media.AudioBuffer;
+import lime.net.HTTPRequest;
 
 import flixel.graphics.FlxGraphic;
 import flixel.system.FlxAssets;
@@ -30,6 +32,7 @@ class FunkinAssets
 	#if html5
 	static final html5LoadedLibraries:Map<String, Bool> = [];
 	static var html5CurrentSongLibrary:Null<String> = null;
+	static var html5SongChartText:Map<String, String> = [];
 	#end
 
 	#if html5
@@ -103,10 +106,17 @@ class FunkinAssets
 	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void):Void
 	{
 		#if html5
-			var suffix:String = Paths.sanitize(songName);
-			suffix = ~/[^a-z0-9_-]/g.replace(suffix, '_');
-			final library:String = 'song_' + suffix;
-			final manifestPath:String = 'manifest/' + library + '.json';
+			final songPath:String = Paths.sanitize(songName);
+			final root:String = 'assets/songs/' + songPath;
+			final chartPath:String = root + '/data/' + Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty);
+			final instPath:String = root + '/Inst.ogg';
+			final voicesPath:String = root + '/Voices.ogg';
+			final chartKey:String = songPath + ':' + PlayState.storyMeta.difficulty;
+
+			var chartDone:Bool = false;
+			var instDone:Bool = false;
+			var voicesDone:Bool = false;
+			var failed:Bool = false;
 			var finished:Bool = false;
 
 			function finish():Void
@@ -116,62 +126,60 @@ class FunkinAssets
 				onComplete();
 			}
 
-			function registerLoadedLibrary(loadedLibrary:Null<lime.utils.AssetLibrary>):Void
+			function checkDone():Void
 			{
-				if (loadedLibrary == null)
+				if (!failed && chartDone && instDone && voicesDone) finish();
+			}
+
+			new HTTPRequest<String>().load(chartPath).onComplete(function(text:String) {
+				html5SongChartText.set(chartKey, text);
+				chartDone = true;
+				checkDone();
+			}).onError(function(error) {
+				failed = true;
+				Logger.log('Failed to load HTML5 Story Mode chart ' + chartPath + '\\nException: ' + error, ERROR);
+				finish();
+			});
+
+			AudioBuffer.loadFromFile(instPath).onComplete(function(buffer:AudioBuffer) {
+				if (buffer != null)
 				{
-					Logger.log('HTML5 song manifest produced no library: $manifestPath ($songName)', ERROR);
-					finish();
-					return;
+					final sound:Sound = Sound.fromAudioBuffer(buffer);
+					cache.cacheSound(instPath, sound);
 				}
-
-				LimeAssets.registerLibrary(library, loadedLibrary);
-				html5LoadedLibraries.set(library, true);
-				html5CurrentSongLibrary = library;
+				instDone = (buffer != null);
+				checkDone();
+			}).onError(function(error) {
+				failed = true;
+				Logger.log('Failed to load HTML5 Story Mode instrumental ' + instPath + '\\nException: ' + error, ERROR);
 				finish();
-			}
+			});
 
-			function fallbackDeferredLibrary():Void
-			{
-				LimeAssets.loadLibrary(library).onComplete(function(loadedLibrary) {
-					registerLoadedLibrary(loadedLibrary);
-				}).onError(function(error) {
-					Logger.log('Failed to load HTML5 song library $library for $songName\\nManifest: $manifestPath\\nException: $error', ERROR);
-					finish();
-				});
-			}
-
-			if (html5LoadedLibraries.exists(library))
-			{
-				html5CurrentSongLibrary = library;
-				finish();
-				return;
-			}
-
-			if (LimeAssets.getLibrary(library) != null)
-			{
-				html5LoadedLibraries.set(library, true);
-				html5CurrentSongLibrary = library;
-				finish();
-				return;
-			}
-
-			lime.utils.AssetLibrary.loadFromFile(manifestPath).onComplete(function(loadedLibrary) {
-				if (loadedLibrary == null)
+			AudioBuffer.loadFromFile(voicesPath).onComplete(function(buffer:AudioBuffer) {
+				if (buffer != null)
 				{
-					fallbackDeferredLibrary();
-					return;
+					final sound:Sound = Sound.fromAudioBuffer(buffer);
+					cache.cacheSound(voicesPath, sound);
 				}
-				registerLoadedLibrary(loadedLibrary);
-			}).onError(function(_) {
-				// Some HTML5/Lime versions resolve deferred manifests through their
-				// generated library path instead of a direct manifest URL.
-				fallbackDeferredLibrary();
+				voicesDone = (buffer != null);
+				checkDone();
+			}).onError(function(error) {
+				failed = true;
+				Logger.log('Failed to load HTML5 Story Mode voices ' + voicesPath + '\\nException: ' + error, ERROR);
+				finish();
 			});
 		#else
 			onComplete();
 		#end
 	}
+
+	#if html5
+	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
+	{
+		final songPath:String = Paths.sanitize(songName);
+		return html5SongChartText.get(songPath + ':' + difficulty);
+	}
+	#end
 
 	static function resolveHtml5AssetId(path:String, ?type:AssetType):Null<String>
 	{
