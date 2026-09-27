@@ -328,13 +328,14 @@ class StoryMenuState extends AmongUIState
 			if (controls.UI_RIGHT_P) moveCruiser(EAST);
 			if (controls.UI_DOWN_P) moveCruiser(SOUTH);
 			if (controls.UI_UP_P) moveCruiser(NORTH);
-			if (controls.ACCEPT) accept();
+			if (controls.ACCEPT || FlxG.keys.justPressed.ENTER) accept();
 			
 			if (FlxG.mouse.justPressed)
 			{
-				wasPressingCruiser = FlxG.mouse.overlaps(cruiser);
+				wasPressingCruiser = FlxG.mouse.overlaps(cruiser) || FlxG.mouse.overlaps(cast cruiser.followingNode);
 			}
-			else if (FlxG.mouse.justReleased && wasPressingCruiser && FlxG.mouse.overlaps(cruiser))
+			else if (FlxG.mouse.justReleased && wasPressingCruiser
+				&& (FlxG.mouse.overlaps(cruiser) || FlxG.mouse.overlaps(cast cruiser.followingNode)))
 			{
 				accept();
 			}
