@@ -70,7 +70,15 @@ class CosmicubeData
 		
 		#if html5
 		final dir:String = Paths.getCorePath('data/cosmicube');
-		for (file in FunkinAssets.readDirectory(dir))
+		var files:Array<String> = FunkinAssets.readDirectory(dir);
+		
+		// HTML5 asset libraries do not expose filesystem directories. The base
+		// cosmicube is known at build time, so make sure it is still discovered
+		// when the runtime directory listing is empty.
+		if (files.length == 0 && FunkinAssets.exists(haxe.io.Path.join([dir, 'impostor.json'])))
+			files.push('impostor.json');
+		
+		for (file in files)
 		{
 			if (!file.endsWith('.json')) continue;
 			
@@ -126,7 +134,68 @@ class CosmicubeData
 		final list:Array<ShopItemData> = [];
 		
 		#if html5
-		for (file in FunkinAssets.readDirectory(dir))
+		var files:Array<String> = FunkinAssets.readDirectory(dir);
+		
+		// The HTML5 runtime can load the files synchronously, but it may not
+		// expose virtual directory enumeration consistently. Fall back to the
+		// current base cosmicube item index in that case.
+		if (files.length == 0 && meta.fileName == 'impostor')
+		{
+			files = [
+				'amongGf.json',
+				'amongbf.json',
+				'bf-ghost.json',
+				'bf-stick.json',
+				'bfairship.json',
+				'bfballer.json',
+				'bfmira.json',
+				'bfpolus.json',
+				'bfsauce.json',
+				'bfsusreal.json',
+				'blackp.json',
+				'crab.json',
+				'dog.json',
+				'dripbf.json',
+				'elliepet.json',
+				'fall-guy.json',
+				'fishus.json',
+				'frankendog.json',
+				'fribbit.json',
+				'gf-ghost.json',
+				'gf-stick.json',
+				'gf-tuesday.json',
+				'gfmira.json',
+				'gfmira2.json',
+				'gfpolus.json',
+				'greenp.json',
+				'ham.json',
+				'hampton.json',
+				'helicopter.json',
+				'lilmungus.json',
+				'magmate.json',
+				'maroonplayable.json',
+				'minicrewmate.json',
+				'minigrey.json',
+				'nuclearbomb.json',
+				'pinkplayable.json',
+				'redp.json',
+				'slug.json',
+				'slugmate.json',
+				'snowball.json',
+				'snowmate.json',
+				'squig.json',
+				'stickmin.json',
+				'thenug.json',
+				'tomong.json',
+				'ufo.json',
+				'upboy.json',
+				'upgirl.json',
+				'whitep.json',
+				'yellowplayable.json'
+			];
+		}
+		
+		for (file in files)
 		{
 			if (!file.endsWith('.json')) continue;
 			
