@@ -286,12 +286,24 @@ class StoryMenuState extends AmongUIState
 		{
 			try
 			{
-				PlayState.SONG = Chart.fromSong(PlayState.storyMeta.playlist[0], PlayState.storyMeta.difficulty);
+				#if html5
+					final chartText = FunkinAssets.getHtml5SongChart(PlayState.storyMeta.playlist[0], PlayState.storyMeta.difficulty);
+					if (chartText == null)
+					{
+						Logger.log('HTML5 Story Mode chart was not cached for ' + PlayState.storyMeta.playlist[0], ERROR);
+						lockMovement = false;
+						return;
+					}
+					PlayState.SONG = Chart.fromData(FunkinAssets.parseJson(chartText));
+				#else
+					PlayState.SONG = Chart.fromSong(PlayState.storyMeta.playlist[0], PlayState.storyMeta.difficulty);
+				#end
 				FlxG.switchState(PlayState.new);
 			}
 			catch (e)
 			{
 				Logger.log('Failed to load Story Mode song ' + PlayState.storyMeta.playlist[0] + '\\nException: ' + e, ERROR);
+				lockMovement = false;
 			}
 		}
 		
