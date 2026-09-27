@@ -111,13 +111,9 @@ class FunkinAssets
 			suffix = ~/[^a-z0-9_-]/g.replace(suffix, '_');
 			final library:String = 'song_' + suffix;
 			
-			if (!Assets.hasLibrary(library))
-			{
-				Logger.log('HTML5 song library not found: $library ($songName)', ERROR);
-				onComplete();
-				return;
-			}
-			
+			// Do not reject a deferred library here based on whether OpenFL has
+			// already materialized it. Lime owns the runtime library registry, and
+			// loadLibrary() is what makes a deferred song library available.
 			if (html5LoadedLibraries.exists(library))
 			{
 				html5CurrentSongLibrary = library;
