@@ -230,6 +230,11 @@ class PlayableSong extends VocalGroup
 	public var trackSwap:Bool = false;
 	public var splitVocals:Bool = false;
 	
+	#if html5
+	public var ready:Bool = false;
+	public var loading:Bool = false;
+	#end
+	
 	public function populate(?data:Song):Void
 	{
 		volume = 1;
@@ -237,15 +242,57 @@ class PlayableSong extends VocalGroup
 		if (data == null)
 		{
 			Logger.log('Song provided was null. Cannot create tracks', WARN);
-			
 			return;
 		}
-		
-		volume = 1;
 		
 		splitVocals = false;
 		trackSwap = data.trackSwap ?? false;
 		
+		#if html5
+		loading = true;
+		ready = false;
+		final songPath:String = Paths.sanitize(data.song);
+		
+		function streamTrack(url:String, addTrack:FlxSound->Void, loaded:Void->Void):Void
+		{
+			final track:FlxSound = new FlxSound();
+			addTrack(track);
+			track.loadStream(url, false, false, null, loaded);
+		}
+		
+		if (trackSwap)
+		{
+			streamTrack('assets/songs/' + songPath + '/Track-main.ogg',
+				function(track) {
+					inst = track;
+					add(track);
+				},
+				function() {
+					loading = false;
+					ready = true;
+				});
+			opponentVolume = 0;
+		}
+		else
+		{
+			streamTrack('assets/songs/' + songPath + '/Inst.ogg',
+				function(track) {
+					inst = track;
+					add(track);
+				},
+				function() {
+					loading = false;
+					ready = true;
+				});
+			
+			if (data.needsVoices)
+			{
+				streamTrack('assets/songs/' + songPath + '/Voices.ogg',
+					function(track) addPlayerVocals(track),
+					function() {});
+			}
+		}
+		#else
 		if (trackSwap)
 		{
 			final instSnd = Paths.trackSwap(data.song, 'main');
@@ -268,10 +315,7 @@ class PlayableSong extends VocalGroup
 			if (data.needsVoices)
 			{
 				var playerSound = Paths.voices(data.song, 'player');
-				if (playerSound == null)
-				{
-					playerSound = Paths.voices(data.song, null);
-				}
+				if (playerSound == null) playerSound = Paths.voices(data.song, null);
 				if (playerSound != null) addPlayerVocals(new FlxSoundEx().loadEmbedded(playerSound));
 				
 				final opponentSound = Paths.voices(data.song, 'opp');
@@ -280,8 +324,9 @@ class PlayableSong extends VocalGroup
 				splitVocals = playerVocals.length != 0 && opponentVocals.length != 0;
 			}
 		}
+		#end
 	}
-	
+
 	override public function play(forceRestart:Bool = false, startTime:Float = 0.0, ?endTime:Null<Float>)
 	{
 		if (trackSwap && inst != null) inst.volume = 0;
