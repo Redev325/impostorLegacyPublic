@@ -411,41 +411,13 @@ class MainMenuState extends MusicBeatState
 	
 	function switchToSelection()
 	{
+		// The main-menu and secondary-menu assets are already available in the
+		// HTML5 build. Do not call openfl.Assets.loadLibrary() here: runtime
+		// library loading can leave the state transition waiting indefinitely.
 		#if html5
-		// Make every secondary-menu library explicitly ready before constructing
-		// the target state. This keeps Lime/OpenFL from exposing a manifest entry
-		// as "async-only" to Flixel during AmongUIState.create().
-		openfl.Assets.loadLibrary('mainmenu')
-			.onComplete(function(_) {
-				openfl.Assets.loadLibrary('menus')
-					.onComplete(function(_) {
-						openfl.Assets.loadLibrary('gameplay')
-							.onComplete(function(_) {
-								openfl.Assets.loadLibrary('fonts')
-									.onComplete(function(_) {
-										switchToSelectionState();
-									})
-									.onError(function(error) {
-										trace('Failed to load font assets: ' + Std.string(error));
-										lockMovement = false;
-									});
-							})
-							.onError(function(error) {
-								trace('Failed to load gameplay menu data: ' + Std.string(error));
-								lockMovement = false;
-							});
-					})
-					.onError(function(error) {
-						trace('Failed to load secondary menu assets: ' + Std.string(error));
-						lockMovement = false;
-					});
-			})
-			.onError(function(error) {
-				trace('Failed to load main menu assets: ' + Std.string(error));
-				lockMovement = false;
-			});
+			switchToSelectionState();
 		#else
-		switchToSelectionState();
+			switchToSelectionState();
 		#end
 	}
 
