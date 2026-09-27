@@ -111,74 +111,50 @@ class FunkinAssets
 	{
 		#if html5
 			final songPath:String = Paths.sanitize(songName);
-			final root:String = 'assets/songs/' + songPath;
-			final chartPath:String = root + '/data/' + Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty);
-			final instPath:String = root + '/Inst.ogg';
-			final voicesPath:String = root + '/Voices.ogg';
+			final libraryName:String = 'song_' + songPath;
+			final chartPath:String = 'assets/songs/' + songPath + '/data/' + Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty);
 			final chartKey:String = songPath + ':' + PlayState.storyMeta.difficulty;
 
-			var chartDone:Bool = false;
-			var instDone:Bool = false;
-			var voicesDone:Bool = false;
-			var finished:Bool = false;
-
-			function finish():Void
+			if (!Assets.hasLibrary(libraryName))
 			{
-				if (finished) return;
-				finished = true;
+				Logger.log('HTML5 Story Mode song library was not generated: ' + libraryName, ERROR);
 				onComplete();
+				return;
 			}
 
-			function checkDone():Void
-			{
-				if (chartDone && instDone && voicesDone) finish();
-			}
+			// Song libraries are already packaged by Project.xml. Load the selected
+			// library through Lime instead of waiting on raw Sound.load() browser
+			// events, which can leave Story Mode locked indefinitely on HTML5.
+			LimeAssets.loadLibrary(libraryName).onComplete(function(_) {
+				html5CurrentSongLibrary = libraryName;
 
-			new HTTPRequest<String>().load(chartPath).onComplete(function(text:String) {
-				html5SongChartText.set(chartKey, text);
-				chartDone = true;
-				checkDone();
-			}).onError(function(error) {
-				Logger.log('Failed to load HTML5 Story Mode chart ' + chartPath + '\\nException: ' + error, ERROR);
-				chartDone = true;
-				checkDone();
-			});
-
-			function loadSound(path:String, label:String, markDone:Void->Void):Void
-			{
 				try
 				{
-					final sound:Sound = new Sound();
-					sound.addEventListener(Event.COMPLETE, function(_) {
-						cache.cacheSound(path, sound);
-						markDone();
-					});
-					sound.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
-						Logger.log('Failed to load HTML5 Story Mode ' + label + ' ' + path + '\\nException: ' + error, ERROR);
-						markDone();
-					});
-					sound.load(new URLRequest(path));
+					final qualifiedChartPath:String = libraryName + ':' + chartPath;
+					if (!Assets.exists(qualifiedChartPath, TEXT))
+					{
+						Logger.log('HTML5 Story Mode chart was not found in ' + libraryName + ': ' + chartPath, ERROR);
+						onComplete();
+						return;
+					}
+
+					html5SongChartText.set(chartKey, Assets.getText(qualifiedChartPath));
 				}
 				catch (e)
 				{
-					Logger.log('Failed to start HTML5 Story Mode ' + label + ' load ' + path + '\\nException: ' + e, ERROR);
-					markDone();
+					Logger.log('Failed to read HTML5 Story Mode chart ' + chartPath + '\\nException: ' + e, ERROR);
 				}
-			}
 
-			loadSound(instPath, 'instrumental', function() {
-				instDone = true;
-				checkDone();
-			});
-
-			loadSound(voicesPath, 'voices', function() {
-				voicesDone = true;
-				checkDone();
+				onComplete();
+			}).onError(function(error) {
+				Logger.log('Failed to load HTML5 Story Mode song library ' + libraryName + '\\nException: ' + error, ERROR);
+				onComplete();
 			});
 		#else
 			onComplete();
 		#end
 	}
+
 	#if html5
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
 	{
