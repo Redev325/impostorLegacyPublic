@@ -12,6 +12,7 @@ import flixel.util.FlxStringUtil;
 import funkin.objects.HealthIcon;
 
 import flixel.group.FlxSpriteGroup;
+import flixel.input.keyboard.FlxKey;
 
 class StoryMenuState extends AmongUIState
 {
@@ -171,7 +172,7 @@ class StoryMenuState extends AmongUIState
 				Mods.currentModDirectory = week.folder;
 				
 				var parent:String = (node.parent ?? 'root');
-				var newNode:StoryNode = new StoryNode(weekID, week);
+				var newNode:StoryNode = new StoryNode(0, 0, weekID, week);
 				tempNodes.set(weekID, newNode);
 				
 				if (parent == weekID) continue;
@@ -328,16 +329,27 @@ class StoryMenuState extends AmongUIState
 			if (controls.UI_RIGHT_P) moveCruiser(EAST);
 			if (controls.UI_DOWN_P) moveCruiser(SOUTH);
 			if (controls.UI_UP_P) moveCruiser(NORTH);
-			if (controls.ACCEPT || FlxG.keys.justPressed.ENTER) accept();
+			final firstKey:FlxKey = FlxG.keys.firstJustPressed();
+			if (controls.ACCEPT || firstKey == FlxKey.ENTER) accept();
 			
 			if (FlxG.mouse.justPressed)
 			{
-				wasPressingCruiser = FlxG.mouse.overlaps(cruiser) || FlxG.mouse.overlaps(cast cruiser.followingNode);
+				wasPressingCruiser = FlxG.mouse.overlaps(cruiser);
 			}
-			else if (FlxG.mouse.justReleased && wasPressingCruiser
-				&& (FlxG.mouse.overlaps(cruiser) || FlxG.mouse.overlaps(cast cruiser.followingNode)))
+			else if (FlxG.mouse.justReleased)
 			{
-				accept();
+				var selectedNode:StoryNode = cast cruiser.followingNode;
+				var clickedNode:Bool = false;
+				if (selectedNode != null)
+				{
+					final centerX:Float = selectedNode.x;
+					final centerY:Float = selectedNode.y;
+					final scale:Float = Math.max(1, .5 / FlxG.camera.zoom);
+					final dx:Float = FlxG.mouse.x - centerX;
+					final dy:Float = FlxG.mouse.y - centerY;
+					clickedNode = Math.sqrt(dx * dx + dy * dy) <= 110 * scale;
+				}
+				if ((wasPressingCruiser || clickedNode) && selectedNode != null) accept();
 			}
 			
 			var wDeadzone:Float = Math.min((800 - (FlxG.width + 800) * (1 - FlxG.camera.zoom)), (FlxG.camera.width - cruiser.width) * .5);
