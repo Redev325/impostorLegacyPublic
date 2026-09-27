@@ -1203,8 +1203,26 @@ class PlayState extends MusicBeatState
 	public var countdownSet:Null<FlxSprite> = null;
 	public var countdownGo:Null<FlxSprite> = null;
 	
+	#if html5
+	var waitingForAudio:Bool = false;
+	#end
+	
 	public function startCountdown():Void
 	{
+		#if html5
+		if (audio != null && !audio.ready)
+		{
+			if (!waitingForAudio)
+			{
+				waitingForAudio = true;
+				new FlxTimer().start(0.1, function(_) {
+					waitingForAudio = false;
+					if (startingSong && !startedCountdown) startCountdown();
+				});
+			}
+			return;
+		}
+		#end
 		if (startedCountdown)
 		{
 			scripts.call('onStartCountdown', []);
@@ -1365,8 +1383,12 @@ class PlayState extends MusicBeatState
 	
 	function startSong():Void
 	{
+		#if html5
+		if (audio == null || !audio.ready) return;
+		#end
 		startingSong = false;
 		
+		if (audio.inst == null) return;
 		audio.inst.onComplete = finishSong.bind(false);
 		
 		#if FLX_PITCH
