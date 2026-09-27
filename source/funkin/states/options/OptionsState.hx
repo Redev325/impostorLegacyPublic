@@ -45,6 +45,7 @@ class OptionsState extends MusicBeatState
 	var optionsHeader:FlxText;
 	var menuBackButton:FlxSprite;
 	var mouseControlActive:Bool = true;
+	var useHardcodedMenu:Bool = false;
 	var hoveredOption:Int = -1;
 	
 	static final OPTION_LABEL_BASE_SIZE:Int = 26;
@@ -117,9 +118,11 @@ class OptionsState extends MusicBeatState
 		// The browser build has no Options state script, so always build the
 		// native Options UI instead of depending on the script-state gate.
 		buildHardcodedMenu = true;
+		useHardcodedMenu = true;
 		#end
 		if (buildHardcodedMenu)
 		{
+			useHardcodedMenu = true;
 			var ext:String = 'menu/options/';
 			
 			// scrolling stars
@@ -305,7 +308,7 @@ class OptionsState extends MusicBeatState
 	{
 		super.update(elapsed);
 		
-		if (isHardcodedState())
+		if (useHardcodedMenu)
 		{
 			hoveredOption = -1;
 			
