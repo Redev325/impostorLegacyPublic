@@ -103,30 +103,46 @@ class FunkinAssets
 	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void):Void
 	{
 		#if html5
-			// Each song has its own deferred Lime asset library. Loading that
-			// library brings in the chart, scripts and audio for only this song
-			// instead of touching the huge global music library.
+			// The HTML5 build writes a separate manifest for each song, but these
+			// libraries are intentionally omitted from the startup preloader. Load
+			// the selected manifest directly so Story Mode does not depend on the
+			// deferred-library registry being populated at startup.
 			var suffix:String = Paths.sanitize(songName);
-			// Library names must be safe even for songs such as "D'low".
 			suffix = ~/[^a-z0-9_-]/g.replace(suffix, '_');
 			final library:String = 'song_' + suffix;
-			
-			// Do not reject a deferred library here based on whether OpenFL has
-			// already materialized it. Lime owns the runtime library registry, and
-			// loadLibrary() is what makes a deferred song library available.
+			final manifestPath:String = 'manifest/' + library + '.json';
+
 			if (html5LoadedLibraries.exists(library))
 			{
 				html5CurrentSongLibrary = library;
 				onComplete();
 				return;
 			}
-			
-			LimeAssets.loadLibrary(library).onComplete(function(_) {
+
+			// Prefer an already-registered library when one exists (for example,
+			// after returning to Story Mode and selecting the same song again).
+			if (LimeAssets.getLibrary(library) != null)
+			{
+				html5LoadedLibraries.set(library, true);
+				html5CurrentSongLibrary = library;
+				onComplete();
+				return;
+			}
+
+			lime.utils.AssetLibrary.loadFromFile(manifestPath).onComplete(function(loadedLibrary) {
+				if (loadedLibrary == null)
+				{
+					Logger.log('HTML5 song manifest loaded no library: $manifestPath ($songName)', ERROR);
+					onComplete();
+					return;
+				}
+
+				LimeAssets.registerLibrary(library, loadedLibrary);
 				html5LoadedLibraries.set(library, true);
 				html5CurrentSongLibrary = library;
 				onComplete();
 			}).onError(function(error) {
-				Logger.log('Failed to load HTML5 song library $library for $songName\\nException: $error', ERROR);
+				Logger.log('Failed to load HTML5 song manifest $manifestPath for $songName\\nException: $error', ERROR);
 				onComplete();
 			});
 		#else
