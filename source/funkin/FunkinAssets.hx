@@ -14,6 +14,7 @@ import flixel.graphics.FlxGraphic;
 import flixel.system.FlxAssets;
 
 import funkin.backend.FunkinCache;
+import funkin.backend.Difficulty;
 
 /**
  * backend for retrieving and caching assets
