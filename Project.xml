@@ -93,6 +93,7 @@
 		<assets path="assets/legacy/images/menu/freeplay" rename="assets/images/menu/freeplay" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/images/menu/cosmicube" rename="assets/images/menu/cosmicube" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/images/menu/common" rename="assets/images/menu/common" library="menus" preload="true" embed="false" />
+		<assets path="assets/legacy/images/menu/options" rename="assets/images/menu/options" library="menus" preload="true" embed="false" />
 		<!-- Currency icons are used by the secondary menu UI (AmongUIState, FreeplayCard, CosmicubeCard). Keep them in the preloaded menu library so Paths.image() can retrieve them synchronously on HTML5. -->
 		<assets path="assets/legacy/images/currency" rename="assets/images/currency" library="menus" preload="true" embed="false" />
 		<assets path="assets/legacy/data/weeks" rename="assets/data/weeks" library="menus" preload="true" embed="false" />
