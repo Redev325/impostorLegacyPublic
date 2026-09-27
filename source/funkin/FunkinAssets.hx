@@ -103,47 +103,70 @@ class FunkinAssets
 	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void):Void
 	{
 		#if html5
-			// The HTML5 build writes a separate manifest for each song, but these
-			// libraries are intentionally omitted from the startup preloader. Load
-			// the selected manifest directly so Story Mode does not depend on the
-			// deferred-library registry being populated at startup.
 			var suffix:String = Paths.sanitize(songName);
 			suffix = ~/[^a-z0-9_-]/g.replace(suffix, '_');
 			final library:String = 'song_' + suffix;
 			final manifestPath:String = 'manifest/' + library + '.json';
+			var finished:Bool = false;
 
-			if (html5LoadedLibraries.exists(library))
+			function finish():Void
 			{
-				html5CurrentSongLibrary = library;
+				if (finished) return;
+				finished = true;
 				onComplete();
-				return;
 			}
 
-			// Prefer an already-registered library when one exists (for example,
-			// after returning to Story Mode and selecting the same song again).
-			if (LimeAssets.getLibrary(library) != null)
+			function registerLoadedLibrary(loadedLibrary:Null<lime.utils.AssetLibrary>):Void
 			{
-				html5LoadedLibraries.set(library, true);
-				html5CurrentSongLibrary = library;
-				onComplete();
-				return;
-			}
-
-			lime.utils.AssetLibrary.loadFromFile(manifestPath).onComplete(function(loadedLibrary) {
 				if (loadedLibrary == null)
 				{
-					Logger.log('HTML5 song manifest loaded no library: $manifestPath ($songName)', ERROR);
-					onComplete();
+					Logger.log('HTML5 song manifest produced no library: $manifestPath ($songName)', ERROR);
+					finish();
 					return;
 				}
 
 				LimeAssets.registerLibrary(library, loadedLibrary);
 				html5LoadedLibraries.set(library, true);
 				html5CurrentSongLibrary = library;
-				onComplete();
-			}).onError(function(error) {
-				Logger.log('Failed to load HTML5 song manifest $manifestPath for $songName\\nException: $error', ERROR);
-				onComplete();
+				finish();
+			}
+
+			function fallbackDeferredLibrary():Void
+			{
+				LimeAssets.loadLibrary(library).onComplete(function(loadedLibrary) {
+					registerLoadedLibrary(loadedLibrary);
+				}).onError(function(error) {
+					Logger.log('Failed to load HTML5 song library $library for $songName\\nManifest: $manifestPath\\nException: $error', ERROR);
+					finish();
+				});
+			}
+
+			if (html5LoadedLibraries.exists(library))
+			{
+				html5CurrentSongLibrary = library;
+				finish();
+				return;
+			}
+
+			if (LimeAssets.getLibrary(library) != null)
+			{
+				html5LoadedLibraries.set(library, true);
+				html5CurrentSongLibrary = library;
+				finish();
+				return;
+			}
+
+			lime.utils.AssetLibrary.loadFromFile(manifestPath).onComplete(function(loadedLibrary) {
+				if (loadedLibrary == null)
+				{
+					fallbackDeferredLibrary();
+					return;
+				}
+				registerLoadedLibrary(loadedLibrary);
+			}).onError(function(_) {
+				// Some HTML5/Lime versions resolve deferred manifests through their
+				// generated library path instead of a direct manifest URL.
+				fallbackDeferredLibrary();
 			});
 		#else
 			onComplete();
