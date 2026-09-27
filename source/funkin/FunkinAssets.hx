@@ -3,6 +3,9 @@ package funkin;
 import haxe.io.Bytes;
 
 import openfl.media.Sound;
+import openfl.events.Event;
+import openfl.events.IOErrorEvent;
+import openfl.net.URLRequest;
 import openfl.utils.AssetType;
 import openfl.display.BitmapData;
 import openfl.Assets;
@@ -117,7 +120,6 @@ class FunkinAssets
 			var chartDone:Bool = false;
 			var instDone:Bool = false;
 			var voicesDone:Bool = false;
-			var failed:Bool = false;
 			var finished:Bool = false;
 
 			function finish():Void
@@ -129,7 +131,7 @@ class FunkinAssets
 
 			function checkDone():Void
 			{
-				if (!failed && chartDone && instDone && voicesDone) finish();
+				if (chartDone && instDone && voicesDone) finish();
 			}
 
 			new HTTPRequest<String>().load(chartPath).onComplete(function(text:String) {
@@ -137,43 +139,46 @@ class FunkinAssets
 				chartDone = true;
 				checkDone();
 			}).onError(function(error) {
-				failed = true;
 				Logger.log('Failed to load HTML5 Story Mode chart ' + chartPath + '\\nException: ' + error, ERROR);
-				finish();
+				chartDone = true;
+				checkDone();
 			});
 
-			AudioBuffer.loadFromFile(instPath).onComplete(function(buffer:AudioBuffer) {
-				if (buffer != null)
+			function loadSound(path:String, label:String, markDone:Void->Void):Void
+			{
+				try
 				{
-					final sound:Sound = Sound.fromAudioBuffer(buffer);
-					cache.cacheSound(instPath, sound);
+					final sound:Sound = new Sound();
+					sound.addEventListener(Event.COMPLETE, function(_) {
+						cache.cacheSound(path, sound);
+						markDone();
+					});
+					sound.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
+						Logger.log('Failed to load HTML5 Story Mode ' + label + ' ' + path + '\\nException: ' + error, ERROR);
+						markDone();
+					});
+					sound.load(new URLRequest(path));
 				}
-				instDone = (buffer != null);
+				catch (e)
+				{
+					Logger.log('Failed to start HTML5 Story Mode ' + label + ' load ' + path + '\\nException: ' + e, ERROR);
+					markDone();
+				}
+			}
+
+			loadSound(instPath, 'instrumental', function() {
+				instDone = true;
 				checkDone();
-			}).onError(function(error) {
-				failed = true;
-				Logger.log('Failed to load HTML5 Story Mode instrumental ' + instPath + '\\nException: ' + error, ERROR);
-				finish();
 			});
 
-			AudioBuffer.loadFromFile(voicesPath).onComplete(function(buffer:AudioBuffer) {
-				if (buffer != null)
-				{
-					final sound:Sound = Sound.fromAudioBuffer(buffer);
-					cache.cacheSound(voicesPath, sound);
-				}
-				voicesDone = (buffer != null);
+			loadSound(voicesPath, 'voices', function() {
+				voicesDone = true;
 				checkDone();
-			}).onError(function(error) {
-				failed = true;
-				Logger.log('Failed to load HTML5 Story Mode voices ' + voicesPath + '\\nException: ' + error, ERROR);
-				finish();
 			});
 		#else
 			onComplete();
 		#end
 	}
-
 	#if html5
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
 	{
