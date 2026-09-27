@@ -112,7 +112,13 @@ class OptionsState extends MusicBeatState
 		initStateScript();
 		persistentUpdate = true;
 		
-		if (isHardcodedState())
+		var buildHardcodedMenu:Bool = isHardcodedState();
+		#if html5
+		// The browser build has no Options state script, so always build the
+		// native Options UI instead of depending on the script-state gate.
+		buildHardcodedMenu = true;
+		#end
+		if (buildHardcodedMenu)
 		{
 			var ext:String = 'menu/options/';
 			
