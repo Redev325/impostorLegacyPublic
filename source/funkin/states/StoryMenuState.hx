@@ -303,7 +303,7 @@ class StoryMenuState extends AmongUIState
 			catch (e)
 			{
 				Logger.log('Failed to load Story Mode song ' + PlayState.storyMeta.playlist[0] + '\\nException: ' + e, ERROR);
-				onLoadFailed?.call();
+				if (onLoadFailed != null) onLoadFailed();
 			}
 		}
 		
