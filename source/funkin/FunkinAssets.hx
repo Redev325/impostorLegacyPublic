@@ -125,7 +125,7 @@ class FunkinAssets
 				return;
 			}
 			
-			Assets.loadLibrary(library).onComplete(function(_) {
+			LimeAssets.loadLibrary(library).onComplete(function(_) {
 				html5LoadedLibraries.set(library, true);
 				html5CurrentSongLibrary = library;
 				onComplete();
