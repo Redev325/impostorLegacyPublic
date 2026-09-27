@@ -291,7 +291,7 @@ class StoryMenuState extends AmongUIState
 					if (chartText == null)
 					{
 						Logger.log('HTML5 Story Mode chart was not cached for ' + PlayState.storyMeta.playlist[0], ERROR);
-						onLoadFailed?.call();
+						onLoadFailed?.();
 						return;
 					}
 					PlayState.SONG = Chart.fromData(FunkinAssets.parseJson(chartText));
