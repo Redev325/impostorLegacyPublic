@@ -159,6 +159,12 @@ class CosmicubeSelectState extends AmongUIState
 	
 	public function select(mod:Int = 0):Void
 	{
+		if (cards.length == 0)
+		{
+			curSelect = 0;
+			return;
+		}
+		
 		var lastCard:CosmicubeCard = cards.members[curSelect];
 		
 		FlxG.sound.play(Paths.sound('scrollMenu'), .6);
@@ -171,7 +177,10 @@ class CosmicubeSelectState extends AmongUIState
 		{
 			lastCard.select(false);
 		}
-		nextCard.select(true);
+		if (nextCard != null)
+		{
+			nextCard.select(true);
+		}
 	}
 	
 	public function selectLooksie(isIt:Bool):Void
