@@ -255,68 +255,77 @@ class StoryMenuState extends AmongUIState
 	
 	public function accept():Void
 	{
-		var node:StoryNode = cast cruiser.followingNode;
+		final node:StoryNode = nodes.get(currentNode) ?? cast cruiser.followingNode;
+		if (node == null) return;
 		
 		if (node.curScript?.executeFunc('onAccept', [], node) == ScriptConstants.STOP_FUNC) return;
 		
-		if (node?.meta != null)
+		if (node.meta == null) return;
+		if (!node.unlocked)
 		{
-			FlxG.sound.play(Paths.sound('panelAppear'), .5);
-			lockMovement = true;
-			loadWeek(node.meta, function() lockMovement = false);
+			lockAnim(node);
+			return;
 		}
+		
+		if (lockMovement) return;
+		FlxG.sound.play(Paths.sound('panelAppear'), .5);
+		lockMovement = true;
+		loadWeek(node.meta, function() lockMovement = false);
 	}
 	
 	public static function loadWeek(week:WeekData, ?onLoadFailed:Void->Void):Void
 	{
-		if (week == null || week.songs == null || week.songs.length == 0) return;
+		if (week == null || week.songs == null || week.songs.length == 0)
+		{
+			if (onLoadFailed != null) onLoadFailed();
+			return;
+		}
 		
-		var playlist:Array<String> = [for (song in week.songs) song[0]];
+		final playlist:Array<String> = [for (song in week.songs) song[0]];
+		if (playlist.length == 0 || playlist[0] == null || StringTools.trim(Std.string(playlist[0])).length == 0)
+		{
+			if (onLoadFailed != null) onLoadFailed();
+			return;
+		}
 		
 		PlayState.storyMeta.curWeek = WeekData.weeksList.indexOf(week.fileName);
 		PlayState.storyMeta.currency = week.currency;
 		PlayState.storyMeta.playlist = playlist;
 		PlayState.storyMeta.misses = 0;
 		PlayState.storyMeta.score = 0;
+		PlayState.isStoryMode = true;
+		PlayState.chartingMode = false;
 		
-		// Keep the selected week's asset directory active. This matters for
-		// mod/DLC weeks and is harmless for the core Legacy weeks.
 		WeekData.setDirectoryFromWeek(week);
 		
 		function startWeek():Void
 		{
 			try
 			{
-				#if html5
-					final chartText = FunkinAssets.getHtml5SongChart(PlayState.storyMeta.playlist[0], PlayState.storyMeta.difficulty);
-					if (chartText == null)
-					{
-						Logger.log('HTML5 Story Mode chart was not cached for ' + PlayState.storyMeta.playlist[0], ERROR);
-						if (onLoadFailed != null) onLoadFailed();
-						return;
-					}
-					PlayState.SONG = Chart.fromData(FunkinAssets.parseJson(chartText));
-				#else
-					PlayState.SONG = Chart.fromSong(PlayState.storyMeta.playlist[0], PlayState.storyMeta.difficulty);
-				#end
+				final ret = PlayState.prepareForSong(playlist[0], PlayState.storyMeta.difficulty, true);
+				if (ret != null)
+				{
+					Logger.log('Failed to prepare Story Mode song ' + playlist[0] + '\\nException: ' + ret, ERROR);
+					if (onLoadFailed != null) onLoadFailed();
+					return;
+				}
+				
 				FlxG.switchState(PlayState.new);
 			}
 			catch (e)
 			{
-				Logger.log('Failed to load Story Mode song ' + PlayState.storyMeta.playlist[0] + '\\nException: ' + e, ERROR);
+				Logger.log('Failed to start Story Mode week ' + week.fileName + '\\nException: ' + e, ERROR);
 				if (onLoadFailed != null) onLoadFailed();
 			}
 		}
 		
 		#if html5
-		// Gameplay visuals are already preloaded. Load only the selected song's
-		// chart/audio/text before entering PlayState.
-		FunkinAssets.loadHtml5SongAssets(PlayState.storyMeta.playlist[0], startWeek);
+		FunkinAssets.loadHtml5SongAssets(playlist[0], startWeek);
 		#else
 		startWeek();
 		#end
 	}
-	
+
 	var wasPressingCruiser:Bool = false;
 	
 	public override function update(elapsed:Float):Void
@@ -325,12 +334,14 @@ class StoryMenuState extends AmongUIState
 		{
 			if (FlxG.sound.music != null && FlxG.sound.music.volume < .7) FlxG.sound.music.volume += (.5 * elapsed);
 			
-			if (controls.UI_LEFT_P) moveCruiser(WEST);
-			if (controls.UI_RIGHT_P) moveCruiser(EAST);
-			if (controls.UI_DOWN_P) moveCruiser(SOUTH);
-			if (controls.UI_UP_P) moveCruiser(NORTH);
-			final firstKey:FlxKey = FlxG.keys.firstJustPressed();
-			if (controls.ACCEPT || firstKey == FlxKey.ENTER) accept();
+			// Keep configured Controls bindings, with raw keyboard fallbacks so
+			// Story Mode still works if saved bindings are missing or corrupted.
+			if (controls.UI_LEFT_P || FlxG.keys.justPressed.LEFT) moveCruiser(WEST);
+			if (controls.UI_RIGHT_P || FlxG.keys.justPressed.RIGHT) moveCruiser(EAST);
+			if (controls.UI_DOWN_P || FlxG.keys.justPressed.DOWN) moveCruiser(SOUTH);
+			if (controls.UI_UP_P || FlxG.keys.justPressed.UP) moveCruiser(NORTH);
+			if (controls.ACCEPT || FlxG.keys.justPressed.ENTER || FlxG.keys.justPressed.SPACE) accept();
+			if (controls.BACK || FlxG.keys.justPressed.ESCAPE) exit();
 			
 			if (FlxG.mouse.justPressed)
 			{
@@ -338,7 +349,7 @@ class StoryMenuState extends AmongUIState
 			}
 			else if (FlxG.mouse.justReleased)
 			{
-				var selectedNode:StoryNode = cast cruiser.followingNode;
+				final selectedNode:StoryNode = nodes.get(currentNode) ?? cast cruiser.followingNode;
 				var clickedNode:Bool = false;
 				if (selectedNode != null)
 				{
@@ -347,7 +358,7 @@ class StoryMenuState extends AmongUIState
 					final scale:Float = Math.max(1, .5 / FlxG.camera.zoom);
 					final dx:Float = FlxG.mouse.x - centerX;
 					final dy:Float = FlxG.mouse.y - centerY;
-					clickedNode = Math.sqrt(dx * dx + dy * dy) <= 110 * scale;
+					clickedNode = Math.sqrt(dx * dx + dy * dy) <= 130 * scale;
 				}
 				if ((wasPressingCruiser || clickedNode) && selectedNode != null) accept();
 			}
