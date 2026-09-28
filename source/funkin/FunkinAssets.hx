@@ -113,7 +113,7 @@ class FunkinAssets
 	 * Loads the deferred library for exactly one song before PlayState starts.
 	 * Story Mode and Freeplay both use this path on HTML5.
 	 */
-	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void, ?onError:Void->Void, ?difficulty:Int = -1):Void
+	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void, ?onError:Void->Void, ?difficulty:Int = -1)
 	{
 		#if html5
 			final safeSongName:String = Paths.sanitize(songName);
@@ -126,16 +126,6 @@ class FunkinAssets
 				callback();
 			}
 
-			// A song library stays registered after it loads, so returning here is
-			// safe and avoids downloading the same song library twice.
-			if (Assets.hasLibrary(libraryName))
-			{
-				html5LoadedLibraries.set(libraryName, true);
-				html5CurrentSongLibrary = libraryName;
-				onComplete();
-				return;
-			}
-
 			if (html5LoadedLibraries.exists(libraryName))
 			{
 				html5CurrentSongLibrary = libraryName;
@@ -143,6 +133,9 @@ class FunkinAssets
 				return;
 			}
 
+			// Each song has an explicit Lime library in Project.xml. Load that
+			// library through the normal OpenFL/Lime asset pipeline, then mark it
+			// as the current library so Paths can resolve its files synchronously.
 			try
 			{
 				Assets.loadLibrary(libraryName).onComplete(function(loadedLibrary) {
