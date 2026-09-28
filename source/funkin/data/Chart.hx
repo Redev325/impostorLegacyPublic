@@ -47,6 +47,20 @@ class Chart
 	{
 		songName = Paths.sanitize(songName);
 		
+		#if html5
+		// Story Mode preloads the selected chart with a browser request because
+		// individual song libraries are not synchronously available on HTML5.
+		// Reuse that cached chart here instead of asking Assets for the same
+		// deferred library again.
+		final effectiveDifficulty:Int = difficulty == -1 ? PlayState.storyMeta.difficulty : difficulty;
+		final cachedChart:Null<String> = FunkinAssets.getHtml5SongChart(songName, effectiveDifficulty);
+		if (cachedChart != null)
+		{
+			final parsedChart = FunkinAssets.parseJson(cachedChart);
+			if (parsedChart != null) return fromData(parsedChart);
+		}
+		#end
+		
 		final path = Paths.json('$songName/data/${Difficulty.getDifficultyFilePath(difficulty)}');
 		
 		if (!FunkinAssets.exists(path))
