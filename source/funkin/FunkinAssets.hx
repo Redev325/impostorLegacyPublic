@@ -112,66 +112,11 @@ class FunkinAssets
 	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void):Void
 	{
 		#if html5
-			final songPath:String = Paths.sanitize(songName);
-			// Project.xml uses one deferred library per song. Most names map
-			// directly; apostrophes and other punctuation are normalized to '_'.
-			final normalizedName:String = ~/[^a-zA-Z0-9_-]/g.replace(songPath, '_');
-			final library:String = 'song_' + normalizedName;
-			final difficultyPath:String = Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty).toLowerCase();
-			final chartId:String = library + ':assets/songs/' + songPath + '/data/' + difficultyPath + '.json';
-			
-			function finish():Void
-			{
-				if (!Assets.hasLibrary(library))
-				{
-					Logger.log('HTML5 song library was not registered: ' + library + ' for ' + songName, ERROR);
-					onComplete();
-					return;
-				}
-				
-				html5CurrentSongLibrary = library;
-				
-				if (!Assets.exists(chartId, TEXT))
-				{
-					Logger.log('HTML5 Story Mode chart was not found after loading ' + library + ': ' + chartId, ERROR);
-					onComplete();
-					return;
-				}
-				
-				// Explicitly fetch the chart once. This proves the deferred library is
-				// synchronously usable before PlayState/Chart.fromSong() runs and also
-				// primes OpenFL's asset cache for the exact chart being entered.
-				Assets.loadText(chartId).onComplete(function(chartText:String) {
-					html5SongChartText.set(songPath + ':' + PlayState.storyMeta.difficulty, chartText);
-					onComplete();
-				}).onError(function(error) {
-					Logger.log('Failed to load HTML5 Story Mode chart ' + chartId + '\\nException: ' + error, ERROR);
-					onComplete();
-				});
-			}
-			
-			if (html5LoadedLibraries.exists(library))
-			{
-				finish();
-				return;
-			}
-			
-			// Load the per-song deferred library itself. Do not check hasLibrary()
-			// first; a deferred manifest may only become visible as this loads.
-			Assets.loadLibrary(library).onComplete(function(loadedLibrary) {
-				if (loadedLibrary == null)
-				{
-					Logger.log('HTML5 song library could not be loaded: ' + library, ERROR);
-					onComplete();
-					return;
-				}
-				
-				html5LoadedLibraries.set(library, true);
-				finish();
-			}).onError(function(error) {
-				Logger.log('Failed to load HTML5 song library ' + library + ' for ' + songName + '\\nException: ' + error, ERROR);
-				onComplete();
-			});
+			// HTML5 song charts, events, and song scripts live in the preloaded
+			// gameplay library. PlayableSong streams Inst/Voices directly from the
+			// static assets path, so no deferred OpenFL/Lime song library is needed.
+			html5CurrentSongLibrary = 'gameplay';
+			onComplete();
 		#else
 			onComplete();
 		#end
