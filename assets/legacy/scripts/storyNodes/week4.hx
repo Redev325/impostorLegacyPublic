@@ -68,10 +68,11 @@ function onAccept():Void {
 		
 		FlxG.sound.music.volume = 0;
 		FlxG.sound.play(Paths.sound('kill'), .9);
-		FlxTimer.wait(1, () -> StoryMenuState.loadWeek(meta));
+		FlxTimer.wait(1, () -> StoryMenuState.loadWeek(meta, function() lockMovement = false));
 	} else {
 		lockMovement = true;
-		openSubState(new funkin.states.substates.MissCounterSubstate(function(misses:Int) StoryMenuState.loadWeek(meta)));
+		openSubState(new funkin.states.substates.MissCounterSubstate(function(misses:Int)
+			StoryMenuState.loadWeek(meta, function() lockMovement = false)));
 	}
 	
 	return Function_Stop;
