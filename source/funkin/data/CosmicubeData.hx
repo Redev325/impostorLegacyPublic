@@ -69,30 +69,41 @@ class CosmicubeData
 		cosmicubeItems.clear();
 		
 		#if html5
-		final dir:String = Paths.getCorePath('data/cosmicube');
-		var files:Array<String> = FunkinAssets.readDirectory(dir);
-		
-		// The built-in VS IMPOSTOR cube is part of the game data. Do not rely on
-		// virtual-directory enumeration to discover it on HTML5; some Lime/OpenFL
-		// builds expose the files through Assets.getText() but omit the directory
-		// entry from Assets.list().
-		if (!files.contains('impostor.json')) files.push('impostor.json');
-		
-		for (file in files)
+		// HTML5 does not have a real filesystem for the bundled assets, so keep
+		// the built-in Cosmicube index deterministic instead of depending on
+		// virtual directory enumeration.
+		final cubePath:String = Paths.getCorePath('data/cosmicube/impostor.json');
+		var cubeMeta:Null<CosmicubeMetadata> = null;
+		try
 		{
-			if (!file.endsWith('.json')) continue;
-			
-			final fileName:String = file.withoutExtension();
-			final raw:Null<String> = FunkinAssets.getContent(haxe.io.Path.join([dir, file]));
-			final meta:Null<CosmicubeMetadata> = FunkinAssets.parseJson5(raw);
-			if (meta == null) continue;
-			
-			meta.fileName = fileName;
-			meta.mod = null;
-			
-			cosmicubeList.push(fileName);
-			cosmicubeMetas.set(fileName, meta);
-			cosmicubeItems.set(fileName, getShopItems(haxe.io.Path.join([dir, fileName]), meta));
+			cubeMeta = FunkinAssets.parseJson5(FunkinAssets.getContent(cubePath));
+		}
+		catch (e)
+		{
+			Logger.log('Failed to load built-in Cosmicube metadata: $e', ERROR);
+		}
+		
+		if (cubeMeta != null)
+		{
+			cubeMeta.fileName = 'impostor';
+			cubeMeta.mod = null;
+			cosmicubeList.push('impostor');
+			cosmicubeMetas.set('impostor', cubeMeta);
+			cosmicubeItems.set('impostor', getShopItems(Paths.getCorePath('data/cosmicube/impostor'), cubeMeta));
+		}
+		else
+		{
+			// Keep the menu renderable even if the metadata request fails.
+			final fallback:CosmicubeMetadata =
+			{
+				title: 'VS IMPOSTOR COSMICUBE',
+				currency: 'beans',
+				fileName: 'impostor',
+				mod: null
+			};
+			cosmicubeList.push('impostor');
+			cosmicubeMetas.set('impostor', fallback);
+			cosmicubeItems.set('impostor', []);
 		}
 		#else
 		var directories:Array<String> = [Paths.mods(), Paths.getCorePath()];
