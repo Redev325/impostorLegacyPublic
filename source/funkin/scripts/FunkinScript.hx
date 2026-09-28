@@ -388,6 +388,12 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		set('float', function(value:Dynamic):Float return Std.parseFloat(Std.string(value)));
 		set('parseInt', function(value:String):Null<Int> return Std.parseInt(value));
 		set('parseFloat', function(value:String):Float return Std.parseFloat(value));
+		// Legacy stage scripts frequently call these helpers without the Paths. prefix.
+		set('image', function(key:String, ?parentFolder:String, allowGPU:Bool = true, mode:PathsTestMode = NORMAL) return Paths.image(key, parentFolder, allowGPU, mode));
+		set('getSparrowAtlas', function(key:String, ?parentFolder:String, allowGPU:Bool = true, mode:PathsTestMode = NORMAL) return Paths.getSparrowAtlas(key, parentFolder, allowGPU, mode));
+		set('getPackerAtlas', function(key:String, ?parentFolder:String, allowGPU:Bool = true, mode:PathsTestMode = NORMAL) return Paths.getPackerAtlas(key, parentFolder, allowGPU, mode));
+		set('sound', function(key:String, ?parentFolder:String, mode:PathsTestMode = NORMAL) return Paths.sound(key, parentFolder, mode));
+		set('music', function(key:String, ?parentFolder:String, mode:PathsTestMode = NORMAL) return Paths.music(key, parentFolder, mode));
 		#end
 		set('FlxColor', funkin.scripts.ScriptClasses.ScriptedFlxColor);
 		set('Random', funkin.scripts.ScriptClasses.ScriptedFlxRandom);
