@@ -282,10 +282,20 @@ class StoryMenuState extends AmongUIState
 		}
 		
 		final playlist:Array<String> = [for (song in week.songs) song[0]];
-		if (playlist.length == 0 || playlist[0] == null || StringTools.trim(Std.string(playlist[0])).length == 0)
+		if (playlist.length == 0)
 		{
 			if (onLoadFailed != null) onLoadFailed();
 			return;
+		}
+		
+		for (songName in playlist)
+		{
+			if (songName == null || StringTools.trim(Std.string(songName)).length == 0)
+			{
+				Logger.log('Story Mode week ' + week.fileName + ' contains an empty song entry', ERROR);
+				if (onLoadFailed != null) onLoadFailed();
+				return;
+			}
 		}
 		
 		PlayState.storyMeta.curWeek = WeekData.weeksList.indexOf(week.fileName);
