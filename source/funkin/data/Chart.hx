@@ -3,7 +3,6 @@ package funkin.data;
 import funkin.backend.Difficulty;
 import funkin.data.Song;
 import funkin.data.StageData;
-import funkin.states.PlayState;
 
 import haxe.Json;
 
@@ -46,15 +45,6 @@ class Chart
 	public static function fromSong(songName:String, difficulty:Int = -1):Song
 	{
 		songName = Paths.sanitize(songName);
-		
-		#if html5
-		final effectiveDifficulty:Int = difficulty < 0 ? PlayState.storyMeta.difficulty : difficulty;
-		final cachedChart:Null<String> = FunkinAssets.getHtml5SongChart(songName, effectiveDifficulty);
-		if (cachedChart != null)
-		{
-			return fromData(FunkinAssets.parseJson(cachedChart));
-		}
-		#end
 		
 		final path = Paths.json('$songName/data/${Difficulty.getDifficultyFilePath(difficulty)}');
 		
