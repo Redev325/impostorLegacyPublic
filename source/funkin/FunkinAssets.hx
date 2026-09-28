@@ -115,7 +115,14 @@ class FunkinAssets
 			// HTML5 song charts, events, and song scripts live in the preloaded
 			// gameplay library. PlayableSong streams Inst/Voices directly from the
 			// static assets path, so no deferred OpenFL/Lime song library is needed.
+			final songPath:String = Paths.sanitize(songName);
+			final difficultyPath:String = Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty);
+			final chartPath:String = Paths.json(songPath + '/data/' + difficultyPath);
 			html5CurrentSongLibrary = 'gameplay';
+			if (!Assets.exists('gameplay:' + chartPath, TEXT))
+			{
+				Logger.log('HTML5 Story Mode chart is missing from gameplay preload: ' + chartPath, ERROR);
+			}
 			onComplete();
 		#else
 			onComplete();
