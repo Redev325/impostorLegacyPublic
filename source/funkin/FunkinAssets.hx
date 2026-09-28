@@ -115,156 +115,76 @@ class FunkinAssets
 	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void, ?onError:Void->Void):Void
 	{
 		#if html5
-			// HTML5 uses direct browser requests for the selected song instead of
-			// relying on a deferred Lime library registration.
+			// Only the chart has to be ready before entering PlayState. The
+			// PlayableSong class already streams Inst.ogg/Voices.ogg after the
+			// state is created, so waiting for audio here can make Story Mode
+			// appear stuck on slower connections.
 			html5CurrentSongLibrary = null;
 			final safeSongName:String = Paths.sanitize(songName);
-			final folderName:String = safeSongName == 'dlow' ? "d'low" : safeSongName;
 			final effectiveDifficulty:Int = PlayState.storyMeta.difficulty;
 			final chartDifficulty:String = Difficulty.getDifficultyFilePath(effectiveDifficulty);
 			final chartCacheKey:String = safeSongName + ':' + effectiveDifficulty;
-			final chartUrl:String = 'assets/songs/$folderName/data/$chartDifficulty.json';
-			final baseUrl:String = 'assets/songs/$folderName';
-			final instCandidates:Array<String> = [
-				'$baseUrl/Inst.ogg',
-				'$baseUrl/audio/Inst.ogg',
-				'$baseUrl/Inst.wav',
-				'$baseUrl/audio/Inst.wav'
-			];
-			final voicesCandidates:Array<String> = [
-				'$baseUrl/Voices.ogg',
-				'$baseUrl/audio/Voices.ogg',
-				'$baseUrl/Voices.wav',
-				'$baseUrl/audio/Voices.wav'
-			];
-			var finished:Bool = false;
+			final chartUrl:String = 'assets/songs/' + (safeSongName == 'dlow' ? "d'low" : safeSongName)
+				+ '/data/' + chartDifficulty + '.json';
+
+			if (html5SongChartText.exists(chartCacheKey))
+			{
+				onComplete();
+				return;
+			}
 
 			function fail(reason:Dynamic):Void
 			{
-				if (finished) return;
-				finished = true;
-				Logger.log('Unable to load HTML5 song assets for $songName: $reason', ERROR);
+				Logger.log('Unable to load HTML5 song chart for ' + songName + ': ' + reason, ERROR);
 				final callback:Void->Void = onError ?? function() {};
 				callback();
 			}
 
-			function cacheLoadedSound(sound:Sound, url:String):Void
-			{
-				cache.cacheSound(url, sound);
-				final fileNameStart:Int = url.lastIndexOf('/') + 1;
-				final fileName:String = url.substr(fileNameStart);
-				final folderStart:Int = url.lastIndexOf('/');
-				final folder:String = url.substr(0, folderStart);
-				if (folder.indexOf('/audio') == -1)
-				{
-					cache.cacheSound(folder + '/audio/' + fileName, sound);
-				}
-				else
-				{
-					cache.cacheSound(StringTools.replace(folder, '/audio', '') + '/' + fileName, sound);
-				}
-			}
-
-			function loadSoundCandidates(candidates:Array<String>, required:Bool, done:Void->Void, index:Int = 0, attempt:Int = 1):Void
-			{
-				if (finished) return;
-				if (index >= candidates.length)
-				{
-					if (required) fail('required audio file was not reachable');
-					else done();
-					return;
-				}
-
-				final url:String = candidates[index];
-				final sound:Sound = new Sound();
-				sound.addEventListener(Event.COMPLETE, function(_) {
-					cacheLoadedSound(sound, url);
-					done();
-				});
-				sound.addEventListener(IOErrorEvent.IO_ERROR, function(event) {
-					if (attempt < 3)
-					{
-						Logger.log('Failed to load $url, retrying (' + (attempt + 1) + '/3)\\nException: ' + event.text, WARN);
-						Timer.delay(() -> loadSoundCandidates(candidates, required, done, index, attempt + 1), 500 * attempt);
-					}
-					else
-					{
-						loadSoundCandidates(candidates, required, done, index + 1, 1);
-					}
-				});
-				try
-				{
-					sound.load(new URLRequest(url));
-				}
-				catch (e)
-				{
-					loadSoundCandidates(candidates, required, done, index + 1, 1);
-				}
-			}
-
 			function loadChart(attempt:Int = 1):Void
 			{
-				if (finished) return;
-
-				if (html5SongChartText.exists(chartCacheKey))
-				{
-					loadSoundCandidates(instCandidates, true, function() {
-						loadSoundCandidates(voicesCandidates, false, function() {
-							if (!finished)
-							{
-								finished = true;
-								onComplete();
-							}
-						});
-					});
-					return;
-				}
-
 				final loader:URLLoader = new URLLoader();
 				loader.addEventListener(Event.COMPLETE, function(_) {
 					final text:String = Std.string(loader.data);
 					if (text.trim().length == 0)
 					{
-						if (attempt < 3) Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
-						else fail('chart file was empty');
+						if (attempt < 3)
+							Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
+						else
+							fail('chart file was empty');
 						return;
 					}
+
 					if (parseJson(text) == null)
 					{
 						fail('chart JSON could not be parsed');
 						return;
 					}
+
 					html5SongChartText.set(chartCacheKey, text);
-					loadSoundCandidates(instCandidates, true, function() {
-						loadSoundCandidates(voicesCandidates, false, function() {
-							if (!finished)
-							{
-								finished = true;
-								onComplete();
-							}
-						});
-					});
-			});
-			loader.addEventListener(IOErrorEvent.IO_ERROR, function(event) {
-				if (attempt < 3)
+					onComplete();
+				});
+				loader.addEventListener(IOErrorEvent.IO_ERROR, function(event) {
+					if (attempt < 3)
+					{
+						Logger.log('Failed to load HTML5 chart ' + chartUrl + ', retrying (' + (attempt + 1) + '/3)\\nException: ' + event.text, WARN);
+						Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
+					}
+					else
+					{
+						fail('chart request failed after 3 attempts');
+					}
+				});
+				try
 				{
-					Logger.log('Failed to load HTML5 chart $chartUrl, retrying (' + (attempt + 1) + '/3)\\nException: ' + event.text, WARN);
-					Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
+					loader.load(new URLRequest(chartUrl));
 				}
-				else
+				catch (e)
 				{
-					fail('chart request failed after 3 attempts');
+					if (attempt < 3)
+						Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
+					else
+						fail(e);
 				}
-			});
-			try
-			{
-				loader.load(new URLRequest(chartUrl));
-			}
-			catch (e)
-			{
-				if (attempt < 3) Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
-				else fail(e);
-			}
 			}
 
 			loadChart();
@@ -272,6 +192,7 @@ class FunkinAssets
 			onComplete();
 		#end
 	}
+
 	#if html5
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
 	{
