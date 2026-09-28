@@ -175,7 +175,9 @@ class FunkinAssets
 			
 			tryLoad(1);
 		#else
-			onComplete()
+			onComplete();
+		#end
+	}
 	#if html5
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
 	{
