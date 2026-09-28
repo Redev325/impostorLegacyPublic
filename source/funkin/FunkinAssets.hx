@@ -112,50 +112,10 @@ class FunkinAssets
 	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void):Void
 	{
 		#if html5
-			// Activate every deferred runtime library needed by a real song:
-			// gameplay = charts/scripts/stages/characters,
-			// music = Inst/Voices and runtime music,
-			// embedded = videos/cutscenes and other embedded content.
-			final songPath:String = Paths.sanitize(songName);
-			final difficultyPath:String = Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty);
-			final chartPath:String = Paths.json(songPath + '/data/' + difficultyPath);
-			
-			function finish():Void
-			{
-				html5CurrentSongLibrary = 'gameplay';
-				if (!Assets.exists('gameplay:' + chartPath, TEXT))
-				{
-					Logger.log('HTML5 Story Mode chart is missing from gameplay preload: ' + chartPath, ERROR);
-				}
-				onComplete();
-			}
-			
-			function loadEmbedded():Void
-			{
-				Assets.loadLibrary('embedded').onComplete(function(_) {
-					finish();
-				}).onError(function(error) {
-					Logger.log('Failed to activate HTML5 embedded/cutscene library for ' + songName + '\\nException: ' + error, ERROR);
-					finish();
-				});
-			}
-			
-			function loadMusic():Void
-			{
-				Assets.loadLibrary('music').onComplete(function(_) {
-					loadEmbedded();
-				}).onError(function(error) {
-					Logger.log('Failed to activate HTML5 music library for ' + songName + '\\nException: ' + error, ERROR);
-					loadEmbedded();
-				});
-			}
-			
-			Assets.loadLibrary('gameplay').onComplete(function(_) {
-				loadMusic();
-			}).onError(function(error) {
-				Logger.log('Failed to activate HTML5 gameplay library for ' + songName + '\\nException: ' + error, ERROR);
-				loadMusic();
-			});
+			// All song data/audio is already in the preloaded gameplay library.
+			// Do not block the Story Mode state transition on the music/video libraries.
+			html5CurrentSongLibrary = 'gameplay';
+			onComplete();
 		#else
 			onComplete();
 		#end
