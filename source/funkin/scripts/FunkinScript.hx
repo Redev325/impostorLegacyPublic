@@ -136,6 +136,12 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 	
 	public var modFolder:Null<String>;
 	
+	public static function isEscapedScriptReturn(e:Dynamic):Bool
+	{
+		final value:String = Std.string(e);
+		return value == 'SReturn' || value.endsWith('.SReturn');
+	}
+
 	public function new(script:String, ?name:String = "Script", ?additionalVars:Map<String, Any>, ?shareables:Sharables, ?modFolder:String)
 	{
 		super(script, {name: name, autoRun: false, autoPreset: false}, shareables);
@@ -198,11 +204,11 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 				{
 					returnVal = Reflect.callMethod(theObject, daFunc, parameters ?? []);
 				}
-				catch (e:haxe.Exception)
+				catch (e:Dynamic)
 				{
-					#if sys
-					Sys.println(e.message);
-					#end
+					// HScript's SReturn is internal control flow. It should never reach
+					// the HTML5 crash handler as though it were a real game exception.
+					if (!isEscapedScriptReturn(e)) throw e;
 				}
 				
 				for (key in defaultShit.keys())
