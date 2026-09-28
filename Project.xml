@@ -116,13 +116,10 @@
 			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg|clickText.ogg|cosmicubePop.ogg|equip.ogg|equipPet.ogg|getbeans.ogg|hover.ogg|kill.ogg|locked.ogg|menu/looksie.ogg|panelAppear.ogg|panelDisappear.ogg|select.ogg|shopbuy.ogg|unlockSong.ogg" preload="true" embed="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="music"
 			exclude="freakyMenu.ogg|finaleMenu.ogg" preload="false" embed="false" />
-		<!-- HTML5 keeps song charts/scripts in the preloaded gameplay library. Audio is streamed directly by PlayableSong. -->
+		<!-- HTML5 song data AND audio are preloaded into gameplay so PlayState can start
+		     without blocking on a giant deferred library transition. -->
 		<assets path="assets/legacy/songs" rename="assets/songs" library="gameplay"
-			exclude="*.ogg|*.mp3|*.wav" preload="true" embed="false" if="html5" />
-		<!-- HTML5 song audio is streamed when gameplay starts. Keep it in a non-preloaded
-		     library so every song does not download during the startup loader. -->
-		<assets path="assets/legacy/songs" rename="assets/songs" library="music"
-			exclude="*.json|*.hx|*.hxs|*.hscript|*.txt" preload="false" embed="false" if="html5" />
+			preload="true" embed="false" if="html5" />
 
 		<!-- Desktop/non-HTML5 builds keep the original per-song libraries. -->
 		<assets path="assets/legacy/songs/armed" rename="assets/songs/armed" library="song_armed" preload="true" embed="false" unless="html5" />
