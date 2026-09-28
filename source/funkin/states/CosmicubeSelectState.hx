@@ -84,6 +84,28 @@ class CosmicubeSelectState extends AmongUIState
 		}
 		#end
 		
+		#if html5
+		// The built-in VS IMPOSTOR cube is the only core cube on this build.
+		// Create its card directly so the selector never depends on virtual
+		// directory enumeration or an empty runtime cube list.
+		var builtInMeta:CosmicubeMetadata = CosmicubeData.cosmicubeMetas.get('impostor');
+		if (builtInMeta == null)
+		{
+			builtInMeta =
+			{
+				title: 'VS IMPOSTOR COSMICUBE',
+				currency: 'beans',
+				fileName: 'impostor',
+				mod: null
+			};
+			CosmicubeData.cosmicubeMetas.set('impostor', builtInMeta);
+			if (!CosmicubeData.cosmicubeList.contains('impostor')) CosmicubeData.cosmicubeList.push('impostor');
+			if (!CosmicubeData.cosmicubeItems.exists('impostor')) CosmicubeData.cosmicubeItems.set('impostor', []);
+		}
+		
+		Mods.currentModDirectory = null;
+		cards.add(new CosmicubeCard(0, 0, builtInMeta));
+		#else
 		for (id in cubeIDs)
 		{
 			var meta:CosmicubeMetadata = (CosmicubeData.cosmicubeMetas.get(id) ?? CosmicubeData.fallbackMeta);
@@ -92,6 +114,7 @@ class CosmicubeSelectState extends AmongUIState
 			
 			cards.add(new CosmicubeCard(0, 0, meta));
 		}
+		#end
 		
 		Mods.currentModDirectory = prevMod;
 		
