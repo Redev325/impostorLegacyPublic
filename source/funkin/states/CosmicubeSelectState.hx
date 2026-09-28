@@ -32,7 +32,14 @@ class CosmicubeSelectState extends AmongUIState
 		turboGroup.add(controlUP);
 		
 		CosmicubeData.reload();
+		
+		// The locker preload is not required to render the Cosmicube selector.
+		// On HTML5 it can request deferred cosmetic assets before the selector
+		// has finished creating its own cards, so defer that preload until the
+		// locker is actually opened.
+		#if !html5
 		CosmeticsSubstate.preloadForFreeplay();
+		#end
 		
 		#if !html5
 		DiscordClient.changePresence("Cosmicube Menu");
@@ -52,14 +59,38 @@ class CosmicubeSelectState extends AmongUIState
 		
 		add(cards);
 		cards.setPosition(40, upperBar.height + 40);
+		cards.camera = FlxG.camera;
+		cards.visible = true;
+		cards.active = true;
+		cards.zIndex = 5;
 		
-		for (id in CosmicubeData.cosmicubeList)
+		// Always keep the built-in VS IMPOSTOR cube renderable on HTML5, even if
+		// an asset-list lookup returns no cube IDs.
+		var cubeIDs:Array<String> = CosmicubeData.cosmicubeList.copy();
+		#if html5
+		if (cubeIDs.length == 0)
+		{
+			final fallbackMeta:CosmicubeMetadata =
+			{
+				title: 'VS IMPOSTOR COSMICUBE',
+				currency: 'beans',
+				fileName: 'impostor',
+				mod: null
+			};
+			CosmicubeData.cosmicubeList.push('impostor');
+			CosmicubeData.cosmicubeMetas.set('impostor', fallbackMeta);
+			CosmicubeData.cosmicubeItems.set('impostor', []);
+			cubeIDs.push('impostor');
+		}
+		#end
+		
+		for (id in cubeIDs)
 		{
 			var meta:CosmicubeMetadata = (CosmicubeData.cosmicubeMetas.get(id) ?? CosmicubeData.fallbackMeta);
 			
 			Mods.currentModDirectory = meta.mod;
 			
-			cards.add(new CosmicubeCard(meta));
+			cards.add(new CosmicubeCard(0, 0, meta));
 		}
 		
 		Mods.currentModDirectory = prevMod;
