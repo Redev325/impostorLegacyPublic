@@ -43,15 +43,20 @@ class InterpEx extends crowplexus.hscript.Interp
 	
 	override function makeIterator(v:Dynamic):Iterator<Dynamic>
 	{
+		// HTML5/HScript can sometimes lose reflective access to Array.iterator().
+		// Handle real Haxe arrays directly before using the generic reflection path.
+		if (Std.isOfType(v, Array))
+			return (cast v : Array<Dynamic>).iterator();
+		
 		#if ((flash && !flash9) || (php && !php7 && haxe_ver < '4.0.0'))
 		if (v.iterator != null) v = v.iterator();
 		#else
 		// DATA CHANGE //does a null check because this crashes on debug build
-		if (v.iterator != null) try
+		if (v != null && v.iterator != null) try
 			v = v.iterator()
 		catch (e:Dynamic) {};
 		#end
-		if (v.hasNext == null || v.next == null) error(EInvalidIterator(v));
+		if (v == null || v.hasNext == null || v.next == null) error(EInvalidIterator(v));
 		return v;
 	}
 	
