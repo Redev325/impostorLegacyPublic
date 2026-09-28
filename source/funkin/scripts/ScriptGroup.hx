@@ -90,7 +90,16 @@ class ScriptGroup implements IFlxDestroyable
 		{
 			if (i == null || !i.exists(event) || exclusions.contains(i.name)) continue;
 			
-			var ret:Dynamic = i.call(event, args)?.returnValue;
+			var ret:Dynamic = null;
+			try
+			{
+				ret = i.call(event, args)?.returnValue;
+			}
+			catch (e:Dynamic)
+			{
+				// A leaked HScript SReturn is script control flow, not a game crash.
+				if (!FunkinScript.isEscapedScriptReturn(e)) throw e;
+			}
 			
 			if (ret != null)
 			{
