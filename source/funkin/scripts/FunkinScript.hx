@@ -239,6 +239,21 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		
 		for (k => v in funkin.data.Defines.defines) parser.preprocesorValues.set(k, v);
 		
+		#if html5
+		// Some Std methods (notably Std.int) are extern/inline and therefore do not
+		// survive reflection into HScript on JavaScript. Expose real function values.
+		set("Std", {
+			int: function(value:Dynamic):Int return Std.int(value),
+			parseInt: function(value:String):Null<Int> return Std.parseInt(value),
+			parseFloat: function(value:String):Float return Std.parseFloat(value),
+			string: function(value:Dynamic):String return Std.string(value),
+			isOfType: function(value:Dynamic, type:Dynamic):Bool return Std.isOfType(value, type),
+			random: function(max:Int):Int return Std.random(max),
+			instance: function(value:Dynamic, type:Dynamic):Dynamic return Std.downcast(value, type)
+		});
+		#else
+		set("Std", Std);
+		#end
 		set("StringTools", StringTools);
 		set("Date", Date);
 		#if sys
@@ -329,7 +344,31 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		set("SetEvent", funkin.game.modchart.events.SetEvent);
 		
 		// FNF-specific things
+		#if html5
+		// Paths contains many inline static helpers. Reflection cannot call those
+		// methods reliably from HScript on JavaScript, so expose a script-facing
+		// object whose function fields are concrete closures.
+		set("Paths", {
+			getPath: function(file:String, ?parentFolder:String, mode:PathsTestMode = NONE):String return Paths.getPath(file, parentFolder, mode),
+			image: function(key:String, ?parentFolder:String, allowGPU:Bool = true, mode:PathsTestMode = NORMAL) return Paths.image(key, parentFolder, allowGPU, mode),
+			getAtlasFrames: function(key:String, ?parentFolder:String, allowGPU:Bool = true, mode:PathsTestMode = NORMAL) return Paths.getAtlasFrames(key, parentFolder, allowGPU, mode),
+			getSparrowAtlas: function(key:String, ?parentFolder:String, allowGPU:Bool = true, mode:PathsTestMode = NORMAL) return Paths.getSparrowAtlas(key, parentFolder, allowGPU, mode),
+			getPackerAtlas: function(key:String, ?parentFolder:String, allowGPU:Bool = true, mode:PathsTestMode = NORMAL) return Paths.getPackerAtlas(key, parentFolder, allowGPU, mode),
+			getMultiAtlas: function(keys:Array<String>, ?parentFolder:String, allowGPU:Bool = true, mode:PathsTestMode = NORMAL) return Paths.getMultiAtlas(keys, parentFolder, allowGPU, mode),
+			sanitize: function(path:String):String return Paths.sanitize(path),
+			fileExists: function(key:String, ?parentFolder:String, mode:PathsTestMode = NORMAL):Bool return Paths.fileExists(key, parentFolder, mode),
+			sound: function(key:String, ?parentFolder:String, mode:PathsTestMode = NORMAL) return Paths.sound(key, parentFolder, mode),
+			music: function(key:String, ?parentFolder:String, mode:PathsTestMode = NORMAL) return Paths.music(key, parentFolder, mode),
+			voices: function(song:String, ?postFix:String, mode:PathsTestMode = NORMAL) return Paths.voices(song, postFix, mode),
+			inst: function(song:String, ?postFix:String, mode:PathsTestMode = NORMAL) return Paths.inst(song, postFix, mode),
+			trackSwap: function(song:String, ?postFix:String, mode:PathsTestMode = NORMAL) return Paths.trackSwap(song, postFix, mode),
+			font: function(key:String, overridable:Bool = true, mode:PathsTestMode = NORMAL):String return Paths.font(key, overridable, mode),
+			video: function(key:String, mode:PathsTestMode = NORMAL):String return Paths.video(key, mode),
+			getTextFromFile: function(key:String, ?parentFolder:String, mode:PathsTestMode = NORMAL):String return Paths.getTextFromFile(key, parentFolder, mode)
+		});
+		#else
 		set("Paths", Paths);
+		#end
 		set("PathsTestMode", PathsTestMode);
 		set("MusicBeatState", funkin.backend.MusicBeatState);
 		set("Conductor", funkin.backend.Conductor);
@@ -344,6 +383,12 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		set('FunkinSound', funkin.audio.FunkinSound);
 		
 		// custom
+		#if html5
+		set('int', function(value:Dynamic):Int return Std.int(value));
+		set('float', function(value:Dynamic):Float return Std.parseFloat(Std.string(value)));
+		set('parseInt', function(value:String):Null<Int> return Std.parseInt(value));
+		set('parseFloat', function(value:String):Float return Std.parseFloat(value));
+		#end
 		set('FlxColor', funkin.scripts.ScriptClasses.ScriptedFlxColor);
 		set('Random', funkin.scripts.ScriptClasses.ScriptedFlxRandom);
 		
