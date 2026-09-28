@@ -350,7 +350,6 @@ class StoryMenuState extends AmongUIState
 			if (controls.UI_RIGHT_P || FlxG.keys.justPressed.RIGHT) moveCruiser(EAST);
 			if (controls.UI_DOWN_P || FlxG.keys.justPressed.DOWN) moveCruiser(SOUTH);
 			if (controls.UI_UP_P || FlxG.keys.justPressed.UP) moveCruiser(NORTH);
-			if (controls.ACCEPT || FlxG.keys.justPressed.ENTER || FlxG.keys.justPressed.SPACE) accept();
 			if (controls.BACK || FlxG.keys.justPressed.ESCAPE) exit();
 			
 			if (FlxG.mouse.justPressed)
@@ -359,18 +358,37 @@ class StoryMenuState extends AmongUIState
 			}
 			else if (FlxG.mouse.justReleased)
 			{
-				final selectedNode:StoryNode = nodes.get(currentNode) ?? cast cruiser.followingNode;
-				var clickedNode:Bool = false;
-				if (selectedNode != null)
+				var clickedNode:StoryNode = null;
+				final mouseWorld = FlxG.mouse.getWorldPosition(FlxG.camera);
+				for (node in nodes)
 				{
-					final centerX:Float = selectedNode.x;
-					final centerY:Float = selectedNode.y;
-					final scale:Float = Math.max(1, .5 / FlxG.camera.zoom);
-					final dx:Float = FlxG.mouse.x - centerX;
-					final dy:Float = FlxG.mouse.y - centerY;
-					clickedNode = Math.sqrt(dx * dx + dy * dy) <= 130 * scale;
+					if (node == null || !node.exists || !node.visible) continue;
+					final dx:Float = mouseWorld.x - node.x;
+					final dy:Float = mouseWorld.y - node.y;
+					final hitRadius:Float = 115;
+					if (Math.sqrt(dx * dx + dy * dy) <= hitRadius)
+					{
+						clickedNode = node;
+						break;
+					}
 				}
-				if ((wasPressingCruiser || clickedNode) && selectedNode != null) accept();
+				if (clickedNode != null)
+				{
+					if (clickedNode.unlocked)
+					{
+						goTo(clickedNode);
+						accept();
+					}
+					else
+					{
+						goTo(clickedNode);
+						lockAnim(clickedNode);
+					}
+				}
+				else if (wasPressingCruiser)
+				{
+					accept();
+				}
 			}
 			
 			var wDeadzone:Float = Math.min((800 - (FlxG.width + 800) * (1 - FlxG.camera.zoom)), (FlxG.camera.width - cruiser.width) * .5);
@@ -380,6 +398,14 @@ class StoryMenuState extends AmongUIState
 			if (canZoom && FlxG.mouse.wheel != 0) FlxG.camera.zoom = FlxMath.bound(FlxG.camera.zoom + FlxG.mouse.wheel * FlxG.camera.zoom / 10, .25, .45);
 		}
 		
+		super.update(elapsed);
+
+		// Process acceptance after the base state has refreshed keyboard/action
+		// input for this frame. Raw Enter/Space remain available even if a saved
+		// control binding is missing.
+		if (!lockMovement && (controls.ACCEPT || FlxG.keys.justPressed.ENTER || FlxG.keys.justPressed.SPACE))
+			accept();
+
 		final cruiserScaleMult:Float = (!lockMovement && FlxG.mouse.overlaps(cruiser) ? (FlxG.mouse.pressed && wasPressingCruiser ? .9 : 1.1) : 1);
 		cruiser.scale.x = cruiser.scale.y = MathUtil.fpsLerp(cruiser.scale.x, cruiserScaleMult, .35);
 		
