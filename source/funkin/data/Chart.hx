@@ -3,6 +3,7 @@ package funkin.data;
 import funkin.backend.Difficulty;
 import funkin.data.Song;
 import funkin.data.StageData;
+import funkin.states.PlayState;
 
 import haxe.Json;
 
