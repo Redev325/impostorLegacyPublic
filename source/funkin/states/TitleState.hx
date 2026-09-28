@@ -249,7 +249,7 @@ class TitleState extends MusicBeatState
 					FlxG.switchState(MainMenuState.new);
 					closedState = true;
 					#end
-				});;;
+				});
 			}
 		}
 		
