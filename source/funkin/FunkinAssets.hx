@@ -124,7 +124,7 @@ class FunkinAssets
 			html5SongSoundCache = [];
 			final safeSongName:String = Paths.sanitize(songName);
 			final folderName:String = safeSongName == 'dlow' ? "d'low" : safeSongName;
-			final effectiveDifficulty:Int = difficulty == -1 ? PlayState.storyMeta.difficulty : difficulty;
+			final effectiveDifficulty:Int = difficulty == -1 ? (PlayState.storyMeta?.difficulty ?? 1) : difficulty;
 			final chartDifficulty:String = Difficulty.getDifficultyFilePath(effectiveDifficulty);
 			final chartCacheKey:String = safeSongName + ':' + effectiveDifficulty;
 			final chartUrl:String = 'assets/songs/$folderName/data/$chartDifficulty.json';
