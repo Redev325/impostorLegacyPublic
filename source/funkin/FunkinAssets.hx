@@ -193,7 +193,7 @@ class FunkinAssets
 		}
 
 		// Prefer the currently loaded song library for chart/audio/script paths.
-		if (html5CurrentSongLibrary != null && Assets.hasLibrary(html5CurrentSongLibrary))
+		if (html5CurrentSongLibrary != null)
 		{
 			final id = html5CurrentSongLibrary + ':' + path;
 			if (Assets.exists(id, type)) return id;
