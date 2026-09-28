@@ -55,7 +55,7 @@ class FunkinAssets
  	 * startup preloader. This lets menus stay fast while still making
  	 * gameplay assets available synchronously once a song starts.
  	 */
-	public static function loadHtml5Libraries(libraries:Array<String>, onComplete:Void->Void, ?onError:Void->Void):Void
+	public static function loadHtml5Libraries(libraries:Array<String>, onComplete:Void->Void):Void
 	{
 		#if html5
 			final queue:Array<String> = libraries.copy();
@@ -81,41 +81,23 @@ class FunkinAssets
 					return;
 				}
 				
-				function tryLoad(attempt:Int):Void
-				{
-					Assets.loadLibrary(library).onComplete(function(loadedLibrary) {
-						if (loadedLibrary == null)
-						{
-							if (attempt < 3)
-							{
-								Logger.log('HTML5 asset library returned no library, retrying ' + library + ' (' + (attempt + 1) + '/3)', WARN);
-								Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
-							}
-							else
-							{
-								Logger.log('HTML5 asset library could not be loaded: ' + library, ERROR);
-								if (onError != null) onError();
-							}
-							return;
-						}
-						
-						html5LoadedLibraries.set(library, true);
+				// Do not gate this on Assets.hasLibrary(). Deferred HTML5 libraries
+				// are exactly the libraries that may not be registered until this call
+				// resolves their manifest.
+				Assets.loadLibrary(library).onComplete(function(loadedLibrary) {
+					if (loadedLibrary == null)
+					{
+						Logger.log('HTML5 asset library could not be loaded: ' + library, ERROR);
 						loadNext();
-					}).onError(function(error) {
-						if (attempt < 3)
-						{
-							Logger.log('Failed to load HTML5 asset library ' + library + ', retrying (' + (attempt + 1) + '/3)\\nException: ' + error, WARN);
-							Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
-						}
-						else
-						{
-							Logger.log('Failed to load HTML5 asset library ' + library + ' after 3 attempts\\nException: ' + error, ERROR);
-							if (onError != null) onError();
-						}
-					});
-				}
-				
-				tryLoad(1);
+						return;
+					}
+					
+					html5LoadedLibraries.set(library, true);
+					loadNext();
+				}).onError(function(error) {
+					Logger.log('Failed to load HTML5 asset library ' + library + '\\nException: ' + error, ERROR);
+					loadNext();
+				});
 			}
 			
 			loadNext();
@@ -123,6 +105,7 @@ class FunkinAssets
 			onComplete();
 		#end
 	}
+
 	/**
 	 * Loads the deferred library for exactly one song before PlayState starts.
 	 * Story Mode and Freeplay both use this path on HTML5.
@@ -132,19 +115,43 @@ class FunkinAssets
 		#if html5
 			html5CurrentSongLibrary = null;
 			final safeSongName:String = Paths.sanitize(songName);
-			// Paths.sanitize removes punctuation. The legacy d'low folder/library
-			// predates this HTML5 loader and uses the explicit song_d_low name.
+			// The legacy folder/library for d'low contains an underscore.
 			final libraryKey:String = safeSongName == 'dlow' ? 'd_low' : safeSongName;
 			final songLibrary:String = 'song_' + libraryKey;
 			
-			// Load the shared gameplay library once, followed by only the selected
-			// song's library. This avoids downloading all 57 songs before gameplay.
-			loadHtml5Libraries(['gameplay', songLibrary], function() {
-				html5CurrentSongLibrary = songLibrary;
-				onComplete();
-			}, function() {
-				Logger.log('Unable to load HTML5 song assets for ' + songName + ' (' + songLibrary + ')', ERROR);
-			});
+			function tryLoad(attempt:Int):Void
+			{
+				Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
+					if (loadedLibrary == null)
+					{
+						if (attempt < 3)
+						{
+							Logger.log('HTML5 song library returned no library, retrying ' + songLibrary + ' (' + (attempt + 1) + '/3)', WARN);
+							Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
+						}
+						else
+						{
+							Logger.log('HTML5 song library could not be loaded: ' + songLibrary, ERROR);
+						}
+						return;
+					}
+					
+					html5CurrentSongLibrary = songLibrary;
+					onComplete();
+				}).onError(function(error) {
+					if (attempt < 3)
+					{
+						Logger.log('Failed to load HTML5 song library ' + songLibrary + ', retrying (' + (attempt + 1) + '/3)\\nException: ' + error, WARN);
+						Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
+					}
+					else
+					{
+						Logger.log('Failed to load HTML5 song library ' + songLibrary + ' after 3 attempts\\nException: ' + error, ERROR);
+					}
+				});
+			}
+			
+			tryLoad(1);
 		#else
 			onComplete();
 		#end
