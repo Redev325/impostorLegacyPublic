@@ -113,53 +113,69 @@ class FunkinAssets
 	 * Loads the deferred library for exactly one song before PlayState starts.
 	 * Story Mode and Freeplay both use this path on HTML5.
 	 */
-	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void, ?onError:Void->Void, ?difficulty:Int = -1)
+	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void, ?onError:Void->Void):Void
 	{
 		#if html5
+			html5CurrentSongLibrary = null;
 			final safeSongName:String = Paths.sanitize(songName);
-			final libraryName:String = safeSongName == 'dlow' ? 'song_d_low' : 'song_' + safeSongName;
-
-			function fail(reason:Dynamic):Void
+			// The legacy folder/library for d'low contains an underscore.
+			final libraryKey:String = safeSongName == 'dlow' ? 'd_low' : safeSongName;
+			final songLibrary:String = 'song_' + libraryKey;
+			var finished:Bool = false;
+			
+			function complete():Void
 			{
-				Logger.log('Unable to load HTML5 song library $libraryName for $songName: $reason', ERROR);
+				if (finished) return;
+				finished = true;
+				html5CurrentSongLibrary = songLibrary;
+				onComplete();
+			}
+			
+			function fail():Void
+			{
+				if (finished) return;
+				finished = true;
+				html5CurrentSongLibrary = null;
 				final callback:Void->Void = onError ?? function() {};
 				callback();
 			}
-
-			if (html5LoadedLibraries.exists(libraryName))
+			
+			function tryLoad(attempt:Int):Void
 			{
-				html5CurrentSongLibrary = libraryName;
-				onComplete();
-				return;
-			}
-
-			// Each song has an explicit Lime library in Project.xml. Load that
-			// library through the normal OpenFL/Lime asset pipeline, then mark it
-			// as the current library so Paths can resolve its files synchronously.
-			try
-			{
-				Assets.loadLibrary(libraryName).onComplete(function(loadedLibrary) {
+				Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
 					if (loadedLibrary == null)
 					{
-						fail('library returned null');
+						if (attempt < 3)
+						{
+							Logger.log('HTML5 song library returned no library, retrying ' + songLibrary + ' (' + (attempt + 1) + '/3)', WARN);
+							Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
+						}
+						else
+						{
+							Logger.log('HTML5 song library could not be loaded: ' + songLibrary, ERROR);
+							fail();
+						}
 						return;
 					}
-
-					html5LoadedLibraries.set(libraryName, true);
-					html5CurrentSongLibrary = libraryName;
-					onComplete();
+					
+					complete();
 				}).onError(function(error) {
-					fail(error);
+					if (attempt < 3)
+					{
+						Logger.log('Failed to load HTML5 song library ' + songLibrary + ', retrying (' + (attempt + 1) + '/3)\nException: ' + error, WARN);
+						Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
+					}
+					else
+					{
+						Logger.log('Failed to load HTML5 song library ' + songLibrary + ' after 3 attempts\nException: ' + error, ERROR);
+						fail();
+					}
 				});
 			}
-			catch (e)
-			{
-				fail(e);
-			}
+			
+			tryLoad(1);
 		#else
-			onComplete();
-		#end
-	}
+			onComplete()
 	#if html5
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
 	{
