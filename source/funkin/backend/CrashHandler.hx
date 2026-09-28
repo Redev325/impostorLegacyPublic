@@ -25,8 +25,22 @@ class CrashHandler
 		throw Std.string(message);
 	}
 	
+	static inline function isEscapedScriptReturn(error:Dynamic):Bool
+	{
+		final value:String = Std.string(error);
+		return value == 'SReturn' || value.endsWith('.SReturn');
+	}
+
 	static function onUncaughtError(event:UncaughtErrorEvent)
 	{
+		if (isEscapedScriptReturn(event.error))
+		{
+			event.preventDefault();
+			event.stopPropagation();
+			event.stopImmediatePropagation();
+			return;
+		}
+
 		FlxTransitionableState.skipNextTransIn = FlxTransitionableState.skipNextTransOut = true;
 		
 		var curFlxState:String = 'N/A';
