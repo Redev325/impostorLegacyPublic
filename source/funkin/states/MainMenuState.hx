@@ -411,11 +411,11 @@ class MainMenuState extends MusicBeatState
 	
 	function switchToSelection()
 	{
-		// The main-menu and secondary-menu assets are already available in the
-		// HTML5 build. Do not call openfl.Assets.loadLibrary() here: runtime
-		// library loading can leave the state transition waiting indefinitely.
+		// The secondary menu library must be loaded before Story/Freeplay/Cosmicube
+		// enumerate their virtual asset directories on HTML5. The main menu can
+		// still transition immediately on native targets.
 		#if html5
-			switchToSelectionState();
+			FunkinAssets.loadHtml5Libraries(['menus'], switchToSelectionState);
 		#else
 			switchToSelectionState();
 		#end
