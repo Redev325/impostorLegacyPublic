@@ -81,48 +81,48 @@ class FunkinAssets
 					return;
 				}
 				
-			}
-			
-			function tryLoad(attempt:Int):Void
-			{
-				Assets.loadLibrary(library).onComplete(function(loadedLibrary) {
-					if (loadedLibrary == null)
-					{
+				function tryLoad(attempt:Int):Void
+				{
+					Assets.loadLibrary(library).onComplete(function(loadedLibrary) {
+						if (loadedLibrary == null)
+						{
+							if (attempt < 3)
+							{
+								Logger.log('HTML5 asset library returned no library, retrying ' + library + ' (' + (attempt + 1) + '/3)', WARN);
+								Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
+							}
+							else
+							{
+								Logger.log('HTML5 asset library could not be loaded: ' + library, ERROR);
+								if (onError != null) onError();
+							}
+							return;
+						}
+						
+						html5LoadedLibraries.set(library, true);
+						loadNext();
+					}).onError(function(error) {
 						if (attempt < 3)
 						{
-							Logger.log('HTML5 asset library returned no library, retrying ' + library + ' (' + (attempt + 1) + '/3)', WARN);
+							Logger.log('Failed to load HTML5 asset library ' + library + ', retrying (' + (attempt + 1) + '/3)\\nException: ' + error, WARN);
 							Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
 						}
 						else
 						{
-							Logger.log('HTML5 asset library could not be loaded: ' + library, ERROR);
+							Logger.log('Failed to load HTML5 asset library ' + library + ' after 3 attempts\\nException: ' + error, ERROR);
 							if (onError != null) onError();
 						}
-						return;
-					}
-					
-					html5LoadedLibraries.set(library, true);
-					loadNext();
-				}).onError(function(error) {
-					if (attempt < 3)
-					{
-						Logger.log('Failed to load HTML5 asset library ' + library + ', retrying (' + (attempt + 1) + '/3)\\nException: ' + error, WARN);
-						Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
-					}
-					else
-					{
-						Logger.log('Failed to load HTML5 asset library ' + library + ' after 3 attempts\\nException: ' + error, ERROR);
-						if (onError != null) onError();
-					}
-				});
+					});
+				}
+				
+				tryLoad(1);
 			}
 			
-			tryLoad(1);
+			loadNext();
 		#else
 			onComplete();
 		#end
 	}
-
 	/**
 	 * Loads the deferred library for exactly one song before PlayState starts.
 	 * Story Mode and Freeplay both use this path on HTML5.
