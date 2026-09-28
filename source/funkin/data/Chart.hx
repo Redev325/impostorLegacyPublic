@@ -48,8 +48,7 @@ class Chart
 		songName = Paths.sanitize(songName);
 		
 		#if html5
-		final requestedDifficulty:Int = difficulty ?? -1;
-		final effectiveDifficulty:Int = requestedDifficulty < 0 ? PlayState.storyMeta.difficulty : requestedDifficulty;
+		final effectiveDifficulty:Int = difficulty < 0 ? PlayState.storyMeta.difficulty : difficulty;
 		final cachedChart:Null<String> = FunkinAssets.getHtml5SongChart(songName, effectiveDifficulty);
 		if (cachedChart != null)
 		{
