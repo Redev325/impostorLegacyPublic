@@ -7,6 +7,7 @@ import openfl.media.Sound;
 import openfl.events.Event;
 import openfl.events.IOErrorEvent;
 import openfl.net.URLRequest;
+import openfl.net.URLLoader;
 import openfl.utils.AssetType;
 import openfl.display.BitmapData;
 import openfl.Assets;
