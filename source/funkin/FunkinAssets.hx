@@ -19,6 +19,7 @@ import flixel.system.FlxAssets;
 
 import funkin.backend.FunkinCache;
 import funkin.backend.Difficulty;
+import funkin.states.PlayState;
 
 /**
  * backend for retrieving and caching assets
