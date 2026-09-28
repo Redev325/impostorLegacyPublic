@@ -119,6 +119,10 @@
 		<!-- HTML5 keeps song charts/scripts in the preloaded gameplay library. Audio is streamed directly by PlayableSong. -->
 		<assets path="assets/legacy/songs" rename="assets/songs" library="gameplay"
 			exclude="*.ogg|*.mp3|*.wav" preload="true" embed="false" if="html5" />
+		<!-- HTML5 song audio is streamed when gameplay starts. Keep it in a non-preloaded
+		     library so every song does not download during the startup loader. -->
+		<assets path="assets/legacy/songs" rename="assets/songs" library="music"
+			exclude="*.json|*.hx|*.hxs|*.hscript|*.txt" preload="false" embed="false" if="html5" />
 
 		<!-- Desktop/non-HTML5 builds keep the original per-song libraries. -->
 		<assets path="assets/legacy/songs/armed" rename="assets/songs/armed" library="song_armed" preload="true" embed="false" unless="html5" />
