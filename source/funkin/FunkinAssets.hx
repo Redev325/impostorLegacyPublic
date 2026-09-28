@@ -81,6 +81,8 @@ class FunkinAssets
 					return;
 				}
 				
+			}
+			
 			function tryLoad(attempt:Int):Void
 			{
 				Assets.loadLibrary(library).onComplete(function(loadedLibrary) {
