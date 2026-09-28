@@ -107,9 +107,9 @@ class CosmicubeCard extends flixel.group.FlxSpriteGroup
 		}
 		final completion:Float = (totalItems <= 0 ? 100 : unlockedItems / totalItems * 100);
 		#else
-		final completion = ProgressionUtil.calculateCubeCompletion(id);
+		final completion = ProgressionUtil.calculateCubeCompletion(id).percent;
 		#end
-		completionText.text = Lang.str('cosmicube_completed').replace('@', Std.string(Math.floor(completion.percent)));
+		completionText.text = Lang.str('cosmicube_completed').replace('@', Std.string(Math.floor(completion)));
 	}
 	
 	public function select(isIt:Bool):Void
