@@ -88,7 +88,7 @@ class FunkinAssets
 					return;
 				}
 				
-				LimeAssets.loadLibrary(library).onComplete(function(_) {
+				Assets.loadLibrary(library).onComplete(function(_) {
 					html5LoadedLibraries.set(library, true);
 					loadNext();
 				}).onError(function(error) {
@@ -111,102 +111,119 @@ class FunkinAssets
 	{
 		#if html5
 			/*
-			 * Story Mode does not need the entire music library downloaded at once.
-			 * The Project.xml file exposes every song through the deferred “Music”
-			 * library, so load the selected song's actual assets directly from that
-			 * library. This avoids relying on deferred per-song library registration,
-			 * which can leave Chart.fromSong() with assets that exist but are not yet
-			 * synchronously available in the HTML5 build.
+			 * The song files are also exposed through the aggregate “music”
+			 * library. Keep that library deferred, then explicitly load only the
+			 * selected song's assets. This is important on HTML5 because deferred
+			 * libraries are not guaranteed to be registered with OpenFL until their
+			 * manifest has been loaded.
 			 */
 			final songPath:String = Paths.sanitize(songName);
 			final prefix:String = 'music:assets/songs/' + songPath + '/';
-			final assets:Array<String> = [];
-			final allAssets:Array<String> = Assets.list();
-			for (asset in allAssets)
+			html5CurrentSongLibrary = null;
+			
+			function loadSongAssets():Void
 			{
-				if (asset.startsWith(prefix)) assets.push(asset);
-			}
-			
-			// The aggregate music library is required for this fallback path.
-			if (!Assets.hasLibrary('music'))
-			{
-				Logger.log('HTML5 music library is not registered while loading ' + songName, ERROR);
-				onComplete();
-				return;
-			}
-			
-			if (assets.length == 0)
-			{
-				Logger.log('No HTML5 song assets found for ' + songName + ' (' + prefix + ')', ERROR);
-				onComplete();
-				return;
-			}
-			
-			// Make all synchronous Paths.* lookups for this song resolve into the
-			// same aggregate library whose individual assets were just loaded.
-			html5CurrentSongLibrary = 'music';
-			
-			var index:Int = 0;
-			var chartLoaded:Bool = false;
-			
-			function finish():Void
-			{
-				if (!chartLoaded)
+				final assets:Array<String> = [];
+				for (asset in Assets.list())
 				{
-					Logger.log('HTML5 Story Mode chart did not finish loading for ' + songName, ERROR);
+					if (asset.startsWith(prefix)) assets.push(asset);
 				}
-				onComplete();
-			}
-			
-			function loadNext():Void
-			{
-				if (index >= assets.length)
+				
+				if (assets.length == 0)
 				{
-					finish();
+					Logger.log('No HTML5 song assets found for ' + songName + ' (' + prefix + ')', ERROR);
+					onComplete();
 					return;
 				}
 				
-				final assetId:String = assets[index++];
-				final lower:String = assetId.toLowerCase();
+				html5CurrentSongLibrary = 'music';
 				
-				if (lower.endsWith('.json') || lower.endsWith('.txt') || lower.endsWith('.hx') || lower.endsWith('.xml'))
+				var index:Int = 0;
+				var chartLoaded:Bool = false;
+				
+				function finish():Void
 				{
-					Assets.loadText(assetId).onComplete(function(text:String) {
-						if (lower.endsWith('/data/' + Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty).toLowerCase() + '.json'))
-						{
-							html5SongChartText.set(songPath + ':' + PlayState.storyMeta.difficulty, text);
-							chartLoaded = true;
-						}
-						loadNext();
-					}).onError(function(error) {
-						Logger.log('Failed to load HTML5 song text ' + assetId + '\\nException: ' + error, ERROR);
-						loadNext();
-					});
+					if (!chartLoaded)
+					{
+						Logger.log('HTML5 Story Mode chart did not finish loading for ' + songName, ERROR);
+					}
+					onComplete();
 				}
-				else if (lower.endsWith('.ogg') || lower.endsWith('.wav') || lower.endsWith('.mp3'))
+				
+				function loadNext():Void
 				{
-					Assets.loadSound(assetId).onComplete(function(_) loadNext()).onError(function(error) {
-						Logger.log('Failed to load HTML5 song audio ' + assetId + '\\nException: ' + error, ERROR);
-						loadNext();
-					});
+					if (index >= assets.length)
+					{
+						finish();
+						return;
+					}
+					
+					final assetId:String = assets[index++];
+					final lower:String = assetId.toLowerCase();
+					
+					if (lower.endsWith('.json') || lower.endsWith('.txt') || lower.endsWith('.hx') || lower.endsWith('.xml'))
+					{
+						Assets.loadText(assetId).onComplete(function(text:String) {
+							if (lower.endsWith('/data/' + Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty).toLowerCase() + '.json'))
+							{
+								html5SongChartText.set(songPath + ':' + PlayState.storyMeta.difficulty, text);
+								chartLoaded = true;
+							}
+							loadNext();
+						}).onError(function(error) {
+							Logger.log('Failed to load HTML5 song text ' + assetId + '\\nException: ' + error, ERROR);
+							loadNext();
+						});
+					}
+					else if (lower.endsWith('.ogg') || lower.endsWith('.wav') || lower.endsWith('.mp3'))
+					{
+						Assets.loadSound(assetId).onComplete(function(_) loadNext()).onError(function(error) {
+							Logger.log('Failed to load HTML5 song audio ' + assetId + '\\nException: ' + error, ERROR);
+							loadNext();
+						});
+					}
+					else if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg'))
+					{
+						Assets.loadBitmapData(assetId).onComplete(function(_) loadNext()).onError(function(error) {
+							Logger.log('Failed to load HTML5 song image ' + assetId + '\\nException: ' + error, ERROR);
+							loadNext();
+						});
+					}
+					else
+					{
+						Assets.loadBytes(assetId).onComplete(function(_) loadNext()).onError(function(error) {
+							Logger.log('Failed to load HTML5 song asset ' + assetId + '\\nException: ' + error, ERROR);
+							loadNext();
+						});
+					}
 				}
-				else if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg'))
-				{
-					Assets.loadBitmapData(assetId).onComplete(function(_) loadNext()).onError(function(error) {
-						Logger.log('Failed to load HTML5 song image ' + assetId + '\\nException: ' + error, ERROR);
-						loadNext();
-					});
-				}
-				else
-				{
-					Assets.loadBytes(assetId).onComplete(function(_) loadNext()).onError(function(error) {
-						Logger.log('Failed to load HTML5 song asset ' + assetId + '\\nException: ' + error, ERROR);
-						loadNext();
-					});
-				}
+				
+				loadNext();
 			}
 			
-			loadNext();
+			function ensureMusicLibrary():Void
+			{
+				if (Assets.hasLibrary('music'))
+				{
+					loadSongAssets();
+					return;
+				}
+				
+				Assets.loadLibrary('music').onComplete(function(library) {
+					if (library == null)
+					{
+						Logger.log('HTML5 music library could not be registered while loading ' + songName, ERROR);
+						onComplete();
+						return;
+					}
+					loadSongAssets();
+				}).onError(function(error) {
+					Logger.log('Failed to register HTML5 music library\\nException: ' + error, ERROR);
+					onComplete();
+				});
+			}
+			
+			ensureMusicLibrary();
 		#else
 			onComplete();
 		#end
