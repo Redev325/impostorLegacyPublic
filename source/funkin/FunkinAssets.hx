@@ -7,7 +7,6 @@ import openfl.media.Sound;
 import openfl.events.Event;
 import openfl.events.IOErrorEvent;
 import openfl.net.URLRequest;
-import openfl.net.URLLoader;
 import openfl.utils.AssetType;
 import openfl.display.BitmapData;
 import openfl.Assets;
@@ -19,7 +18,6 @@ import flixel.system.FlxAssets;
 
 import funkin.backend.FunkinCache;
 import funkin.backend.Difficulty;
-import funkin.states.PlayState;
 
 /**
  * backend for retrieving and caching assets
@@ -39,7 +37,6 @@ class FunkinAssets
 	static final html5LoadedLibraries:Map<String, Bool> = [];
 	static var html5CurrentSongLibrary:Null<String> = null;
 	static var html5SongChartText:Map<String, String> = [];
-	static var html5SongSoundCache:Map<String, Sound> = [];
 	#end
 
 	#if html5
@@ -178,6 +175,7 @@ class FunkinAssets
 			onComplete();
 		#end
 	}
+
 	#if html5
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
 	{
@@ -195,7 +193,7 @@ class FunkinAssets
 		}
 
 		// Prefer the currently loaded song library for chart/audio/script paths.
-		if (html5CurrentSongLibrary != null)
+		if (html5CurrentSongLibrary != null && Assets.hasLibrary(html5CurrentSongLibrary))
 		{
 			final id = html5CurrentSongLibrary + ':' + path;
 			if (Assets.exists(id, type)) return id;
@@ -468,21 +466,8 @@ class FunkinAssets
 		#if html5
 		if (sound == null)
 		{
-			#if html5
-			if (html5SongSoundCache.exists(key))
-			{
-				sound = html5SongSoundCache.get(key);
-			}
-			else
-			#end
-			{
-				#if html5
-				final resolved = resolveHtml5AssetId(key, SOUND);
-				if (resolved != null) sound = Assets.getSound(resolved, true);
-				#else
-				sound = null;
-				#end
-			}
+			final resolved = resolveHtml5AssetId(key, SOUND);
+			if (resolved != null) sound = Assets.getSound(resolved, true);
 		}
 		#else
 		if (sound == null && Assets.exists(key, SOUND)) sound = Assets.getSound(key, true);
