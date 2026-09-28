@@ -72,11 +72,11 @@ class CosmicubeData
 		final dir:String = Paths.getCorePath('data/cosmicube');
 		var files:Array<String> = FunkinAssets.readDirectory(dir);
 		
-		// HTML5 asset libraries do not expose filesystem directories. The base
-		// cosmicube is known at build time, so make sure it is still discovered
-		// when the runtime directory listing is empty.
-		if (files.length == 0 && FunkinAssets.exists(haxe.io.Path.join([dir, 'impostor.json'])))
-			files.push('impostor.json');
+		// The built-in VS IMPOSTOR cube is part of the game data. Do not rely on
+		// virtual-directory enumeration to discover it on HTML5; some Lime/OpenFL
+		// builds expose the files through Assets.getText() but omit the directory
+		// entry from Assets.list().
+		if (!files.contains('impostor.json')) files.push('impostor.json');
 		
 		for (file in files)
 		{
