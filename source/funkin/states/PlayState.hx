@@ -688,12 +688,21 @@ class PlayState extends MusicBeatState
 		allowGFSkin = (!isStoryMode && (SONG.allowGFskin ?? true));
 		allowPet = (!isStoryMode && (SONG.allowPet ?? true));
 		
-		// Load all global legacy scripts before the stage. This includes utils.hx,
-		// dialogue.hx, camTweenEvent.hx, and the other shared compatibility hooks.
+		// Load all global legacy scripts from their actual HTML5 asset location.
+		// The project renames assets/legacy/scripts -> assets/scripts, so the generic
+		// Paths.getPath() data resolver cannot find these by itself.
+		#if html5
+		for (file in FunkinAssets.readDirectory('assets/scripts'))
+		{
+			if (!FunkinScript.isHxFile(file)) continue;
+			initFunkinScript('gameplay:assets/scripts/' + file);
+		}
+		#else
 		for (file in Paths.listAllFilesInDirectory('scripts', LOOSE).filter(path -> FunkinScript.isHxFile(path)))
 		{
 			initFunkinScript(file);
 		}
+		#end
 		
 		stage = new Stage(SONG.stage);
 		applyStageData(stage.stageData);
