@@ -96,7 +96,12 @@ class FunkinSprite extends FlxAnimate
 			final isAtlasSprite = FunkinAssets.exists(Paths.getPath('images/$path/Animation.json', mode));
 			if (isAtlasSprite)
 			{
-				var atlas = FlxAnimateFrames.fromAnimate(Paths.getPath('images/$path', mode), null, null, null, false, settings ?? {cacheOnLoad: true});
+				#if html5
+				final animatePath:String = 'gameplay:' + Paths.getPath('images/$path', mode);
+				#else
+				final animatePath:String = Paths.getPath('images/$path', mode);
+				#end
+				var atlas = FlxAnimateFrames.fromAnimate(animatePath, null, null, null, false, settings ?? {cacheOnLoad: true});
 				if (atlas != null)
 				{
 					for (spritemap in cast(atlas.parent, FlxAnimateSpritemapCollection).spritemaps)
