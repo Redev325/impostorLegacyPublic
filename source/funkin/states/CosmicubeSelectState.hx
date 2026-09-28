@@ -25,6 +25,16 @@ class CosmicubeSelectState extends AmongUIState
 	
 	public override function create():Void
 	{
+		// Story Mode changes the persistent main camera's viewport and follow
+		// target. Reset that camera before drawing Cosmicube cards so the selector
+		// always uses the normal full-screen view, regardless of which menu was
+		// visited immediately before it.
+		FlxG.camera.target = null;
+		FlxG.camera.setPosition(0, 0);
+		FlxG.camera.setSize(FlxG.width, FlxG.height);
+		FlxG.camera.scroll.set(0, 0);
+		FlxG.camera.zoom = 1;
+		
 		super.create();
 		
 		add(turboGroup = new TurboControlGroup());
