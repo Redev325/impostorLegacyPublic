@@ -413,8 +413,6 @@ class StoryMenuState extends AmongUIState
 		if (Math.abs(intendedScore - lerpScore) < 10) lerpScore = intendedScore;
 		
 		if (weekScore.visible) weekScore.text = ('${highscore_string}: ' + FlxStringUtil.formatMoney(Math.round(lerpScore), false));
-		
-		super.update(elapsed);
 	}
 	
 	override function closeSubState()
