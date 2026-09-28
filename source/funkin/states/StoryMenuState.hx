@@ -330,7 +330,7 @@ class StoryMenuState extends AmongUIState
 		}
 		
 		#if html5
-		FunkinAssets.loadHtml5SongAssets(playlist[0], startWeek);
+		FunkinAssets.loadHtml5SongAssets(playlist[0], startWeek, onLoadFailed);
 		#else
 		startWeek();
 		#end
