@@ -135,6 +135,8 @@ class FunkinAssets
 			final libraryKey:String = safeSongName == 'dlow' ? 'd_low' : safeSongName;
 			final songLibrary:String = 'song_' + libraryKey;
 			
+			// Load the shared gameplay library once, followed by only the selected
+			// song's library. This avoids downloading all 57 songs before gameplay.
 			loadHtml5Libraries(['gameplay', songLibrary], function() {
 				html5CurrentSongLibrary = songLibrary;
 				onComplete();
