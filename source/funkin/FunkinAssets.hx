@@ -110,61 +110,107 @@ class FunkinAssets
 	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void):Void
 	{
 		#if html5
+			/*
+			 * Story Mode does not need the entire music library downloaded at once.
+			 * The Project.xml file exposes every song through the deferred “Music”
+			 * library, so load the selected song's actual assets directly from that
+			 * library. This avoids relying on deferred per-song library registration,
+			 * which can leave Chart.fromSong() with assets that exist but are not yet
+			 * synchronously available in the HTML5 build.
+			 */
 			final songPath:String = Paths.sanitize(songName);
-			// Each song is packaged as its own deferred Lime library in Project.xml.
-			// The library normally matches the sanitized song path exactly
-			// (song_sussus-moogus), but D'low is the one current exception because
-			// its library is explicitly named song_d_low.
-			var library:String = 'song_' + songPath;
-			if (!Assets.hasLibrary(library))
+			final prefix:String = 'music:assets/songs/' + songPath + '/';
+			final assets:Array<String> = [];
+			final allAssets:Array<String> = Assets.list();
+			for (asset in allAssets)
 			{
-				final normalizedLibrary:String = ~/[^a-zA-Z0-9_-]/g.replace(songPath, '_');
-				library = 'song_' + normalizedLibrary;
+				if (asset.startsWith(prefix)) assets.push(asset);
 			}
 			
-			if (!Assets.hasLibrary(library))
+			// The aggregate music library is required for this fallback path.
+			if (!Assets.hasLibrary('music'))
 			{
-				// Last-resort lookup: use the actual asset path inside registered
-				// song_* libraries. This keeps future specially-named songs working
-				// without hard-coding additional exceptions.
-				final assetPrefix:String = 'assets/songs/' + songPath + '/';
-				for (asset in Assets.list())
-				{
-					final colon:Int = asset.indexOf(':');
-					if (colon <= 0) continue;
-					final candidate:String = asset.substr(0, colon);
-					final assetPath:String = asset.substr(colon + 1);
-					if (candidate.startsWith('song_') && assetPath.startsWith(assetPrefix))
-					{
-						library = candidate;
-						break;
-					}
-				}
-			}
-			
-			if (!Assets.hasLibrary(library))
-			{
-				Logger.log('HTML5 song library not found for ' + songName + ' (tried ' + library + ')', ERROR);
+				Logger.log('HTML5 music library is not registered while loading ' + songName, ERROR);
 				onComplete();
 				return;
 			}
 			
-			loadHtml5Libraries([library], function() {
-				if (html5LoadedLibraries.exists(library))
+			if (assets.length == 0)
+			{
+				Logger.log('No HTML5 song assets found for ' + songName + ' (' + prefix + ')', ERROR);
+				onComplete();
+				return;
+			}
+			
+			// Make all synchronous Paths.* lookups for this song resolve into the
+			// same aggregate library whose individual assets were just loaded.
+			html5CurrentSongLibrary = 'music';
+			
+			var index:Int = 0;
+			var chartLoaded:Bool = false;
+			
+			function finish():Void
+			{
+				if (!chartLoaded)
 				{
-					html5CurrentSongLibrary = library;
+					Logger.log('HTML5 Story Mode chart did not finish loading for ' + songName, ERROR);
+				}
+				onComplete();
+			}
+			
+			function loadNext():Void
+			{
+				if (index >= assets.length)
+				{
+					finish();
+					return;
+				}
+				
+				final assetId:String = assets[index++];
+				final lower:String = assetId.toLowerCase();
+				
+				if (lower.endsWith('.json') || lower.endsWith('.txt') || lower.endsWith('.hx') || lower.endsWith('.xml'))
+				{
+					Assets.loadText(assetId).onComplete(function(text:String) {
+						if (lower.endsWith('/data/' + Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty).toLowerCase() + '.json'))
+						{
+							html5SongChartText.set(songPath + ':' + PlayState.storyMeta.difficulty, text);
+							chartLoaded = true;
+						}
+						loadNext();
+					}).onError(function(error) {
+						Logger.log('Failed to load HTML5 song text ' + assetId + '\\nException: ' + error, ERROR);
+						loadNext();
+					});
+				}
+				else if (lower.endsWith('.ogg') || lower.endsWith('.wav') || lower.endsWith('.mp3'))
+				{
+					Assets.loadSound(assetId).onComplete(function(_) loadNext()).onError(function(error) {
+						Logger.log('Failed to load HTML5 song audio ' + assetId + '\\nException: ' + error, ERROR);
+						loadNext();
+					});
+				}
+				else if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg'))
+				{
+					Assets.loadBitmapData(assetId).onComplete(function(_) loadNext()).onError(function(error) {
+						Logger.log('Failed to load HTML5 song image ' + assetId + '\\nException: ' + error, ERROR);
+						loadNext();
+					});
 				}
 				else
 				{
-					Logger.log('HTML5 song library failed to load: ' + library, ERROR);
+					Assets.loadBytes(assetId).onComplete(function(_) loadNext()).onError(function(error) {
+						Logger.log('Failed to load HTML5 song asset ' + assetId + '\\nException: ' + error, ERROR);
+						loadNext();
+					});
 				}
-				onComplete();
-			});
+			}
+			
+			loadNext();
 		#else
 			onComplete();
 		#end
 	}
-
 	#if html5
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
 	{
