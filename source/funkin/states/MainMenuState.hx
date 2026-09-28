@@ -66,8 +66,14 @@ class MainMenuState extends MusicBeatState
 		
 		persistentUpdate = persistentDraw = true;
 		
-		if (ClientPrefs.finaleState == ACTIVE) FunkinSound.playMusic(Paths.music('finaleMenu'), 0);
-		else if (FlxG.sound.music == null) FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
+		if (ClientPrefs.finaleState == ACTIVE)
+		{
+			FunkinSound.playMusic(Paths.music('finaleMenu'), 0);
+		}
+		else if (FlxG.sound.music == null || !FlxG.sound.music.playing)
+		{
+			FunkinSound.playMusic(Paths.music('freakyMenu'), 0);
+		}
 		
 		#if !html5
 		initStateScript();
