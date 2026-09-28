@@ -234,21 +234,12 @@ class TitleState extends MusicBeatState
 				#end
 				
 				FlxTimer.wait(1, () -> {
-					#if html5
-					// Menu libraries are deferred so the initial HTML5 preload stays small.
-					FunkinAssets.loadHtml5Libraries(['mainmenu', 'menus'], function() {
-						MainMenuState.fromTitle = true;
-						FlxG.switchState(MainMenuState.new);
-						closedState = true;
-					}, function() {
-						// Stay on the title screen instead of entering a half-loaded menu.
-						transitioning = false;
-					});
-					#else
+					// The mainmenu library is part of the completed HaxeFlixel preload,
+					// so its images must be accessed synchronously here. Starting a second
+					// async load can make Lime report the already-known assets as async-only.
 					MainMenuState.fromTitle = true;
 					FlxG.switchState(MainMenuState.new);
 					closedState = true;
-					#end
 				});
 			}
 		}
