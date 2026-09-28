@@ -110,7 +110,7 @@ class FunkinAssets
 	 * Loads the deferred library for exactly one song before PlayState starts.
 	 * Story Mode and Freeplay both use this path on HTML5.
 	 */
-	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void):Void
+	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void, ?onError:Void->Void):Void
 	{
 		#if html5
 			html5CurrentSongLibrary = null;
@@ -118,6 +118,23 @@ class FunkinAssets
 			// The legacy folder/library for d'low contains an underscore.
 			final libraryKey:String = safeSongName == 'dlow' ? 'd_low' : safeSongName;
 			final songLibrary:String = 'song_' + libraryKey;
+			var finished:Bool = false;
+			
+			function complete():Void
+			{
+				if (finished) return;
+				finished = true;
+				html5CurrentSongLibrary = songLibrary;
+				onComplete();
+			}
+			
+			function fail():Void
+			{
+				if (finished) return;
+				finished = true;
+				html5CurrentSongLibrary = null;
+				if (onError != null) onError();
+			}
 			
 			function tryLoad(attempt:Int):Void
 			{
@@ -132,21 +149,22 @@ class FunkinAssets
 						else
 						{
 							Logger.log('HTML5 song library could not be loaded: ' + songLibrary, ERROR);
+							fail();
 						}
 						return;
 					}
 					
-					html5CurrentSongLibrary = songLibrary;
-					onComplete();
+					complete();
 				}).onError(function(error) {
 					if (attempt < 3)
 					{
-						Logger.log('Failed to load HTML5 song library ' + songLibrary + ', retrying (' + (attempt + 1) + '/3)\\nException: ' + error, WARN);
+						Logger.log('Failed to load HTML5 song library ' + songLibrary + ', retrying (' + (attempt + 1) + '/3)\nException: ' + error, WARN);
 						Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
 					}
 					else
 					{
-						Logger.log('Failed to load HTML5 song library ' + songLibrary + ' after 3 attempts\\nException: ' + error, ERROR);
+						Logger.log('Failed to load HTML5 song library ' + songLibrary + ' after 3 attempts\nException: ' + error, ERROR);
+						fail();
 					}
 				});
 			}
@@ -156,6 +174,7 @@ class FunkinAssets
 			onComplete();
 		#end
 	}
+
 	#if html5
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
 	{
