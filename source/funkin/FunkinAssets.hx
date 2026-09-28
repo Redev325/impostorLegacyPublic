@@ -9,7 +9,6 @@ import openfl.net.URLRequest;
 import openfl.utils.AssetType;
 import openfl.display.BitmapData;
 import openfl.Assets;
-import lime.utils.Assets as LimeAssets;
 import lime.media.AudioBuffer;
 import lime.net.HTTPRequest;
 
@@ -75,24 +74,27 @@ class FunkinAssets
 					return;
 				}
 				
-				if (!Assets.hasLibrary(library))
-				{
-					Logger.log('HTML5 asset library not found: $library', WARN);
-					loadNext();
-					return;
-				}
-				
 				if (html5LoadedLibraries.exists(library))
 				{
 					loadNext();
 					return;
 				}
 				
-				Assets.loadLibrary(library).onComplete(function(_) {
+				// Do not gate this on Assets.hasLibrary(). Deferred HTML5 libraries
+				// are exactly the libraries that may not be registered until this call
+				// resolves their manifest.
+				Assets.loadLibrary(library).onComplete(function(loadedLibrary) {
+					if (loadedLibrary == null)
+					{
+						Logger.log('HTML5 asset library could not be loaded: ' + library, ERROR);
+						loadNext();
+						return;
+					}
+					
 					html5LoadedLibraries.set(library, true);
 					loadNext();
 				}).onError(function(error) {
-					Logger.log('Failed to load HTML5 asset library $library\\nException: $error', ERROR);
+					Logger.log('Failed to load HTML5 asset library ' + library + '\\nException: ' + error, ERROR);
 					loadNext();
 				});
 			}
@@ -104,126 +106,72 @@ class FunkinAssets
 	}
 
 	/**
-	 * Loads only the assets belonging to one song from the deferred HTML5
-	 * music library. This avoids downloading every song when one week starts.
+	 * Loads the deferred library for exactly one song before PlayState starts.
+	 * Story Mode and Freeplay both use this path on HTML5.
 	 */
 	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void):Void
 	{
 		#if html5
-			/*
-			 * The song files are also exposed through the aggregate “music”
-			 * library. Keep that library deferred, then explicitly load only the
-			 * selected song's assets. This is important on HTML5 because deferred
-			 * libraries are not guaranteed to be registered with OpenFL until their
-			 * manifest has been loaded.
-			 */
 			final songPath:String = Paths.sanitize(songName);
-			final prefix:String = 'music:assets/songs/' + songPath + '/';
-			html5CurrentSongLibrary = null;
+			// Project.xml uses one deferred library per song. Most names map
+			// directly; apostrophes and other punctuation are normalized to '_'.
+			final normalizedName:String = ~/[^a-zA-Z0-9_-]/g.replace(songPath, '_');
+			final library:String = 'song_' + normalizedName;
+			final difficultyPath:String = Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty).toLowerCase();
+			final chartId:String = library + ':assets/songs/' + songPath + '/data/' + difficultyPath + '.json';
 			
-			function loadSongAssets():Void
+			function finish():Void
 			{
-				final assets:Array<String> = [];
-				for (asset in Assets.list())
+				if (!Assets.hasLibrary(library))
 				{
-					if (asset.startsWith(prefix)) assets.push(asset);
-				}
-				
-				if (assets.length == 0)
-				{
-					Logger.log('No HTML5 song assets found for ' + songName + ' (' + prefix + ')', ERROR);
+					Logger.log('HTML5 song library was not registered: ' + library + ' for ' + songName, ERROR);
 					onComplete();
 					return;
 				}
 				
-				html5CurrentSongLibrary = 'music';
+				html5CurrentSongLibrary = library;
 				
-				var index:Int = 0;
-				var chartLoaded:Bool = false;
-				
-				function finish():Void
+				if (!Assets.exists(chartId, TEXT))
 				{
-					if (!chartLoaded)
-					{
-						Logger.log('HTML5 Story Mode chart did not finish loading for ' + songName, ERROR);
-					}
+					Logger.log('HTML5 Story Mode chart was not found after loading ' + library + ': ' + chartId, ERROR);
 					onComplete();
-				}
-				
-				function loadNext():Void
-				{
-					if (index >= assets.length)
-					{
-						finish();
-						return;
-					}
-					
-					final assetId:String = assets[index++];
-					final lower:String = assetId.toLowerCase();
-					
-					if (lower.endsWith('.json') || lower.endsWith('.txt') || lower.endsWith('.hx') || lower.endsWith('.xml'))
-					{
-						Assets.loadText(assetId).onComplete(function(text:String) {
-							if (lower.endsWith('/data/' + Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty).toLowerCase() + '.json'))
-							{
-								html5SongChartText.set(songPath + ':' + PlayState.storyMeta.difficulty, text);
-								chartLoaded = true;
-							}
-							loadNext();
-						}).onError(function(error) {
-							Logger.log('Failed to load HTML5 song text ' + assetId + '\\nException: ' + error, ERROR);
-							loadNext();
-						});
-					}
-					else if (lower.endsWith('.ogg') || lower.endsWith('.wav') || lower.endsWith('.mp3'))
-					{
-						Assets.loadSound(assetId).onComplete(function(_) loadNext()).onError(function(error) {
-							Logger.log('Failed to load HTML5 song audio ' + assetId + '\\nException: ' + error, ERROR);
-							loadNext();
-						});
-					}
-					else if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg'))
-					{
-						Assets.loadBitmapData(assetId).onComplete(function(_) loadNext()).onError(function(error) {
-							Logger.log('Failed to load HTML5 song image ' + assetId + '\\nException: ' + error, ERROR);
-							loadNext();
-						});
-					}
-					else
-					{
-						Assets.loadBytes(assetId).onComplete(function(_) loadNext()).onError(function(error) {
-							Logger.log('Failed to load HTML5 song asset ' + assetId + '\\nException: ' + error, ERROR);
-							loadNext();
-						});
-					}
-				}
-				
-				loadNext();
-			}
-			
-			function ensureMusicLibrary():Void
-			{
-				if (Assets.hasLibrary('music'))
-				{
-					loadSongAssets();
 					return;
 				}
 				
-				Assets.loadLibrary('music').onComplete(function(library) {
-					if (library == null)
-					{
-						Logger.log('HTML5 music library could not be registered while loading ' + songName, ERROR);
-						onComplete();
-						return;
-					}
-					loadSongAssets();
+				// Explicitly fetch the chart once. This proves the deferred library is
+				// synchronously usable before PlayState/Chart.fromSong() runs and also
+				// primes OpenFL's asset cache for the exact chart being entered.
+				Assets.loadText(chartId).onComplete(function(chartText:String) {
+					html5SongChartText.set(songPath + ':' + PlayState.storyMeta.difficulty, chartText);
+					onComplete();
 				}).onError(function(error) {
-					Logger.log('Failed to register HTML5 music library\\nException: ' + error, ERROR);
+					Logger.log('Failed to load HTML5 Story Mode chart ' + chartId + '\\nException: ' + error, ERROR);
 					onComplete();
 				});
 			}
 			
-			ensureMusicLibrary();
+			if (html5LoadedLibraries.exists(library))
+			{
+				finish();
+				return;
+			}
+			
+			// Load the per-song deferred library itself. Do not check hasLibrary()
+			// first; a deferred manifest may only become visible as this loads.
+			Assets.loadLibrary(library).onComplete(function(loadedLibrary) {
+				if (loadedLibrary == null)
+				{
+					Logger.log('HTML5 song library could not be loaded: ' + library, ERROR);
+					onComplete();
+					return;
+				}
+				
+				html5LoadedLibraries.set(library, true);
+				finish();
+			}).onError(function(error) {
+				Logger.log('Failed to load HTML5 song library ' + library + ' for ' + songName + '\\nException: ' + error, ERROR);
+				onComplete();
+			});
 		#else
 			onComplete();
 		#end
