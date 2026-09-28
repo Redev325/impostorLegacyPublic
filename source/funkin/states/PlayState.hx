@@ -2966,15 +2966,29 @@ class PlayState extends MusicBeatState
 					
 					trace('LOADING: ' + Paths.sanitize(storyMeta.playlist[0]) + difficulty);
 					
-					PlayState.SONG = Chart.fromSong(songLowercase, PlayState.storyMeta.difficulty);
-					
 					popUpEndCallback = function() {
 						if (!ScriptConstants.stopping(scripts.call('postEndSong')))
 						{
 							CoolUtil.cancelMusicFadeTween();
 							FlxG.sound.music.stop();
-							
+						
+							#if html5
+							FunkinAssets.loadHtml5SongAssets(songLowercase, function() {
+								try
+								{
+									PlayState.SONG = Chart.fromSong(songLowercase, PlayState.storyMeta.difficulty);
+									FlxG.switchState(PlayState.new);
+								}
+								catch (e)
+								{
+									Logger.log('Failed to prepare next Story Mode song ' + songLowercase + '\\nException: ' + e, ERROR);
+									FlxG.switchState(StoryMenuState.new);
+								}
+							});
+							#else
+							PlayState.SONG = Chart.fromSong(songLowercase, PlayState.storyMeta.difficulty);
 							FlxG.switchState(PlayState.new);
+							#end
 						}
 					}
 				}
