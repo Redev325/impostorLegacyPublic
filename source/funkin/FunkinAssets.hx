@@ -111,21 +111,30 @@ class FunkinAssets
 	{
 		#if html5
 			final songPath:String = Paths.sanitize(songName);
-			final chartPath:String = 'assets/songs/' + songPath + '/data/' + Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty);
-			final chartKey:String = songPath + ':' + PlayState.storyMeta.difficulty;
+			// Every song is packaged as its own deferred Lime library in Project.xml
+			// (for example song_sussus-moogus). Normalize names such as D'low to
+			// the corresponding generated library id (song_d_low).
+			final librarySuffix:String = ~/[^a-zA-Z0-9_-]/g.replace(songPath, '_');
+			final library:String = 'song_' + librarySuffix;
 			
-			// Only the chart is needed before changing states. Audio is streamed
-			// directly by PlayableSong after PlayState is visible, so a slow audio
-			// request can never trap the Story/Freeplay menu behind its lock.
-			new HTTPRequest<String>().load(chartPath)
-				.onComplete(function(text:String) {
-					html5SongChartText.set(chartKey, text);
-					onComplete();
-				})
-				.onError(function(error) {
-					Logger.log('Failed to load HTML5 song chart ' + chartPath + '\\nException: ' + error, ERROR);
-					onComplete();
-				});
+			if (!Assets.hasLibrary(library))
+			{
+				Logger.log('HTML5 song library not found: ' + library + ' for ' + songName, ERROR);
+				onComplete();
+				return;
+			}
+			
+			loadHtml5Libraries([library], function() {
+				if (html5LoadedLibraries.exists(library))
+				{
+					html5CurrentSongLibrary = library;
+				}
+				else
+				{
+					Logger.log('HTML5 song library failed to load: ' + library, ERROR);
+				}
+				onComplete();
+			});
 		#else
 			onComplete();
 		#end
