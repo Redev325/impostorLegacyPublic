@@ -247,16 +247,30 @@ class WeekData
 		#end
 
 		#if html5
-		// HTML5 core weeks are virtual assets inside the preloaded menus
-		// library. Directories are not AssetType entries, so do NOT gate this
-		// scan with FunkinAssets.exists(directory). Just enumerate the virtual
-		// directory and load each JSON week that it contains.
+		// HTML5 core weeks are virtual assets inside the preloaded menus library.
+		// Prefer normal virtual-directory enumeration, but keep a deterministic
+		// fallback list because some OpenFL/Lime HTML5 builds do not expose every
+		// virtual directory entry through Assets.list().
 		final html5WeeksDirectory:String = Paths.getCorePath('data/weeks');
 		for (file in FunkinAssets.readDirectory(html5WeeksDirectory))
 		{
 			if (!file.endsWith('.json')) continue;
 			final weekId:String = file.withoutExtension();
 			addWeek(weekId, Path.join([html5WeeksDirectory, file]), Paths.getCorePath(), 0, 1);
+		}
+
+		if (weeksList.length == 0)
+		{
+			final fallbackWeeks:Array<String> = [
+				'week1', 'week2', 'week3', 'week4', 'week4Crisis', 'week4Finale',
+				'week5', 'week6', 'week7', 'week7Bonus', 'week8', 'week8Bonus',
+				'week9', 'week10', 'week10Bonus', 'week11', 'weekBonus', 'weekCval'
+			];
+			for (weekId in fallbackWeeks)
+			{
+				final weekPath:String = html5WeeksDirectory + '/' + weekId + '.json';
+				addWeek(weekId, weekPath, Paths.getCorePath(), 0, 1);
+			}
 		}
 		#end
 		
