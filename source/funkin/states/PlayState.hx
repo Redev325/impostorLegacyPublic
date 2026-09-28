@@ -691,7 +691,7 @@ class PlayState extends MusicBeatState
 		// Load the shared legacy utility script before the stage script. Stage files
 		// depend on camSpecialThing, hasBfSkin, hasPet, resetCam, and related
 		// shareables being present during their onLoad/onCreatePost callbacks.
-		initFunkinScript('scripts/utils.hx');
+		initFunkinScript(Paths.getPath('scripts/utils.hx'));
 		
 		stage = new Stage(SONG.stage);
 		applyStageData(stage.stageData);
