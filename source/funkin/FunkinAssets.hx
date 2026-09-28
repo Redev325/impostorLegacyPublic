@@ -133,7 +133,8 @@ class FunkinAssets
 				if (finished) return;
 				finished = true;
 				html5CurrentSongLibrary = null;
-				if (onError != null) onError();
+				final callback:Void->Void = onError ?? function() {};
+				callback();
 			}
 			
 			function tryLoad(attempt:Int):Void
