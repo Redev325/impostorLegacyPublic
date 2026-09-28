@@ -688,10 +688,12 @@ class PlayState extends MusicBeatState
 		allowGFSkin = (!isStoryMode && (SONG.allowGFskin ?? true));
 		allowPet = (!isStoryMode && (SONG.allowPet ?? true));
 		
-		// Load the shared legacy utility script before the stage script. Stage files
-		// depend on camSpecialThing, hasBfSkin, hasPet, resetCam, and related
-		// shareables being present during their onLoad/onCreatePost callbacks.
-		initFunkinScript(Paths.getPath('scripts/utils.hx'));
+		// Load all global legacy scripts before the stage. This includes utils.hx,
+		// dialogue.hx, camTweenEvent.hx, and the other shared compatibility hooks.
+		for (file in Paths.listAllFilesInDirectory('scripts', LOOSE).filter(path -> FunkinScript.isHxFile(path)))
+		{
+			initFunkinScript(file);
+		}
 		
 		stage = new Stage(SONG.stage);
 		applyStageData(stage.stageData);
