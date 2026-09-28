@@ -112,24 +112,49 @@ class FunkinAssets
 	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void):Void
 	{
 		#if html5
-			// Story Mode uses the preloaded gameplay library for charts, events,
-			// scripts, stages, and character assets. Explicitly resolving/loading the
-			// library here prevents a race where the state changes before the
-			// preloader has finished making those assets synchronously available.
+			// Activate every deferred runtime library needed by a real song:
+			// gameplay = charts/scripts/stages/characters,
+			// music = Inst/Voices and runtime music,
+			// embedded = videos/cutscenes and other embedded content.
 			final songPath:String = Paths.sanitize(songName);
 			final difficultyPath:String = Difficulty.getDifficultyFilePath(PlayState.storyMeta.difficulty);
 			final chartPath:String = Paths.json(songPath + '/data/' + difficultyPath);
-			html5CurrentSongLibrary = 'gameplay';
-			Assets.loadLibrary('gameplay').onComplete(function(_) {
+			
+			function finish():Void
+			{
 				html5CurrentSongLibrary = 'gameplay';
 				if (!Assets.exists('gameplay:' + chartPath, TEXT))
 				{
 					Logger.log('HTML5 Story Mode chart is missing from gameplay preload: ' + chartPath, ERROR);
 				}
 				onComplete();
+			}
+			
+			function loadEmbedded():Void
+			{
+				Assets.loadLibrary('embedded').onComplete(function(_) {
+					finish();
+				}).onError(function(error) {
+					Logger.log('Failed to activate HTML5 embedded/cutscene library for ' + songName + '\\nException: ' + error, ERROR);
+					finish();
+				});
+			}
+			
+			function loadMusic():Void
+			{
+				Assets.loadLibrary('music').onComplete(function(_) {
+					loadEmbedded();
+				}).onError(function(error) {
+					Logger.log('Failed to activate HTML5 music library for ' + songName + '\\nException: ' + error, ERROR);
+					loadEmbedded();
+				});
+			}
+			
+			Assets.loadLibrary('gameplay').onComplete(function(_) {
+				loadMusic();
 			}).onError(function(error) {
 				Logger.log('Failed to activate HTML5 gameplay library for ' + songName + '\\nException: ' + error, ERROR);
-				onComplete();
+				loadMusic();
 			});
 		#else
 			onComplete();
