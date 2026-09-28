@@ -34,7 +34,11 @@ class CosmicubeCard extends flixel.group.FlxSpriteGroup
 		this.id = meta.fileName;
 		this.meta = meta;
 		
+		#if html5
+		add(slide = new FlxSprite(8, Paths.image('${ext}slides/${id == 'impostor' ? 'impostor' : 'unknown'}')));
+		#else
 		add(slide = new FlxSprite(8, Paths.image('${ext}slides/${Paths.fileExists('images/${ext}slides/$id.png') ? id : 'unknown'}')));
+		#end
 		add(cover = new FlxSprite(8, 8, Paths.image('${ext}cover')));
 		add(border = new FlxSprite(Paths.image('${ext}cardBorder')));
 		
@@ -91,7 +95,20 @@ class CosmicubeCard extends flixel.group.FlxSpriteGroup
 	public function refresh():Void
 	{
 		counterText.text = flixel.util.FlxStringUtil.formatMoney(CosmicubeData.getMoney(meta.currency), false);
-		var completion = ProgressionUtil.calculateCubeCompletion(id);
+		
+		#if html5
+		final cubeItems:Array<ShopItemData> = (CosmicubeData.cosmicubeItems.get(id) ?? []);
+		final totalItems:Int = cubeItems.length;
+		var unlockedItems:Int = 0;
+		for (item in cubeItems)
+		{
+			if (item != null && item.fileName != null && ClientPrefs.cosmicubeUnlocks.contains(item.fileName))
+				unlockedItems++;
+		}
+		final completion:Float = (totalItems <= 0 ? 100 : unlockedItems / totalItems * 100);
+		#else
+		final completion = ProgressionUtil.calculateCubeCompletion(id);
+		#end
 		completionText.text = Lang.str('cosmicube_completed').replace('@', Std.string(Math.floor(completion.percent)));
 	}
 	
