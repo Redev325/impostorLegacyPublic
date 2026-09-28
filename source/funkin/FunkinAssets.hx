@@ -111,15 +111,40 @@ class FunkinAssets
 	{
 		#if html5
 			final songPath:String = Paths.sanitize(songName);
-			// Every song is packaged as its own deferred Lime library in Project.xml
-			// (for example song_sussus-moogus). Normalize names such as D'low to
-			// the corresponding generated library id (song_d_low).
-			final librarySuffix:String = ~/[^a-zA-Z0-9_-]/g.replace(songPath, '_');
-			final library:String = 'song_' + librarySuffix;
+			// Each song is packaged as its own deferred Lime library in Project.xml.
+			// The library normally matches the sanitized song path exactly
+			// (song_sussus-moogus), but D'low is the one current exception because
+			// its library is explicitly named song_d_low.
+			var library:String = 'song_' + songPath;
+			if (!Assets.hasLibrary(library))
+			{
+				final normalizedLibrary:String = ~/[^a-zA-Z0-9_-]/g.replace(songPath, '_');
+				library = 'song_' + normalizedLibrary;
+			}
 			
 			if (!Assets.hasLibrary(library))
 			{
-				Logger.log('HTML5 song library not found: ' + library + ' for ' + songName, ERROR);
+				// Last-resort lookup: use the actual asset path inside registered
+				// song_* libraries. This keeps future specially-named songs working
+				// without hard-coding additional exceptions.
+				final assetPrefix:String = 'assets/songs/' + songPath + '/';
+				for (asset in Assets.list())
+				{
+					final colon:Int = asset.indexOf(':');
+					if (colon <= 0) continue;
+					final candidate:String = asset.substr(0, colon);
+					final assetPath:String = asset.substr(colon + 1);
+					if (candidate.startsWith('song_') && assetPath.startsWith(assetPrefix))
+					{
+						library = candidate;
+						break;
+					}
+				}
+			}
+			
+			if (!Assets.hasLibrary(library))
+			{
+				Logger.log('HTML5 song library not found for ' + songName + ' (tried ' + library + ')', ERROR);
 				onComplete();
 				return;
 			}
