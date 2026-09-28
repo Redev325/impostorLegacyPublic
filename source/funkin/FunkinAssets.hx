@@ -110,72 +110,170 @@ class FunkinAssets
 	 * Loads the deferred library for exactly one song before PlayState starts.
 	 * Story Mode and Freeplay both use this path on HTML5.
 	 */
-	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void, ?onError:Void->Void):Void
+	public static function loadHtml5SongAssets(songName:String, onComplete:Void->Void, ?onError:Void->Void, ?difficulty:Int = -1):Void
 	{
 		#if html5
+			// Do not use Assets.loadLibrary() for song libraries here. Runtime-loaded
+			// libraries have had HTML5 registration issues in the OpenFL/Lime stack.
+			// The selected song is small enough to load directly, and caching the
+			// resulting Sound objects lets the normal Paths APIs keep working.
 			html5CurrentSongLibrary = null;
 			final safeSongName:String = Paths.sanitize(songName);
-			// The legacy folder/library for d'low contains an underscore.
-			final libraryKey:String = safeSongName == 'dlow' ? 'd_low' : safeSongName;
-			final songLibrary:String = 'song_' + libraryKey;
+			final folderName:String = safeSongName == 'dlow' ? "d'low" : safeSongName;
+			final effectiveDifficulty:Int = difficulty == -1 ? PlayState.storyMeta.difficulty : difficulty;
+			final chartDifficulty:String = Difficulty.getDifficultyFilePath(effectiveDifficulty);
+			final chartCacheKey:String = safeSongName + ':' + effectiveDifficulty;
+			final chartUrl:String = 'assets/songs/$folderName/data/$chartDifficulty.json';
+			final baseUrl:String = 'assets/songs/$folderName';
+			final instCandidates:Array<String> = [
+				'$baseUrl/Inst.ogg',
+				'$baseUrl/audio/Inst.ogg',
+				'$baseUrl/Inst.wav',
+				'$baseUrl/audio/Inst.wav'
+			];
+			final voicesCandidates:Array<String> = [
+				'$baseUrl/Voices.ogg',
+				'$baseUrl/audio/Voices.ogg',
+				'$baseUrl/Voices.wav',
+				'$baseUrl/audio/Voices.wav'
+			];
 			var finished:Bool = false;
-			
-			function complete():Void
-			{
-				if (finished) return;
-				finished = true;
-				html5CurrentSongLibrary = songLibrary;
-				onComplete();
-			}
-			
-			function fail():Void
+
+			function fail(reason:Dynamic):Void
 			{
 				if (finished) return;
 				finished = true;
 				html5CurrentSongLibrary = null;
+				Logger.log('Unable to load HTML5 song assets for $songName: $reason', ERROR);
 				final callback:Void->Void = onError ?? function() {};
 				callback();
 			}
-			
-			function tryLoad(attempt:Int):Void
+
+			function cacheLoadedSound(sound:Sound, url:String):Void
 			{
-				Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
-					if (loadedLibrary == null)
-					{
+				// Cache using the exact path shape Paths.findFileWithExts() may return.
+				cache.cacheSound(url, sound);
+				if (url.indexOf('/audio/') == -1)
+				{
+					cache.cacheSound(url.substring(0, url.lastIndexOf('/')) + '/audio/' + url.substring(url.lastIndexOf('/') + 1), sound);
+				}
+				else
+				{
+					final withoutAudio:String = StringTools.replace(url, '/audio/', '/');
+					cache.cacheSound(withoutAudio, sound);
+				}
+			}
+
+			function loadSoundCandidates(candidates:Array<String>, required:Bool, onCompleteSound:Void->Void, index:Int = 0, attempt:Int = 1):Void
+			{
+				if (index >= candidates.length)
+				{
+					if (required) fail('instrumental audio was not reachable');
+					else onCompleteSound();
+					return;
+				}
+
+				final url:String = candidates[index];
+				try
+				{
+					Sound.loadFromFile(url).onComplete(function(sound:Sound) {
+						if (sound == null)
+						{
+							loadSoundCandidates(candidates, required, onCompleteSound, index + 1, 1);
+							return;
+						}
+						cacheLoadedSound(sound, url);
+						onCompleteSound();
+					}).onError(function(error) {
 						if (attempt < 3)
 						{
-							Logger.log('HTML5 song library returned no library, retrying ' + songLibrary + ' (' + (attempt + 1) + '/3)', WARN);
-							Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
+							Logger.log('Failed to load $url, retrying (' + (attempt + 1) + '/3)\\nException: ' + error, WARN);
+							Timer.delay(() -> loadSoundCandidates(candidates, required, onCompleteSound, index, attempt + 1), 500 * attempt);
 						}
 						else
 						{
-							Logger.log('HTML5 song library could not be loaded: ' + songLibrary, ERROR);
-							fail();
+							loadSoundCandidates(candidates, required, onCompleteSound, index + 1, 1);
 						}
+					});
+				}
+				catch (e)
+				{
+					loadSoundCandidates(candidates, required, onCompleteSound, index + 1, 1);
+				}
+			}
+
+			function loadChart(attempt:Int = 1):Void
+			{
+				if (html5SongChartText.exists(chartCacheKey))
+				{
+					loadSoundCandidates(instCandidates, true, function() {
+						loadSoundCandidates(voicesCandidates, false, function() {
+							if (!finished)
+							{
+								finished = true;
+								onComplete();
+							}
+						});
+					});
+					return;
+				}
+
+				final loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, function(_) {
+					final text:String = Std.string(loader.data);
+					if (text.trim().length == 0)
+					{
+						if (attempt < 3) Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
+						else fail('chart file was empty');
 						return;
 					}
-					
-					complete();
-				}).onError(function(error) {
+
+					if (parseJson(text) == null)
+					{
+						fail('chart JSON could not be parsed');
+						return;
+					}
+
+					html5SongChartText.set(chartCacheKey, text);
+					loadSoundCandidates(instCandidates, true, function() {
+						loadSoundCandidates(voicesCandidates, false, function() {
+							if (!finished)
+							{
+								finished = true;
+								onComplete();
+							}
+						});
+					});
+			});
+
+				loader.addEventListener(IOErrorEvent.IO_ERROR, function(event) {
 					if (attempt < 3)
 					{
-						Logger.log('Failed to load HTML5 song library ' + songLibrary + ', retrying (' + (attempt + 1) + '/3)\nException: ' + error, WARN);
-						Timer.delay(() -> tryLoad(attempt + 1), 600 * attempt);
+						Logger.log('Failed to load HTML5 chart $chartUrl, retrying (' + (attempt + 1) + '/3)\\nException: ' + event.text, WARN);
+						Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
 					}
 					else
 					{
-						Logger.log('Failed to load HTML5 song library ' + songLibrary + ' after 3 attempts\nException: ' + error, ERROR);
-						fail();
+						fail('chart request failed after 3 attempts');
 					}
 				});
+
+				try
+				{
+					loader.load(new URLRequest(chartUrl));
+				}
+				catch (e)
+				{
+					if (attempt < 3) Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
+					else fail(e);
+				}
 			}
-			
-			tryLoad(1);
+
+			loadChart();
 		#else
 			onComplete();
 		#end
 	}
-
 	#if html5
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
 	{
