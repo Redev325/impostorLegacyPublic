@@ -39,6 +39,7 @@ class FunkinAssets
 	static final html5LoadedLibraries:Map<String, Bool> = [];
 	static var html5CurrentSongLibrary:Null<String> = null;
 	static var html5SongChartText:Map<String, String> = [];
+	static var html5SongSoundCache:Map<String, Sound> = [];
 	#end
 
 	#if html5
@@ -120,6 +121,7 @@ class FunkinAssets
 			// The selected song is small enough to load directly, and caching the
 			// resulting Sound objects lets the normal Paths APIs keep working.
 			html5CurrentSongLibrary = null;
+			html5SongSoundCache = [];
 			final safeSongName:String = Paths.sanitize(songName);
 			final folderName:String = safeSongName == 'dlow' ? "d'low" : safeSongName;
 			final effectiveDifficulty:Int = difficulty == -1 ? PlayState.storyMeta.difficulty : difficulty;
@@ -153,16 +155,15 @@ class FunkinAssets
 
 			function cacheLoadedSound(sound:Sound, url:String):Void
 			{
-				// Cache using the exact path shape Paths.findFileWithExts() may return.
-				cache.cacheSound(url, sound);
+				html5SongSoundCache.set(url, sound);
 				if (url.indexOf('/audio/') == -1)
 				{
-					cache.cacheSound(url.substring(0, url.lastIndexOf('/')) + '/audio/' + url.substring(url.lastIndexOf('/') + 1), sound);
+					html5SongSoundCache.set(url.substring(0, url.lastIndexOf('/')) + '/audio/' + url.substring(url.lastIndexOf('/') + 1), sound);
 				}
 				else
 				{
 					final withoutAudio:String = StringTools.replace(url, '/audio/', '/');
-					cache.cacheSound(withoutAudio, sound);
+					html5SongSoundCache.set(withoutAudio, sound);
 				}
 			}
 
@@ -566,8 +567,21 @@ class FunkinAssets
 		#if html5
 		if (sound == null)
 		{
-			final resolved = resolveHtml5AssetId(key, SOUND);
-			if (resolved != null) sound = Assets.getSound(resolved, true);
+			#if html5
+			if (html5SongSoundCache.exists(key))
+			{
+				sound = html5SongSoundCache.get(key);
+			}
+			else
+			#end
+			{
+				#if html5
+				final resolved = resolveHtml5AssetId(key, SOUND);
+				if (resolved != null) sound = Assets.getSound(resolved, true);
+				#else
+				sound = null;
+				#end
+			}
 		}
 		#else
 		if (sound == null && Assets.exists(key, SOUND)) sound = Assets.getSound(key, true);
