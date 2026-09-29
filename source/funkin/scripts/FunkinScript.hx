@@ -88,15 +88,7 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		{
 			final prefix:String = ErrorSeverityTools.getPrefix(level);
 			
-			// Keep HScript diagnostics in the console, but do not cover the HTML5
-			// gameplay screen with parser/runtime messages unless Developer Mode
-			// is explicitly enabled.
-			#if html5
-			if (ClientPrefs.inDevMode)
-			#end
-			{
-				DebugTextPlugin.addText(formatPosInfos(pos.fileName, pos.lineNumber, x, prefix == '' ? '' : '$prefix:'), Logger.getHexColourFromSeverity(Severity.fromIris(level)));
-			}
+			DebugTextPlugin.addText(formatPosInfos(pos.fileName, pos.lineNumber, x, prefix == '' ? '' : '$prefix:'), Logger.getHexColourFromSeverity(Severity.fromIris(level)));
 			
 			Iris.logLevel(level, x, pos);
 		}
@@ -214,9 +206,10 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 				}
 				catch (e:Dynamic)
 				{
-					// HScript's SReturn is internal control flow. It should never reach
-					// the HTML5 crash handler as though it were a real game exception.
-					if (!isEscapedScriptReturn(e)) throw e;
+					// SReturn is HScript control flow. Other script exceptions are
+					// reported but must not freeze the entire HTML5 PlayState.
+					if (!isEscapedScriptReturn(e))
+						DebugTextPlugin.addText(formatPosInfos(name, 0, '[HScript runtime error] ' + Std.string(e), 'ERROR: '), FlxColor.RED);
 				}
 				
 				for (key in defaultShit.keys())
