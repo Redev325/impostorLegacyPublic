@@ -165,11 +165,10 @@ jobs:
           index = Path(sys.argv[1])
           build_sha = sys.argv[2]
           text = index.read_text()
-          patched, count = re.subn(
-              r'ImpostorLegacy\\.js(?:\\?[^"\\' ]*)?',
-              f'ImpostorLegacy.js?v={build_sha}',
-              text
-          )
+          needle = "ImpostorLegacy.js"
+          replacement = f"ImpostorLegacy.js?v={build_sha}"
+          count = text.count(needle)
+          patched = text.replace(needle, replacement)
           if count == 0:
               raise SystemExit("Could not find ImpostorLegacy.js in generated index.html")
           index.write_text(patched)
