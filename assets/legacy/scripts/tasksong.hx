@@ -13,7 +13,7 @@ function onCreatePost()
 {
 	taskGroup = new FlxSpriteGroup(0, 200);
 	taskGroup.camera = camOther;
-	add(taskGroup);
+	addToState(taskGroup);
 	
 	text = new FlxText(0, 0, 0, 'ME');
 	text.setFormat(Paths.font("liberbold.ttf", false), 24, FlxColor.WHITE, FlxTextAlign.LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
@@ -82,7 +82,7 @@ function onEvent(event, value1, value2)
 	{
 		taskGroup.visible = true;
 		
-		switchCredits(value2.length > 0 ? value2 : null);
+		switchCredits(value2 != null && value2.length > 0 ? value2 : null);
 		startTaskSong();
 	}
 }
