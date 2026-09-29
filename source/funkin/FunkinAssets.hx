@@ -124,50 +124,46 @@ class FunkinAssets
 			final effectiveDifficulty:Int = PlayState.storyMeta.difficulty;
 			final chartDifficulty:String = Difficulty.getDifficultyFilePath(effectiveDifficulty);
 			final chartCacheKey:String = safeSongName + ':' + effectiveDifficulty;
-			final chartUrl:String = 'assets/songs/' + (safeSongName == 'dlow' ? "d'low" : safeSongName)
-				+ '/data/' + chartDifficulty + '.json';
-
-			if (html5SongChartText.exists(chartCacheKey))
-			{
-				onComplete();
-				return;
-			}
+			final songFolder:String = safeSongName == 'dlow' ? "d'low" : safeSongName;
+			final songLibrary:String = 'song_' + (safeSongName == 'dlow' ? 'd_low' : safeSongName);
+			final chartId:String = songLibrary + ':assets/songs/' + songFolder + '/data/' + chartDifficulty + '.json';
 
 			function fail(reason:Dynamic):Void
 			{
-				Logger.log('Unable to load HTML5 song chart for ' + songName + ': ' + reason, ERROR);
+				Logger.log('Unable to load HTML5 song assets for ' + songName + ': ' + reason, ERROR);
 				final callback:Void->Void = onError ?? function() {};
 				callback();
 			}
 
-			function loadChart(attempt:Int = 1):Void
+			function finishWithChart(text:String):Void
 			{
+				if (text.trim().length == 0)
+				{
+					fail('chart file was empty');
+					return;
+				}
+				if (parseJson(text) == null)
+				{
+					fail('chart JSON could not be parsed');
+					return;
+				}
+				html5CurrentSongLibrary = songLibrary;
+				html5SongChartText.set(chartCacheKey, text);
+				onComplete();
+			}
+
+			function loadChartFromNetwork(attempt:Int = 1):Void
+			{
+				final chartUrl:String = 'assets/songs/' + songFolder + '/data/' + chartDifficulty + '.json';
 				final loader:URLLoader = new URLLoader();
 				loader.addEventListener(Event.COMPLETE, function(_) {
-					final text:String = Std.string(loader.data);
-					if (text.trim().length == 0)
-					{
-						if (attempt < 3)
-							Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
-						else
-							fail('chart file was empty');
-						return;
-					}
-
-					if (parseJson(text) == null)
-					{
-						fail('chart JSON could not be parsed');
-						return;
-					}
-
-					html5SongChartText.set(chartCacheKey, text);
-					onComplete();
+					finishWithChart(Std.string(loader.data));
 				});
 				loader.addEventListener(IOErrorEvent.IO_ERROR, function(event) {
 					if (attempt < 3)
 					{
 						Logger.log('Failed to load HTML5 chart ' + chartUrl + ', retrying (' + (attempt + 1) + '/3)\\nException: ' + event.text, WARN);
-						Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
+						Timer.delay(() -> loadChartFromNetwork(attempt + 1), 500 * attempt);
 					}
 					else
 					{
@@ -181,13 +177,54 @@ class FunkinAssets
 				catch (e)
 				{
 					if (attempt < 3)
-						Timer.delay(() -> loadChart(attempt + 1), 500 * attempt);
+						Timer.delay(() -> loadChartFromNetwork(attempt + 1), 500 * attempt);
 					else
 						fail(e);
 				}
 			}
 
-			loadChart();
+			function libraryReady():Void
+			{
+				html5CurrentSongLibrary = songLibrary;
+
+				if (html5SongChartText.exists(chartCacheKey))
+				{
+					onComplete();
+					return;
+				}
+
+				try
+				{
+					if (Assets.exists(chartId, AssetType.TEXT))
+					{
+						finishWithChart(Assets.getText(chartId));
+						return;
+					}
+				}
+				catch (e:Dynamic)
+				{
+					Logger.log('Loaded song library but could not read chart ' + chartId + ': ' + e, WARN);
+				}
+				loadChartFromNetwork();
+			}
+
+			if (html5LoadedLibraries.exists(songLibrary) && Assets.hasLibrary(songLibrary))
+			{
+				libraryReady();
+				return;
+			}
+
+			Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
+				if (loadedLibrary == null || !Assets.hasLibrary(songLibrary))
+				{
+					fail('song library could not be loaded: ' + songLibrary);
+					return;
+				}
+				html5LoadedLibraries.set(songLibrary, true);
+				libraryReady();
+			}).onError(function(error) {
+				fail('song library request failed: ' + error);
+			});
 		#else
 			onComplete();
 		#end
