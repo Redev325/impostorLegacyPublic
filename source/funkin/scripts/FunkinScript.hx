@@ -88,7 +88,15 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		{
 			final prefix:String = ErrorSeverityTools.getPrefix(level);
 			
-			DebugTextPlugin.addText(formatPosInfos(pos.fileName, pos.lineNumber, x, prefix == '' ? '' : '$prefix:'), Logger.getHexColourFromSeverity(Severity.fromIris(level)));
+			// Keep HScript diagnostics in the console, but do not cover the HTML5
+			// gameplay screen with parser/runtime messages unless Developer Mode
+			// is explicitly enabled.
+			#if html5
+			if (ClientPrefs.inDevMode)
+			#end
+			{
+				DebugTextPlugin.addText(formatPosInfos(pos.fileName, pos.lineNumber, x, prefix == '' ? '' : '$prefix:'), Logger.getHexColourFromSeverity(Severity.fromIris(level)));
+			}
 			
 			Iris.logLevel(level, x, pos);
 		}
@@ -174,7 +182,7 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		catch (e)
 		{
 			__garbage = true;
-			Logger.log('[${name}]: PARSING ERROR: $e', ERROR, true);
+			Logger.log('[${name}]: PARSING ERROR: $e', ERROR, false);
 		}
 		return ret;
 	}
