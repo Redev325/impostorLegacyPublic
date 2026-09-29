@@ -39,6 +39,7 @@ class FunkinAssets
 	static final html5LoadedLibraries:Map<String, Bool> = [];
 	static var html5CurrentSongLibrary:Null<String> = null;
 	static var html5SongChartText:Map<String, String> = [];
+	static var html5SongEventText:Map<String, String> = [];
 	#end
 
 	#if html5
@@ -183,34 +184,87 @@ class FunkinAssets
 				});
 			}
 
+			function loadSongEvents(afterEvents:Void->Void):Void
+			{
+				final eventCacheKey:String = safeSongName;
+				if (html5SongEventText.exists(eventCacheKey))
+				{
+					afterEvents();
+					return;
+				}
+
+				final eventId:String = songLibrary + ':assets/songs/' + songFolder + '/data/events.json';
+				try
+				{
+					if (Assets.exists(eventId, AssetType.TEXT))
+					{
+						final text:String = Assets.getText(eventId);
+						if (text.trim().length > 0 && parseJson(text) != null)
+						{
+							html5SongEventText.set(eventCacheKey, text);
+							afterEvents();
+							return;
+						}
+					}
+				}
+				catch (e:Dynamic)
+				{
+					Logger.log('Deferred HTML5 event file requires network loading: ' + eventId + '\\nException: ' + e, WARN);
+				}
+
+				final eventUrl:String = 'assets/songs/' + songFolder + '/data/events.json';
+				final loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, function(_) {
+					final text:String = Std.string(loader.data);
+					if (text.trim().length > 0 && parseJson(text) != null)
+					{
+						html5SongEventText.set(eventCacheKey, text);
+					}
+					afterEvents();
+				});
+				loader.addEventListener(IOErrorEvent.IO_ERROR, function(event) {
+					// events.json is optional. A missing file must not block gameplay.
+					Logger.log('HTML5 event file unavailable for ' + songName + ': ' + event.text, WARN);
+					afterEvents();
+				});
+				try
+				{
+					loader.load(new URLRequest(eventUrl));
+				}
+				catch (e)
+				{
+					Logger.log('Could not request HTML5 event file ' + eventUrl + ': ' + e, WARN);
+					afterEvents();
+				}
+			}
+
 			function loadSongAssets():Void
 			{
 				final trackSwap:Bool = PlayState.SONG?.trackSwap ?? false;
 				final needsVoices:Bool = PlayState.SONG?.needsVoices ?? false;
 				final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
 				final voiceId:String = songLibrary + ':assets/songs/' + songFolder + '/Voices.ogg';
-				loadSongAudio(instFile, 1, function() {
-					if (!needsVoices || !Assets.exists(voiceId, AssetType.SOUND))
-					{
-						onComplete();
-						return;
-					}
-					Assets.loadSound(voiceId, true).onComplete(function(sound) {
-						if (sound == null)
+				loadSongEvents(function() {
+					loadSongAudio(instFile, 1, function() {
+						if (!needsVoices || !Assets.exists(voiceId, AssetType.SOUND))
 						{
-							Logger.log('Unable to preload optional HTML5 vocals: ' + voiceId, WARN);
+							onComplete();
+							return;
 						}
-						else
-						{
-							// Keep the completed Sound object in the engine cache. The
-							// later PlayableSong construction can then retrieve it
-							// synchronously without Lime rejecting the asset as async-only.
-							cache.cacheSound(voiceId, sound);
-						}
-						onComplete();
-					}).onError(function(error) {
-						Logger.log('Unable to preload optional HTML5 vocals: ' + voiceId + '\\nException: ' + error, WARN);
-						onComplete();
+						Assets.loadSound(voiceId, true).onComplete(function(sound) {
+							if (sound == null)
+							{
+								Logger.log('Unable to preload optional HTML5 vocals: ' + voiceId, WARN);
+							}
+							else
+							{
+								cache.cacheSound(voiceId, sound);
+							}
+							onComplete();
+						}).onError(function(error) {
+							Logger.log('Unable to preload optional HTML5 vocals: ' + voiceId + '\\nException: ' + error, WARN);
+							onComplete();
+						});
 					});
 				});
 			}
@@ -294,6 +348,12 @@ class FunkinAssets
 	}
 
 	#if html5
+	public static function getHtml5SongEvents(songName:String):Null<String>
+	{
+		final songPath:String = Paths.sanitize(songName);
+		return html5SongEventText.get(songPath);
+	}
+
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
 	{
 		final songPath:String = Paths.sanitize(songName);
