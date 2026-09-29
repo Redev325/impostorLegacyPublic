@@ -87,7 +87,7 @@ function onCreatePost()
 	if (ClientPrefs.shaders)
 	{
 		vignetteOverlay = new funkin.game.shaders.OverlayShader();
-		vignetteOverlay.setBitmapOverlay(Paths.image(ext + 'vignetteOverlay').bitmap);
+		setBitmapOverlay(vignetteOverlay, Paths.image(ext + 'vignetteOverlay').bitmap);
 	}
 	else
 	{
