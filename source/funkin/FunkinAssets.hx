@@ -569,10 +569,29 @@ class FunkinAssets
 	 */
 	public static function getSoundUnsafe(key:String, useCache:Bool = true):Null<Sound>
 	{
-		if (useCache && cache.currentTrackedSounds.exists(key))
+		if (useCache)
 		{
-			cache.localTrackedAssets.push(key);
-			return cache.currentTrackedSounds.get(key);
+			if (cache.currentTrackedSounds.exists(key))
+			{
+				cache.localTrackedAssets.push(key);
+				return cache.currentTrackedSounds.get(key);
+			}
+			#if html5
+			// HTML5/Lime can normalize asset filenames differently between
+			// manifest lookup and runtime requests (for example Voices.ogg ->
+			// voices.ogg). Reuse the already-decoded sound regardless of case
+			// instead of falling through to Assets.getSound(), which throws
+			// when an asset exists only through an asynchronous library.
+			final normalizedKey:String = key.toLowerCase();
+			for (cachedKey in cache.currentTrackedSounds.keys())
+			{
+				if (cachedKey.toLowerCase() == normalizedKey)
+				{
+					cache.localTrackedAssets.push(cachedKey);
+					return cache.currentTrackedSounds.get(cachedKey);
+				}
+			}
+			#end
 		}
 		
 		var sound:Null<Sound> = null;
