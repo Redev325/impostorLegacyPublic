@@ -264,8 +264,11 @@ class PlayableSong extends VocalGroup
 			source.addEventListener(Event.COMPLETE, function(_) {
 				try
 				{
-					final track:FlxSound = new FlxSound().loadEmbedded(source, false, false, loaded);
+					final track:FlxSound = new FlxSound().loadEmbedded(source, false, false);
 					addTrack(track);
+					// OpenFL Sound.COMPLETE means the source has finished loading.
+					// FlxSound.loadEmbedded's optional callback is for playback end.
+					loaded();
 				}
 				catch (e)
 				{
