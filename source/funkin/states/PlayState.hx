@@ -1469,35 +1469,50 @@ class PlayState extends MusicBeatState
 	function getEventsDirect():Array<EventNote>
 	{
 		if (_parsedEvents != null) return _parsedEvents;
-		
+
 		final events:Array<EventNote> = [];
-		
 		final songName:String = Paths.sanitize(SONG.song);
-		
-		var file:String = Paths.json('$songName/data/events');
-		
-		if (FunkinAssets.exists(file))
+
+		#if html5
+		// Deferred song libraries cannot be read synchronously through
+		// Chart.fromPath(). loadHtml5SongAssets() preloads events.json into
+		// FunkinAssets before PlayState is entered, so consume that cached text.
+		final cachedEvents:Null<String> = FunkinAssets.getHtml5SongEvents(songName);
+		if (cachedEvents != null)
 		{
-			final eventsData:Array<Dynamic> = Chart.fromPath(file).events;
-			
-			for (event in eventsData) // Event Notes
+			final parsedEvents:Dynamic = FunkinAssets.parseJson(cachedEvents);
+			if (parsedEvents != null)
 			{
-				for (i in 0...event[1].length)
+				final eventSong:Song = Chart.fromData(parsedEvents);
+				for (event in eventSong.events)
 				{
-					events.push(makeEv(event[0], event[1][i][0], event[1][i][1], event[1][i][2]));
+					for (i in 0...event[1].length)
+						events.push(makeEv(event[0], event[1][i][0], event[1][i][1], event[1][i][2]));
 				}
 			}
 		}
-		
-		for (event in SONG.events) // Event Notes
+		#else
+		final file:String = Paths.json('$songName/data/events');
+		if (FunkinAssets.exists(file))
+		{
+			final eventsData:Array<Dynamic> = Chart.fromPath(file).events;
+			for (event in eventsData)
+			{
+				for (i in 0...event[1].length)
+					events.push(makeEv(event[0], event[1][i][0], event[1][i][1], event[1][i][2]));
+			}
+		}
+		#end
+
+		for (event in SONG.events)
 		{
 			for (i in 0...event[1].length)
 				events.push(makeEv(event[0], event[1][i][0], event[1][i][1], event[1][i][2]));
 		}
-		
+
 		return (_parsedEvents = events);
 	}
-	
+
 	function generateSong(dataPath:String):Void
 	{
 		songSpeedType = ClientPrefs.getGameplaySetting('scrolltype', 'multiplicative');
