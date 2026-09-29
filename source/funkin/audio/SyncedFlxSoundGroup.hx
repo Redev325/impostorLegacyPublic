@@ -285,7 +285,25 @@ class PlayableSong extends VocalGroup
 		else if (data.needsVoices)
 		{
 			final voiceSound:Null<Sound> = getLoadedSound('Voices.ogg');
-			if (voiceSound != null) addPlayerVocals(new FlxSound().loadEmbedded(voiceSound));
+			if (voiceSound != null)
+			{
+				addPlayerVocals(new FlxSound().loadEmbedded(voiceSound));
+			}
+			else
+			{
+				// Some HTML5/Lime builds register Voices.ogg asynchronously even
+				// after the song library is available. Fall back to the browser
+				// stream instead of letting a synchronous asset lookup stall the song.
+				final voiceTrack:FlxSound = new FlxSound();
+				addPlayerVocals(voiceTrack);
+				voiceTrack.loadStream(
+					'assets/songs/' + songFolder + '/Voices.ogg',
+					false,
+					false,
+					null,
+					null
+				);
+			}
 		}
 
 		// The selected song library is fully loaded before PlayState is created,
