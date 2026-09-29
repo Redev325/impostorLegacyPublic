@@ -260,6 +260,9 @@ class PlayableSong extends VocalGroup
 
 		function loadTrack(url:String, addTrack:FlxSound->Void, loaded:Void->Void, ?failed:Void->Void):Void
 		{
+			// Resolve the optional failure callback once so strict null-safety
+			// never tries to invoke a nullable function reference.
+			final onFailed:Void->Void = failed ?? function() {};
 			final source:Sound = new Sound();
 			source.addEventListener(Event.COMPLETE, function(_) {
 				try
@@ -272,11 +275,11 @@ class PlayableSong extends VocalGroup
 				}
 				catch (e)
 				{
-					if (failed != null) failed();
+					onFailed();
 				}
 			});
 			source.addEventListener(IOErrorEvent.IO_ERROR, function(_) {
-				if (failed != null) failed();
+				onFailed();
 			});
 			try
 			{
@@ -284,7 +287,7 @@ class PlayableSong extends VocalGroup
 			}
 			catch (e)
 			{
-				if (failed != null) failed();
+				onFailed();
 			}
 		}
 
