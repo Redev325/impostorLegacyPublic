@@ -211,8 +211,27 @@ class FunkinAssets
 
 			function loadSongAssets():Void
 			{
-				final instFile:String = (PlayState.SONG.trackSwap ?? false) ? 'Track-main.ogg' : 'Inst.ogg';
-				loadSongAudio(instFile, 1, onComplete);
+				final trackSwap:Bool = PlayState.SONG?.trackSwap ?? false;
+				final needsVoices:Bool = PlayState.SONG?.needsVoices ?? false;
+				final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
+				final voiceId:String = songLibrary + ':assets/songs/' + songFolder + '/Voices.ogg';
+				loadSongAudio(instFile, 1, function() {
+					if (!needsVoices || !Assets.exists(voiceId, AssetType.SOUND))
+					{
+						onComplete();
+						return;
+					}
+					Assets.loadSound(voiceId, true).onComplete(function(sound) {
+						if (sound == null)
+						{
+							Logger.log('Unable to preload optional HTML5 vocals: ' + voiceId, WARN);
+						}
+						onComplete();
+					}).onError(function(error) {
+						Logger.log('Unable to preload optional HTML5 vocals: ' + voiceId + '\\nException: ' + error, WARN);
+						onComplete();
+					});
+				});
 			}
 
 			function libraryReady():Void
