@@ -63,7 +63,10 @@ class FunkinCache
 		// 	}
 		// }
 		
-		Paths.tempAtlasFramesCache.clear();
+		// Keep decoded atlas frame data between PlayState instances. Rebuilding
+		// every character/stage atlas on each Week transition can block the
+		// HTML5 main thread for a long time. Atlas entries are cleared separately
+		// when their underlying graphics are actually evicted.
 		
 		// clear all sounds that are cached
 		for (key in currentTrackedSounds.keys())
