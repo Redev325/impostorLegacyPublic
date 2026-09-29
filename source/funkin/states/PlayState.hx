@@ -692,9 +692,21 @@ class PlayState extends MusicBeatState
 		// The project renames assets/legacy/scripts -> assets/scripts, so the generic
 		// Paths.getPath() data resolver cannot find these by itself.
 		#if html5
+		// The browser build can retain an older asset manifest in cache. Only load
+		// the global scripts that actually exist in the current Legacy source tree;
+		// phantom entries such as lacking.hx must never become runtime scripts.
+		final legacyGlobalScripts:Array<String> = [
+			'camTweenEvent.hx',
+			'cheatMenu.hx',
+			'dialogue.hx',
+			'mom.hx',
+			'rgbPetColors.hx',
+			'tasksong.hx',
+			'utils.hx'
+		];
 		for (file in FunkinAssets.readDirectory('assets/scripts'))
 		{
-			if (!FunkinScript.isHxFile(file)) continue;
+			if (!FunkinScript.isHxFile(file) || !legacyGlobalScripts.contains(file)) continue;
 			initFunkinScript('gameplay:assets/scripts/' + file);
 		}
 		#else
