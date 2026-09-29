@@ -258,44 +258,20 @@ class PlayableSong extends VocalGroup
 		ready = false;
 		final songPath:String = Paths.sanitize(data.song);
 
-		function loadTrack(url:String, addTrack:FlxSound->Void, loaded:Void->Void, ?failed:Void->Void):Void
+		function streamTrack(url:String, addTrack:FlxSound->Void, loaded:Void->Void):Void
 		{
-			// Resolve the optional failure callback once so strict null-safety
-			// never tries to invoke a nullable function reference.
-			final onFailed:Void->Void = failed ?? function() {};
-			final source:Sound = new Sound();
-			source.addEventListener(Event.COMPLETE, function(_) {
-				try
-				{
-					final track:FlxSound = new FlxSound().loadEmbedded(source, false, false);
-					addTrack(track);
-					// OpenFL Sound.COMPLETE means the source has finished loading.
-					// FlxSound.loadEmbedded's optional callback is for playback end.
-					loaded();
-				}
-				catch (e)
-				{
-					onFailed();
-				}
-			});
-			source.addEventListener(IOErrorEvent.IO_ERROR, function(_) {
-				onFailed();
-			});
-			try
-			{
-				source.load(new URLRequest(url));
-			}
-			catch (e)
-			{
-				onFailed();
-			}
+			final track:FlxSound = new FlxSound();
+			addTrack(track);
+			// FlxSound's streaming path is designed for browser-hosted audio and
+			// invokes the final callback once the stream is ready. This avoids
+			// waiting forever on Sound.COMPLETE before the gameplay countdown.
+			track.loadStream(url, false, false, null, loaded);
 		}
 
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
-		loadTrack('assets/songs/' + songPath + '/' + instFile,
+		streamTrack('assets/songs/' + songPath + '/' + instFile,
 			function(track) {
 				inst = track;
-				add(track);
 			},
 			function() {
 				loading = false;
@@ -308,7 +284,7 @@ class PlayableSong extends VocalGroup
 		}
 		else if (data.needsVoices)
 		{
-			loadTrack('assets/songs/' + songPath + '/Voices.ogg',
+			streamTrack('assets/songs/' + songPath + '/Voices.ogg',
 				function(track) addPlayerVocals(track),
 				function() {});
 		}
