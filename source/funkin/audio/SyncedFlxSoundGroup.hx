@@ -1,5 +1,10 @@
 package funkin.audio;
 
+import openfl.media.Sound;
+import openfl.events.Event;
+import openfl.events.IOErrorEvent;
+import openfl.net.URLRequest;
+
 import flixel.util.FlxSignal;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.sound.FlxSound;
@@ -252,45 +257,54 @@ class PlayableSong extends VocalGroup
 		loading = true;
 		ready = false;
 		final songPath:String = Paths.sanitize(data.song);
-		
-		function streamTrack(url:String, addTrack:FlxSound->Void, loaded:Void->Void):Void
+
+		function loadTrack(url:String, addTrack:FlxSound->Void, loaded:Void->Void, ?failed:Void->Void):Void
 		{
-			final track:FlxSound = new FlxSound();
-			addTrack(track);
-			track.loadStream(url, false, false, null, loaded);
+			final source:Sound = new Sound();
+			source.addEventListener(Event.COMPLETE, function(_) {
+				try
+				{
+					final track:FlxSound = new FlxSound().loadEmbedded(source, false, false, loaded);
+					addTrack(track);
+				}
+				catch (e)
+				{
+					if (failed != null) failed();
+				}
+			});
+			source.addEventListener(IOErrorEvent.IO_ERROR, function(_) {
+				if (failed != null) failed();
+			});
+			try
+			{
+				source.load(new URLRequest(url));
+			}
+			catch (e)
+			{
+				if (failed != null) failed();
+			}
 		}
-		
+
+		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
+		loadTrack('assets/songs/' + songPath + '/' + instFile,
+			function(track) {
+				inst = track;
+				add(track);
+			},
+			function() {
+				loading = false;
+				ready = true;
+			});
+
 		if (trackSwap)
 		{
-			streamTrack('assets/songs/' + songPath + '/Track-main.ogg',
-				function(track) {
-					inst = track;
-					add(track);
-				},
-				function() {
-					loading = false;
-					ready = true;
-				});
 			opponentVolume = 0;
 		}
-		else
+		else if (data.needsVoices)
 		{
-			streamTrack('assets/songs/' + songPath + '/Inst.ogg',
-				function(track) {
-					inst = track;
-					add(track);
-				},
-				function() {
-					loading = false;
-					ready = true;
-				});
-			
-			if (data.needsVoices)
-			{
-				streamTrack('assets/songs/' + songPath + '/Voices.ogg',
-					function(track) addPlayerVocals(track),
-					function() {});
-			}
+			loadTrack('assets/songs/' + songPath + '/Voices.ogg',
+				function(track) addPlayerVocals(track),
+				function() {});
 		}
 		#else
 		if (trackSwap)
