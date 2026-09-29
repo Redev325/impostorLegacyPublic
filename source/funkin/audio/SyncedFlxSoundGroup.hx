@@ -258,25 +258,25 @@ class PlayableSong extends VocalGroup
 		ready = false;
 		final songPath:String = Paths.sanitize(data.song);
 
-		function streamTrack(url:String, addTrack:FlxSound->Void, loaded:Void->Void):Void
+		final songFolder:String = songPath == 'dlow' ? "d'low" : songPath;
+		final songLibrary:String = 'song_' + (songPath == 'dlow' ? 'd_low' : songPath);
+
+		function getLoadedSound(fileName:String):Null<Sound>
 		{
-			final track:FlxSound = new FlxSound();
-			addTrack(track);
-			// Use the FlxSound streaming URL loader provided by this project's
-			// installed HaxeFlixel version. It keeps the browser track loading
-			// asynchronous while notifying PlayableSong when the stream is ready.
-			track.loadStream(url, false, false, null, loaded);
+			final assetId:String = songLibrary + ':assets/songs/' + songFolder + '/' + fileName;
+			return FunkinAssets.getSoundUnsafe(assetId);
 		}
 
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
-		streamTrack('assets/songs/' + songPath + '/' + instFile,
-			function(track) {
-				inst = track;
-			},
-			function() {
-				loading = false;
-				ready = true;
-			});
+		final instSound:Null<Sound> = getLoadedSound(instFile);
+		if (instSound == null)
+		{
+			Logger.log('Missing HTML5 instrument track: ' + songLibrary + ':assets/songs/' + songFolder + '/' + instFile, ERROR);
+			return;
+		}
+
+		inst = new FlxSound().loadEmbedded(instSound);
+		add(inst);
 
 		if (trackSwap)
 		{
@@ -284,10 +284,15 @@ class PlayableSong extends VocalGroup
 		}
 		else if (data.needsVoices)
 		{
-			streamTrack('assets/songs/' + songPath + '/Voices.ogg',
-				function(track) addPlayerVocals(track),
-				function() {});
+			final voiceSound:Null<Sound> = getLoadedSound('Voices.ogg');
+			if (voiceSound != null) addPlayerVocals(new FlxSound().loadEmbedded(voiceSound));
 		}
+
+		// The selected song library is fully loaded before PlayState is created,
+		// so the instrument exists synchronously here and startup never waits on
+		// a browser audio COMPLETE callback.
+		loading = false;
+		ready = true;
 		#else
 		if (trackSwap)
 		{
