@@ -86,6 +86,9 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		
 		function log(x:String, ?pos:haxe.PosInfos, level:ErrorSeverity)
 		{
+			// SReturn is Iris/HScript's internal return control flow, not an error.
+			// Do not surface it in the in-game error display.
+			if (FunkinScript.isEscapedScriptReturn(x)) return;
 			final prefix:String = ErrorSeverityTools.getPrefix(level);
 			
 			DebugTextPlugin.addText(formatPosInfos(pos.fileName, pos.lineNumber, x, prefix == '' ? '' : '$prefix:'), Logger.getHexColourFromSeverity(Severity.fromIris(level)));
@@ -375,7 +378,20 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		set("MusicBeatState", funkin.backend.MusicBeatState);
 		set("Conductor", funkin.backend.Conductor);
 		set("ClientPrefs", funkin.data.ClientPrefs);
+		#if html5
+		// Lang.hasSpecial()/str() are inline static methods. Expose concrete
+		// closures to HScript on JavaScript instead of relying on reflection.
+		set("Lang", {
+			hasSpecial: function(flag:String):Bool return funkin.data.Lang.hasSpecial(flag),
+			hasFlag: function(flag:String):Bool return funkin.data.Lang.hasFlag(flag),
+			getFlag: function(flag:String):Dynamic return funkin.data.Lang.getFlag(flag),
+			getFont: function(font:String):String return funkin.data.Lang.getFont(font),
+			str: function(line:String, ?fallback:String):Null<String> return funkin.data.Lang.str(line, fallback),
+			arabicTextFix: function(text:flixel.text.FlxText):Void funkin.data.Lang.arabicTextFix(text)
+		});
+		#else
 		set("Lang", funkin.data.Lang);
+		#end
 		set("GameFlags", funkin.data.GameFlags);
 		set("CoolUtil", funkin.utils.CoolUtil);
 		set('WindowUtil', funkin.utils.WindowUtil);
@@ -383,6 +399,16 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		set("StageData", funkin.data.StageData);
 		set("PlayState", PlayState);
 		set('FunkinSound', funkin.audio.FunkinSound);
+		
+		#if html5
+		// Avoid reflective method lookup for shader helpers on the JavaScript target.
+		set('setBitmapOverlay', function(shader:Dynamic, bitmap:Dynamic):Void {
+			if (shader == null || bitmap == null) return;
+			final overlayShader:funkin.game.shaders.OverlayShader = cast shader;
+			final bitmapData:openfl.display.BitmapData = cast bitmap;
+			overlayShader.setBitmapOverlay(bitmapData);
+		});
+		#end
 		
 		// custom
 		#if html5
