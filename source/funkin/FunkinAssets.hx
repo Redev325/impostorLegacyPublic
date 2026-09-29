@@ -135,7 +135,7 @@ class FunkinAssets
 				callback();
 			}
 
-			function finishWithChart(text:String):Void
+			function finishWithChart(text:String, afterChart:Void->Void):Void
 			{
 				if (text.trim().length == 0)
 				{
@@ -149,7 +149,33 @@ class FunkinAssets
 				}
 				html5CurrentSongLibrary = songLibrary;
 				html5SongChartText.set(chartCacheKey, text);
-				onComplete();
+				afterChart();
+			}
+
+			function loadSongAudio(instFile:String, attempt:Int = 1, ?afterAudio:Void->Void):Void
+			{
+				final soundId:String = songLibrary + ':assets/songs/' + songFolder + '/' + instFile;
+				Assets.loadSound(soundId, true).onComplete(function(sound) {
+					if (sound == null)
+					{
+						if (attempt < 3)
+							Timer.delay(() -> loadSongAudio(instFile, attempt + 1, afterAudio), 500 * attempt);
+						else
+							fail('instrument audio loaded as null: ' + soundId);
+						return;
+					}
+					if (afterAudio != null) afterAudio();
+				}).onError(function(error) {
+					if (attempt < 3)
+					{
+						Logger.log('Failed to load HTML5 instrument ' + soundId + ', retrying (' + (attempt + 1) + '/3)\\nException: ' + error, WARN);
+						Timer.delay(() -> loadSongAudio(instFile, attempt + 1, afterAudio), 500 * attempt);
+					}
+					else
+					{
+						fail('instrument audio request failed after 3 attempts: ' + soundId);
+					}
+				});
 			}
 
 			function loadChartFromNetwork(attempt:Int = 1):Void
@@ -183,13 +209,19 @@ class FunkinAssets
 				}
 			}
 
+			function loadSongAssets():Void
+			{
+				final instFile:String = (PlayState.SONG.trackSwap ?? false) ? 'Track-main.ogg' : 'Inst.ogg';
+				loadSongAudio(instFile, 1, onComplete);
+			}
+
 			function libraryReady():Void
 			{
 				html5CurrentSongLibrary = songLibrary;
 
 				if (html5SongChartText.exists(chartCacheKey))
 				{
-					onComplete();
+					loadSongAssets();
 					return;
 				}
 
@@ -197,7 +229,7 @@ class FunkinAssets
 				{
 					if (Assets.exists(chartId, AssetType.TEXT))
 					{
-						finishWithChart(Assets.getText(chartId));
+						finishWithChart(Assets.getText(chartId), loadSongAssets);
 						return;
 					}
 				}
