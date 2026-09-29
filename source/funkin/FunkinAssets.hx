@@ -164,6 +164,11 @@ class FunkinAssets
 							fail('instrument audio loaded as null: ' + soundId);
 						return;
 					}
+					// Assets.loadSound() completes asynchronously, but the returned Sound
+					// object is already decoded and usable. Cache that exact object so
+					// later synchronous getSoundUnsafe() calls never fall back to
+					// Assets.getSound() and trigger Lime's "exists, but only asynchronously" error.
+					cache.cacheSound(soundId, sound);
 					if (afterAudio != null) afterAudio();
 				}).onError(function(error) {
 					if (attempt < 3)
@@ -194,6 +199,13 @@ class FunkinAssets
 						if (sound == null)
 						{
 							Logger.log('Unable to preload optional HTML5 vocals: ' + voiceId, WARN);
+						}
+						else
+						{
+							// Keep the completed Sound object in the engine cache. The
+							// later PlayableSong construction can then retrieve it
+							// synchronously without Lime rejecting the asset as async-only.
+							cache.cacheSound(voiceId, sound);
 						}
 						onComplete();
 					}).onError(function(error) {
