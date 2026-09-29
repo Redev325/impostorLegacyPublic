@@ -92,4 +92,5 @@ You should be able to run `lime test cpp` to start compiling the game now!
 - Nebula_Zorua for the Modchart backend and the [Psych Engine fork](https://github.com/nebulazorua/exe-psych-fork) NMV is built off
 - Rozebud for the chart editor little buddies ([Check out FPS Plus too](https://github.com/ThatRozebudDude/FPS-Plus-Public))
 - MaybeMaru for [MoonChart](https://github.com/MaybeMaru/moonchart) and [Flixel-animate](https://github.com/MaybeMaru/flixel-animate)
-  [![devs.surf](https://devs.surf/badges/subdomain.svg)](https://impostor.devs.surf)
+
+[![devs.surf](https://devs.surf/badges/subdomain.svg)](https://impostor.devs.surf)
