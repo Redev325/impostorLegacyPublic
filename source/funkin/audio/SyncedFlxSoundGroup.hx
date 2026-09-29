@@ -262,10 +262,10 @@ class PlayableSong extends VocalGroup
 		{
 			final track:FlxSound = new FlxSound();
 			addTrack(track);
-			// Use FlxSound's native URL loader. In HaxeFlixel 6.2 this routes
-			// through loadFromURL(), which is the supported browser audio path
-			// and handles the Sound.COMPLETE/readiness bookkeeping internally.
-			track.loadFromURL(url, loaded);
+			// Use the FlxSound streaming URL loader provided by this project's
+			// installed HaxeFlixel version. It keeps the browser track loading
+			// asynchronous while notifying PlayableSong when the stream is ready.
+			track.loadStream(url, false, false, null, loaded);
 		}
 
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
