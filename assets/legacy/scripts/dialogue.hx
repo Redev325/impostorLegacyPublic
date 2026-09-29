@@ -38,7 +38,7 @@ public var repeatedCutscenes:Bool = false;
 public var videoCheckStory:Bool = true;
 
 public var skippableVideo:Bool = true;
-public var video:FunkinVideoSprite;
+public var video:Dynamic;
 public var skipText:FlxText; // skip video text
 var bgFade:FlxSprite;
 var box:RGBSprite;
@@ -107,7 +107,7 @@ function onVidEnd()
 **/
 public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canSkip:Bool, ?onEnd:Void->Void, ?onFormat:Void->Void)
 {
-	if ((videoCheckStory && !isStoryMode) || PlayState.seenCutscene) return;
+	// HTML5 does not include the native video backend used by the desktop build.\n	// Continue the normal story flow instead of leaving song startup blocked.\n	if (IS_HTML5)\n	{\n		if ((dAfter ?? true) && (PlayState.isStoryMode || !videoCheckStory))\n		{\n			readDialogue();\n		}\n		else\n		{\n			startCountdown();\n		}\n		return;\n	}\n	if ((videoCheckStory && !isStoryMode) || PlayState.seenCutscene) return;
 	
 	songStartCallback = () -> return Function_Stop;
 	
