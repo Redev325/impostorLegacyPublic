@@ -268,6 +268,7 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		set("script", this);
 		set("Dynamic", Dynamic);
 		set('modFolder', modFolder);
+		set('IS_HTML5', #if html5 true #else false #end);
 		
 		set('StringMap', haxe.ds.StringMap);
 		set('IntMap', haxe.ds.IntMap);
