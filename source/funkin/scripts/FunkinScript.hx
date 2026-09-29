@@ -460,6 +460,11 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		
 		set("game", FlxG.state);
 		set("state", FlxG.state);
+		#if html5
+		// Calling PlayState.add directly from legacy HScript can hit the
+		// JavaScript reflection path. Use a concrete closure for state adds.
+		set("addToState", function(obj:Dynamic):Dynamic return FlxG.state.add(cast obj));
+		#end
 		
 		if ((FlxG.state is PlayState))
 		{
