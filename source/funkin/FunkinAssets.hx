@@ -183,7 +183,7 @@ class FunkinAssets
 				final chartUrl:String = 'assets/songs/' + songFolder + '/data/' + chartDifficulty + '.json';
 				final loader:URLLoader = new URLLoader();
 				loader.addEventListener(Event.COMPLETE, function(_) {
-					finishWithChart(Std.string(loader.data));
+					finishWithChart(Std.string(loader.data), loadSongAssets);
 				});
 				loader.addEventListener(IOErrorEvent.IO_ERROR, function(event) {
 					if (attempt < 3)
