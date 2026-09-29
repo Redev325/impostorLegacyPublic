@@ -603,7 +603,35 @@ class FunkinAssets
 		if (sound == null)
 		{
 			final resolved = resolveHtml5AssetId(key, SOUND);
-			if (resolved != null) sound = Assets.getSound(resolved, true);
+			if (resolved != null)
+			{
+				// A loaded HTML5 library can expose an asset through its manifest
+				// before Assets.getSound() considers it synchronously accessible.
+				// Reuse Lime's decoded AssetCache first; this is the cache populated
+				// by Assets.loadSound(..., true).
+				try
+				{
+					sound = Assets.cache.getSound(resolved);
+				}
+				catch (e:Dynamic)
+				{
+					Logger.log('Could not read cached HTML5 sound ' + resolved + ': ' + e, WARN);
+				}
+				if (sound == null)
+				{
+					try
+					{
+						sound = Assets.getSound(resolved, true);
+					}
+					catch (e:Dynamic)
+					{
+						// Do not let Lime's async-only asset guard crash gameplay.
+						// The selected song loader is responsible for loading missing
+						// HTML5 audio asynchronously before PlayState starts.
+						Logger.log('HTML5 sound is currently async-only: ' + resolved + '\\nException: ' + e, WARN);
+					}
+				}
+			}
 		}
 		#else
 		if (sound == null && Assets.exists(key, SOUND)) sound = Assets.getSound(key, true);
