@@ -1970,7 +1970,11 @@ class PlayState extends MusicBeatState
 		
 		if (generatedMusic && !endingSong && !isCameraOnForcedPos) moveCameraSection();
 		
-		if (controls.PAUSE && startedCountdown && canPause)
+		// Allow the pause control to work as soon as gameplay state is visible.
+		// The HTML5 song stream may still be buffering before the countdown starts,
+		// so gating pause on startedCountdown would leave the player trapped on the
+		// stage/character screen while audio finishes loading.
+		if ((controls.PAUSE || FlxG.keys.justPressed.ESCAPE) && !endingSong && canPause)
 		{
 			if (!ScriptConstants.stopping(scripts.call('onPause'))) openPauseMenu();
 		}
