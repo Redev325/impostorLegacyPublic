@@ -262,30 +262,62 @@ class PlayableSong extends VocalGroup
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
 		final instUrl:String = 'assets/songs/' + songFolder + '/' + instFile;
 
-		// HTML5 song audio is streamed after the PlayState has been created.
-		// Do not depend on Lime's synchronous Sound cache: deferred song
-		// libraries can report an OGG as "exists, but only asynchronously".
+		// The song loader normally has these Sounds decoded already. Reuse the
+		// decoded objects so PlayState can begin without Lime's asynchronous-only
+		// asset race. The public loader is also used as a safe fallback.
 		final instSound:FlxSound = new FlxSound();
 		inst = instSound;
-		add(instSound);
+	add(instSound);
 
-		instSound.loadStream(instUrl, false, false, null, function() {
+		final instData:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(instUrl);
+		if (instData != null)
+		{
+			instSound.loadEmbedded(instData);
 			loading = false;
 			ready = true;
-		});
+		}
+		else
+		{
+			Logger.log('HTML5 instrument was not cached before PlayState: ' + instUrl, WARN);
+			FunkinAssets.loadHtml5Sound(instUrl, [instUrl], function() {
+				final loaded:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(instUrl);
+				if (loaded != null)
+				{
+					instSound.loadEmbedded(loaded);
+					loading = false;
+					ready = true;
+				}
+				else
+				{
+					loading = false;
+					ready = false;
+					Logger.log('HTML5 instrument could not be decoded: ' + instUrl, ERROR);
+				}
+			});
+		}
 
 		if (!trackSwap && data.needsVoices)
 		{
 			final voiceUrl:String = 'assets/songs/' + songFolder + '/Voices.ogg';
-			final voiceTrack:FlxSound = new FlxSound();
-			addPlayerVocals(voiceTrack);
-			voiceTrack.loadStream(voiceUrl, false, false, null, null);
+			final voiceData:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(voiceUrl);
+			if (voiceData != null)
+			{
+				final voiceTrack:FlxSound = new FlxSound();
+				addPlayerVocals(voiceTrack);
+				voiceTrack.loadEmbedded(voiceData);
+			}
+			else
+			{
+				final voiceTrack:FlxSound = new FlxSound();
+				addPlayerVocals(voiceTrack);
+				FunkinAssets.loadHtml5Sound(voiceUrl, [voiceUrl], function() {
+					final loaded:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(voiceUrl);
+					if (loaded != null) voiceTrack.loadEmbedded(loaded);
+				});
+			}
 		}
 
 		if (trackSwap) opponentVolume = 0;
-
-		// Never force ready after a timeout. Doing so can start the countdown
-		// with a zero-length/unloaded instrument and leave PlayState frozen.
 		#else
 		if (trackSwap)
 		{
