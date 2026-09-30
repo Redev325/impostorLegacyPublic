@@ -256,80 +256,52 @@ class PlayableSong extends VocalGroup
 		#if html5
 		loading = true;
 		ready = false;
-
+		
 		final songPath:String = Paths.sanitize(data.song);
 		final songFolder:String = songPath == 'dlow' ? "d'low" : songPath;
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
 		final instUrl:String = 'assets/songs/' + songFolder + '/' + instFile;
-
-		// The song loader normally has these Sounds decoded already. Reuse the
-		// decoded objects so PlayState can begin without Lime's asynchronous-only
-		// asset race. The public loader is also used as a safe fallback.
+		
+		// HTML5 gameplay audio must use Flixel's streaming backend. Calling
+		// Sound.load()/Assets.getSound() on a deferred Lime library can throw
+		// "exists, but only asynchronously" even when the file is present.
 		final instSound:FlxSound = new FlxSound();
 		inst = instSound;
-	add(instSound);
-
-		final instData:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(instUrl);
-		if (instData != null)
+		add(instSound);
+		
+		function markInstReady():Void
 		{
-			instSound.loadEmbedded(instData);
 			loading = false;
 			ready = true;
 		}
-		else
+		
+		try
 		{
-			Logger.log('HTML5 instrument was not cached before PlayState: ' + instUrl, WARN);
-			FunkinAssets.loadHtml5Sound(instUrl, [instUrl], function() {
-				final loaded:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(instUrl);
-				if (loaded != null)
-				{
-					instSound.loadEmbedded(loaded);
-					loading = false;
-					ready = true;
-				}
-				else
-				{
-					// Sound.load() can fail on a browser even though FlxSound's
-					// streaming path can play the same OGG. Try the stream backend
-					// before declaring the instrument unavailable.
-					instSound.loadStream(instUrl, false, false, null, function() {
-						loading = false;
-						ready = true;
-					});
-				}
-			});
+			instSound.loadStream(instUrl, false, false, null, markInstReady);
 		}
-
+		catch (e:Dynamic)
+		{
+			Logger.log('HTML5 instrument stream failed to start: ' + instUrl + '\\nException: ' + e, ERROR);
+			loading = false;
+			ready = false;
+		}
+		
 		if (!trackSwap && data.needsVoices)
 		{
 			final voiceUrl:String = 'assets/songs/' + songFolder + '/Voices.ogg';
-			final voiceData:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(voiceUrl);
-			if (voiceData != null)
+			final voiceTrack:FlxSound = new FlxSound();
+			addPlayerVocals(voiceTrack);
+			try
 			{
-				final voiceTrack:FlxSound = new FlxSound();
-				addPlayerVocals(voiceTrack);
-				voiceTrack.loadEmbedded(voiceData);
+				voiceTrack.loadStream(voiceUrl, false, false, null, null);
 			}
-			else
+			catch (e:Dynamic)
 			{
-				final voiceTrack:FlxSound = new FlxSound();
-				addPlayerVocals(voiceTrack);
-				FunkinAssets.loadHtml5Sound(voiceUrl, [voiceUrl], function() {
-					final loaded:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(voiceUrl);
-					if (loaded != null)
-					{
-						voiceTrack.loadEmbedded(loaded);
-					}
-					else
-					{
-						voiceTrack.loadStream(voiceUrl, false, false, null, null);
-					}
-				});
+				Logger.log('HTML5 vocal stream failed to start: ' + voiceUrl + '\\nException: ' + e, WARN);
 			}
 		}
-
+		
 		if (trackSwap) opponentVolume = 0;
-		#else
 		if (trackSwap)
 		{
 			final instSnd = Paths.trackSwap(data.song, 'main');
