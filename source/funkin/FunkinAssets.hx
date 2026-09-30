@@ -430,6 +430,7 @@ class FunkinAssets
 					loader.addEventListener(Event.COMPLETE, function(_) {
 						final text:String = Std.string(loader.data);
 						html5SongScriptText.set(relativePath, text);
+						html5SongScriptText.set(songLibrary + ':' + relativePath, text);
 						loadNext();
 					});
 					loader.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
@@ -557,8 +558,9 @@ class FunkinAssets
 
 	public static function getHtml5SongScript(file:String):Null<String>
 	{
-		final normalized:String = file.indexOf(':') > 0 ? file : file;
-		final cached:Null<String> = html5SongScriptText.get(normalized);
+		final colon:Int = file.indexOf(':');
+		final normalized:String = colon > 0 ? file.substr(colon + 1) : file;
+		final cached:Null<String> = html5SongScriptText.get(file) ?? html5SongScriptText.get(normalized);
 		if (cached != null) return cached;
 		if (html5CurrentSongLibrary != null)
 			return html5SongScriptText.get(html5CurrentSongLibrary + ':' + normalized);
