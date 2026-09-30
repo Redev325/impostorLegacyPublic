@@ -40,6 +40,7 @@ class FunkinAssets
 	static var html5CurrentSongLibrary:Null<String> = null;
 	static var html5SongChartText:Map<String, String> = [];
 	static var html5SongEventText:Map<String, String> = [];
+	static var html5SongDialogueText:Map<String, String> = [];
 	#end
 
 	#if html5
@@ -153,35 +154,85 @@ class FunkinAssets
 				afterChart();
 			}
 
-			function loadSongAudio(instFile:String, attempt:Int = 1, ?afterAudio:Void->Void):Void
+			function loadExternalSound(url:String, cacheKeys:Array<String>, attempt:Int = 1, ?afterAudio:Void->Void):Void
 			{
-				final soundId:String = songLibrary + ':assets/songs/' + songFolder + '/' + instFile;
-				Assets.loadSound(soundId, true).onComplete(function(sound) {
-					if (sound == null)
-					{
-						if (attempt < 3)
-							Timer.delay(() -> loadSongAudio(instFile, attempt + 1, afterAudio), 500 * attempt);
-						else
-							fail('instrument audio loaded as null: ' + soundId);
-						return;
-					}
-					// Assets.loadSound() completes asynchronously, but the returned Sound
-					// object is already decoded and usable. Cache that exact object so
-					// later synchronous getSoundUnsafe() calls never fall back to
-					// Assets.getSound() and trigger Lime's "exists, but only asynchronously" error.
-					cache.cacheSound(soundId, sound);
+				final sound:Sound = new Sound();
+				sound.addEventListener(Event.COMPLETE, function(_) {
+					for (key in cacheKeys) cache.cacheSound(key, sound);
 					if (afterAudio != null) afterAudio();
-				}).onError(function(error) {
+				});
+				sound.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
 					if (attempt < 3)
 					{
-						Logger.log('Failed to load HTML5 instrument ' + soundId + ', retrying (' + (attempt + 1) + '/3)\\nException: ' + error, WARN);
-						Timer.delay(() -> loadSongAudio(instFile, attempt + 1, afterAudio), 500 * attempt);
+						Timer.delay(() -> loadExternalSound(url, cacheKeys, attempt + 1, afterAudio), 500 * attempt);
 					}
 					else
 					{
-						fail('instrument audio request failed after 3 attempts: ' + soundId);
+						fail('audio request failed after 3 attempts: ' + url);
 					}
 				});
+				try
+				{
+					sound.load(new URLRequest(url));
+				}
+				catch (e)
+				{
+					if (attempt < 3)
+						Timer.delay(() -> loadExternalSound(url, cacheKeys, attempt + 1, afterAudio), 500 * attempt);
+					else
+						fail(e);
+				}
+			}
+
+			function loadSongAudio(instFile:String, ?afterAudio:Void->Void):Void
+			{
+				final relativePath:String = 'assets/songs/' + songFolder + '/' + instFile;
+				final qualifiedId:String = songLibrary + ':' + relativePath;
+				loadExternalSound(relativePath, [qualifiedId, relativePath], 1, afterAudio);
+			}
+
+			function loadSongDialogue(afterDialogue:Void->Void):Void
+			{
+				final dialogueKey:String = safeSongName;
+				if (html5SongDialogueText.exists(dialogueKey))
+				{
+					afterDialogue();
+					return;
+				}
+
+				final dialogueUrl:String = 'assets/songs/' + songFolder + '/dialogue.txt';
+				final loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, function(_) {
+					final text:String = Std.string(loader.data);
+					html5SongDialogueText.set(dialogueKey, text);
+					afterDialogue();
+				});
+				loader.addEventListener(IOErrorEvent.IO_ERROR, function(_) {
+					html5SongDialogueText.set(dialogueKey, '');
+					afterDialogue();
+				});
+				try
+				{
+					loader.load(new URLRequest(dialogueUrl));
+				}
+				catch (_)
+				{
+					html5SongDialogueText.set(dialogueKey, '');
+					afterDialogue();
+				}
+			}
+
+			function loadDialogueMusic(afterMusic:Void->Void):Void
+			{
+				final dialogueText:Null<String> = html5SongDialogueText.get(safeSongName);
+				if (dialogueText == null || dialogueText.trim().length == 0)
+				{
+					afterMusic();
+					return;
+				}
+
+				final relativePath:String = 'assets/music/dialogue/' + safeSongName + '.ogg';
+				loadExternalSound(relativePath, ['music:' + relativePath, relativePath], 1, afterMusic);
 			}
 
 			function loadSongEvents(afterEvents:Void->Void):Void
@@ -207,33 +258,25 @@ class FunkinAssets
 						}
 					}
 				}
-				catch (e:Dynamic)
-				{
-					Logger.log('Deferred HTML5 event file requires network loading: ' + eventId + '\\nException: ' + e, WARN);
-				}
+				catch (e:Dynamic) {}
 
 				final eventUrl:String = 'assets/songs/' + songFolder + '/data/events.json';
 				final loader:URLLoader = new URLLoader();
 				loader.addEventListener(Event.COMPLETE, function(_) {
 					final text:String = Std.string(loader.data);
 					if (text.trim().length > 0 && parseJson(text) != null)
-					{
 						html5SongEventText.set(eventCacheKey, text);
-					}
 					afterEvents();
 				});
-				loader.addEventListener(IOErrorEvent.IO_ERROR, function(event) {
-					// events.json is optional. A missing file must not block gameplay.
-					Logger.log('HTML5 event file unavailable for ' + songName + ': ' + event.text, WARN);
+				loader.addEventListener(IOErrorEvent.IO_ERROR, function(_) {
 					afterEvents();
 				});
 				try
 				{
 					loader.load(new URLRequest(eventUrl));
 				}
-				catch (e)
+				catch (_)
 				{
-					Logger.log('Could not request HTML5 event file ' + eventUrl + ': ' + e, WARN);
 					afterEvents();
 				}
 			}
@@ -243,27 +286,23 @@ class FunkinAssets
 				final trackSwap:Bool = PlayState.SONG?.trackSwap ?? false;
 				final needsVoices:Bool = PlayState.SONG?.needsVoices ?? false;
 				final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
-				final voiceId:String = songLibrary + ':assets/songs/' + songFolder + '/Voices.ogg';
+				final voicePath:String = 'assets/songs/' + songFolder + '/Voices.ogg';
+
 				loadSongEvents(function() {
-					loadSongAudio(instFile, 1, function() {
-						if (!needsVoices || !Assets.exists(voiceId, AssetType.SOUND))
-						{
-							onComplete();
-							return;
-						}
-						Assets.loadSound(voiceId, true).onComplete(function(sound) {
-							if (sound == null)
+					loadSongDialogue(function() {
+						loadSongAudio(instFile, function() {
+							final finishAudio:Void->Void = function() {
+								loadDialogueMusic(function() onComplete());
+							};
+
+							if (!needsVoices)
 							{
-								Logger.log('Unable to preload optional HTML5 vocals: ' + voiceId, WARN);
+								finishAudio();
+								return;
 							}
-							else
-							{
-								cache.cacheSound(voiceId, sound);
-							}
-							onComplete();
-						}).onError(function(error) {
-							Logger.log('Unable to preload optional HTML5 vocals: ' + voiceId + '\\nException: ' + error, WARN);
-							onComplete();
+
+							final voiceId:String = songLibrary + ':' + voicePath;
+							loadExternalSound(voicePath, [voiceId, voicePath], 1, finishAudio);
 						});
 					});
 				});
@@ -352,6 +391,12 @@ class FunkinAssets
 	{
 		final songPath:String = Paths.sanitize(songName);
 		return html5SongEventText.get(songPath);
+	}
+
+	public static function getHtml5SongDialogue(songName:String):Null<String>
+	{
+		final songPath:String = Paths.sanitize(songName);
+		return html5SongDialogueText.get(songPath);
 	}
 
 	public static function getHtml5SongChart(songName:String, difficulty:Int):Null<String>
