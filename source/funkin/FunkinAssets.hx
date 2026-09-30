@@ -263,6 +263,7 @@ class FunkinAssets
 			final chartId:String = songLibrary + ':assets/songs/' + songFolder + '/data/' + chartDifficulty + '.json';
 			final instFile:String = (PlayState.SONG?.trackSwap ?? false) ? 'Track-main.ogg' : 'Inst.ogg';
 			final voicePath:String = 'assets/songs/' + songFolder + '/Voices.ogg';
+			final needsVoices:Bool = PlayState.SONG?.needsVoices ?? false;
 
 			function fail(reason:Dynamic):Void
 			{
@@ -291,6 +292,12 @@ class FunkinAssets
 			function loadExternalSound(url:String, cacheKeys:Array<String>, ?afterAudio:Void->Void):Void
 			{
 				FunkinAssets.loadHtml5Sound(url, cacheKeys, afterAudio);
+			}
+
+			function loadSongAudio(afterAudio:Void->Void):Void
+			{
+				final relativePath:String = 'assets/songs/' + songFolder + '/' + instFile;
+				loadExternalSound(relativePath, [songLibrary + ':' + relativePath, relativePath], afterAudio);
 			}
 
 			function loadSongInfo(afterInfo:Void->Void):Void
