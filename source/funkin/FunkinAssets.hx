@@ -160,15 +160,30 @@ class FunkinAssets
 			function loadExternalSound(url:String, cacheKeys:Array<String>, attempt:Int = 1, ?afterAudio:Void->Void):Void
 			{
 				final sound:Sound = new Sound();
-				sound.addEventListener(Event.COMPLETE, function(_) {
-					for (key in cacheKeys)
+				var finished:Bool = false;
+
+				function complete(success:Bool):Void
+				{
+					if (finished) return;
+					finished = true;
+
+					if (success)
 					{
-						cache.cacheSound(key, sound);
-						html5LoadedSounds.set(key, sound);
+						for (key in cacheKeys)
+						{
+							cache.cacheSound(key, sound);
+							html5LoadedSounds.set(key, sound);
+						}
 					}
+
 					final callback:Null<Void->Void> = afterAudio;
 					if (callback != null) callback();
+				}
+
+				sound.addEventListener(Event.COMPLETE, function(_) {
+					complete(true);
 				});
+
 				sound.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
 					if (attempt < 3)
 					{
@@ -176,19 +191,26 @@ class FunkinAssets
 					}
 					else
 					{
-						fail('audio request failed after 3 attempts: ' + url);
+						Logger.log('HTML5 audio request failed after 3 attempts: ' + url + '\nException: ' + error.text, ERROR);
+						complete(false);
 					}
 				});
+
 				try
 				{
 					sound.load(new URLRequest(url));
 				}
-				catch (e)
+				catch (e:Dynamic)
 				{
 					if (attempt < 3)
+					{
 						Timer.delay(() -> loadExternalSound(url, cacheKeys, attempt + 1, afterAudio), 500 * attempt);
+					}
 					else
-						fail(e);
+					{
+						Logger.log('HTML5 audio request failed after 3 attempts: ' + url + '\nException: ' + e, ERROR);
+						complete(false);
+					}
 				}
 			}
 
