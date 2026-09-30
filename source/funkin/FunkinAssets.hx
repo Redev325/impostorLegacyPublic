@@ -671,12 +671,17 @@ class FunkinAssets
 			if (Assets.exists(id, type)) return id;
 		}
 
-		// Only fall back to runtime libraries when no preloaded copy exists.
-		for (library in HTML5_LIBRARIES)
+		// Synchronous sound access must never select a preload=false library.
+		// Those assets are intentionally available only through an asynchronous
+		// load path and Assets.getSound() will throw the async-only error.
+		if (type != SOUND)
 		{
-			if (!Assets.hasLibrary(library)) continue;
-			final id = library + ':' + path;
-			if (Assets.exists(id, type)) return id;
+			for (library in HTML5_LIBRARIES)
+			{
+				if (!Assets.hasLibrary(library)) continue;
+				final id = library + ':' + path;
+				if (Assets.exists(id, type)) return id;
+			}
 		}
 
 		// Finally accept a genuinely default/unqualified asset.
