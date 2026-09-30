@@ -295,12 +295,6 @@ class FunkinAssets
 				FunkinAssets.loadHtml5Sound(url, cacheKeys, callback);
 			}
 
-			function loadSongAudio(afterAudio:Void->Void):Void
-			{
-				final relativePath:String = 'assets/songs/' + songFolder + '/' + instFile;
-				loadExternalSound(relativePath, [songLibrary + ':' + relativePath, relativePath], afterAudio);
-			}
-
 			function loadSongInfo(afterInfo:Void->Void):Void
 			{
 				final infoKey:String = safeSongName;
@@ -462,44 +456,19 @@ class FunkinAssets
 
 			function loadSongAssets():Void
 			{
-				// Load every dependency before switching into PlayState. The audio
-				// requests are independent and complete even when a non-critical
-				// file is missing, so one failed asset can never freeze the load.
-				var pending:Int = 1;
-
-				function done():Void
-				{
-					pending--;
-					if (pending == 0) onComplete();
-				}
-
-			loadSongEvents(function() {
-				loadSongDialogue(function() {
-					loadSongInfo(function() {
-						loadSongScripts(function() {
-							pending++;
-							loadSongAudio(done);
-
-							if (needsVoices)
-							{
-								pending++;
-								loadExternalSound(voicePath, [songLibrary + ':' + voicePath, voicePath], done);
-							}
-
-							final dialogueText:Null<String> = html5SongDialogueText.get(safeSongName);
-							if (dialogueText != null && dialogueText.trim().length > 0)
-							{
-								pending++;
-								loadDialogueMusic(done);
-							}
-
-							done();
+				// Preload only synchronous non-audio dependencies here. Gameplay
+				// audio is created by PlayableSong using HTML5 streaming.
+				loadSongEvents(function() {
+					loadSongDialogue(function() {
+						loadSongInfo(function() {
+							loadSongScripts(function() {
+								onComplete();
+							});
 						});
 					});
 				});
-			});
 			}
-
+			
 			function loadChartFromNetwork(attempt:Int = 1):Void
 			{
 				final chartUrl:String = 'assets/songs/' + songFolder + '/data/' + chartDifficulty + '.json';
