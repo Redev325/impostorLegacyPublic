@@ -266,8 +266,7 @@ class PlayableSong extends VocalGroup
 		inst = instSound;
 		add(instSound);
 		
-		FunkinAssets.loadHtml5Sound(instUrl, [instUrl], function() {
-			final loaded:Null<Sound> = FunkinAssets.getSoundUnsafe(instUrl);
+		FunkinAssets.loadHtml5SoundObject(instUrl, [instUrl], function(loaded:Null<Sound>) {
 			if (loaded == null)
 			{
 				Logger.log('HTML5 instrument could not be loaded: ' + instUrl, ERROR);
@@ -287,8 +286,7 @@ class PlayableSong extends VocalGroup
 			final voiceTrack:FlxSound = new FlxSound();
 			addPlayerVocals(voiceTrack);
 			
-			FunkinAssets.loadHtml5Sound(voiceUrl, [voiceUrl], function() {
-				final loaded:Null<Sound> = FunkinAssets.getSoundUnsafe(voiceUrl);
+			FunkinAssets.loadHtml5SoundObject(voiceUrl, [voiceUrl], function(loaded:Null<Sound>) {
 				if (loaded == null)
 				{
 					Logger.log('HTML5 vocals could not be loaded: ' + voiceUrl, WARN);
