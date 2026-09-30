@@ -527,3 +527,13 @@ jobs:
           path: export/release/html5/bin
           if-no-files-found: error
           retention-days: 7
+
+      - name: Upload HTML5 JavaScript Diagnostic
+        uses: actions/upload-artifact@v4
+        with:
+          name: impostor-legacy-html5-js
+          path: |
+            export/release/html5/bin/ImpostorLegacy.js
+            export/release/html5/bin/index.html
+          if-no-files-found: error
+          retention-days: 7
