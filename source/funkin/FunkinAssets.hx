@@ -160,7 +160,8 @@ class FunkinAssets
 				final sound:Sound = new Sound();
 				sound.addEventListener(Event.COMPLETE, function(_) {
 					for (key in cacheKeys) cache.cacheSound(key, sound);
-					if (afterAudio != null) afterAudio();
+					final callback:Null<Void->Void> = afterAudio;
+					if (callback != null) callback();
 				});
 				sound.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
 					if (attempt < 3)
