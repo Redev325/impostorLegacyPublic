@@ -739,22 +739,7 @@ class PlayState extends MusicBeatState
 			stage.add(pet);
 		}
 		
-		#if html5
-		for (scriptFile in FunkinAssets.getHtml5SongScripts(SONG.song))
-		{
-			initFunkinScript(scriptFile);
-		}
-		#else
-		inline function addSongScripts(directory)
-		{
-			for (file in Paths.listAllFilesInDirectory(directory, LOOSE).filter(path -> FunkinScript.isHxFile(path)))
-			{
-				final scriptPath = FunkinScript.getPath(file);
-				initFunkinScript(file);
-			}
-		}
-		addSongScripts('scripts');
-		#end
+
 		
 		var gfVersion:String = SONG.gfVersion;
 		if (gfVersion == null || gfVersion.length < 1) SONG.gfVersion = gfVersion = 'gf';
