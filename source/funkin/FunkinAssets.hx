@@ -477,7 +477,7 @@ class FunkinAssets
 					loadSongInfo(function() {
 						loadSongScripts(function() {
 							pending++;
-							loadSongAudio(instFile, done);
+							loadSongAudio(done);
 
 							if (needsVoices)
 							{
