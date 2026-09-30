@@ -191,6 +191,82 @@ class FunkinAssets
 		#end
 	}
 
+	public static function loadHtml5SoundObject(url:String, cacheKeys:Array<String>, onComplete:Null<Sound>->Void):Void
+	{
+		#if html5
+			for (key in cacheKeys)
+			{
+				final loaded:Null<Sound> = html5LoadedSounds.get(key);
+				if (loaded != null)
+				{
+					onComplete(loaded);
+					return;
+				}
+				if (cache.currentTrackedSounds.exists(key))
+				{
+					onComplete(cache.currentTrackedSounds.get(key));
+					return;
+				}
+			}
+
+			function attemptLoad(attempt:Int):Void
+			{
+				final sound:Sound = new Sound();
+				var handled:Bool = false;
+
+				sound.addEventListener(Event.COMPLETE, function(_) {
+					if (handled) return;
+					handled = true;
+					for (key in cacheKeys)
+					{
+						cache.cacheSound(key, sound);
+						html5LoadedSounds.set(key, sound);
+					}
+					onComplete(sound);
+				});
+
+				sound.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
+					if (handled) return;
+					handled = true;
+
+					if (attempt < 3)
+					{
+						Timer.delay(() -> attemptLoad(attempt + 1), 500 * attempt);
+					}
+					else
+					{
+						Logger.log('HTML5 audio request failed after 3 attempts: ' + url + '\\nException: ' + error.text, ERROR);
+						onComplete(null);
+					}
+				});
+
+				try
+				{
+					sound.load(new URLRequest(url));
+				}
+				catch (e:Dynamic)
+				{
+					if (handled) return;
+					handled = true;
+
+					if (attempt < 3)
+					{
+						Timer.delay(() -> attemptLoad(attempt + 1), 500 * attempt);
+					}
+					else
+					{
+						Logger.log('HTML5 audio request failed after 3 attempts: ' + url + '\\nException: ' + e, ERROR);
+						onComplete(null);
+					}
+				}
+			}
+
+			attemptLoad(1);
+		#else
+			onComplete(null);
+		#end
+	}
+
 	public static function loadHtml5Libraries(libraries:Array<String>, onComplete:Void->Void):Void
 	{
 		#if html5
