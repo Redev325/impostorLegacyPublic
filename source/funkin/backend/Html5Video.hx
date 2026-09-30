@@ -7,7 +7,7 @@ import js.Browser;
 class Html5Video
 {
 	#if html5
-	static var currentVideo:Dynamic = null;
+	static var currentVideo:Null<js.html.VideoElement> = null;
 	static var endCallback:Null<Void->Void> = null;
 	static var errorCallback:Null<Void->Void> = null;
 	static var finished:Bool = false;
@@ -80,7 +80,7 @@ class Html5Video
 				try video.pause() catch (e:Dynamic) {}
 				try
 				{
-					Browser.document.body.removeChild(cast video);
+					Browser.document.body.removeChild(video);
 				}
 				catch (e:Dynamic) {}
 			}
