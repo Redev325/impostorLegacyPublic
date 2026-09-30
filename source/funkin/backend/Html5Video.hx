@@ -117,7 +117,7 @@ class Html5Video
 			try video.pause() catch (e:Dynamic) {}
 			try
 			{
-				if (video.parentNode != null) video.parentNode.removeChild(video);
+				Browser.document.body.removeChild(video);
 			}
 			catch (e:Dynamic) {}
 		}
