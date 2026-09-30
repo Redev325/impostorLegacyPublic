@@ -258,7 +258,7 @@ class PlayableSong extends VocalGroup
 		ready = false;
 		
 		final songPath:String = Paths.sanitize(data.song);
-		final songFolder:String = songPath == 'dlow' ? "d'low' : songPath;
+		final songFolder:String = songPath == 'dlow' ? "d'low" : songPath;
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
 		final instUrl:String = 'assets/songs/' + songFolder + '/' + instFile;
 		
