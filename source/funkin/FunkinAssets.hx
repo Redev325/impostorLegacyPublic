@@ -202,65 +202,35 @@ class FunkinAssets
 					onComplete(loaded);
 					return;
 				}
-				if (cache.currentTrackedSounds.exists(key))
-				{
-					onComplete(cache.currentTrackedSounds.get(key));
-					return;
-				}
 			}
 
-			function attemptLoad(attempt:Int):Void
+			// OpenFL's asynchronous Assets.loadSound() path is designed for
+			// HTML5/deferred assets. It resolves the asset through Lime without
+			// calling the synchronous Assets.getSound() API that can throw the
+			// "exists, but only asynchronously" error.
+			try
 			{
-				final sound:Sound = new Sound();
-				var handled:Bool = false;
-
-				sound.addEventListener(Event.COMPLETE, function(_) {
-					if (handled) return;
-					handled = true;
-					onComplete(sound);
-				});
-
-				sound.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
-					if (handled) return;
-					handled = true;
-
-					if (attempt < 3)
-					{
-						Timer.delay(() -> attemptLoad(attempt + 1), 500 * attempt);
-					}
-					else
-					{
-						Logger.log('HTML5 audio request failed after 3 attempts: ' + url + '\\nException: ' + error.text, ERROR);
+				Assets.loadSound(url, true)
+					.onComplete(function(sound:Sound) {
+						for (key in cacheKeys)
+							html5LoadedSounds.set(key, sound);
+						onComplete(sound);
+					})
+					.onError(function(error) {
+						Logger.log('HTML5 audio request failed: ' + url + '\\nException: ' + error, ERROR);
 						onComplete(null);
-					}
-				});
-
-				try
-				{
-					sound.load(new URLRequest(url));
-				}
-				catch (e:Dynamic)
-				{
-					if (handled) return;
-					handled = true;
-
-					if (attempt < 3)
-					{
-						Timer.delay(() -> attemptLoad(attempt + 1), 500 * attempt);
-					}
-					else
-					{
-						Logger.log('HTML5 audio request failed after 3 attempts: ' + url + '\\nException: ' + e, ERROR);
-						onComplete(null);
-					}
-				}
+					});
 			}
-
-			attemptLoad(1);
+			catch (e:Dynamic)
+			{
+				Logger.log('HTML5 audio request could not start: ' + url + '\\nException: ' + e, ERROR);
+				onComplete(null);
+			}
 		#else
 			onComplete(null);
 		#end
 	}
+
 
 	public static function loadHtml5Libraries(libraries:Array<String>, onComplete:Void->Void):Void
 	{
