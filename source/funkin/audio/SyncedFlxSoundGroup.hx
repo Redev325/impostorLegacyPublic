@@ -265,9 +265,10 @@ class PlayableSong extends VocalGroup
 		// HaxeFlixel's streaming loader is the reliable HTML5 path for these
 		// external OGG files. It avoids Lime's deferred-library synchronous
 		// asset guard entirely.
-		inst = new FlxSound();
-		add(inst);
-		inst.loadStream(instUrl, false, false, null, function() {
+		final instSound:FlxSound = new FlxSound();
+		inst = instSound;
+		add(instSound);
+		instSound.loadStream(instUrl, false, false, null, function() {
 			loading = false;
 			ready = true;
 		});
