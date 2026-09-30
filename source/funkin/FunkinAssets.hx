@@ -250,7 +250,7 @@ class FunkinAssets
 				{
 					loader.load(new URLRequest(dialogueUrl));
 				}
-				catch (_)
+				catch (e:Dynamic)
 				{
 					html5SongDialogueText.set(dialogueKey, '');
 					afterDialogue();
@@ -307,7 +307,7 @@ class FunkinAssets
 				{
 					loader.load(new URLRequest(eventUrl));
 				}
-				catch (_) afterEvents();
+				catch (e:Dynamic) afterEvents();
 			}
 
 			function loadSongScripts(afterScripts:Void->Void):Void
