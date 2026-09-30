@@ -291,7 +291,8 @@ class FunkinAssets
 
 			function loadExternalSound(url:String, cacheKeys:Array<String>, ?afterAudio:Void->Void):Void
 			{
-				FunkinAssets.loadHtml5Sound(url, cacheKeys, afterAudio);
+				final callback:Void->Void = afterAudio ?? function() {};
+				FunkinAssets.loadHtml5Sound(url, cacheKeys, callback);
 			}
 
 			function loadSongAudio(afterAudio:Void->Void):Void
