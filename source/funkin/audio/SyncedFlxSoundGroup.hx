@@ -262,41 +262,53 @@ class PlayableSong extends VocalGroup
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
 		final instUrl:String = 'assets/songs/' + songFolder + '/' + instFile;
 
-		// HaxeFlixel's streaming loader is the reliable HTML5 path for these
-		// external OGG files. It avoids Lime's deferred-library synchronous
-		// asset guard entirely.
-		final instSound:FlxSound = new FlxSound();
-		inst = instSound;
-		add(instSound);
-		instSound.loadStream(instUrl, false, false, null, function() {
+		// FunkinAssets preloads the selected song's OGG files before PlayState
+		// is created. Use the decoded Sound directly so the countdown and notes
+		// are not blocked by the HTML5 deferred-library timing race.
+		final instData:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(instUrl);
+		if (instData != null)
+		{
+			final instSound:FlxSound = new FlxSound();
+			inst = instSound;
+			add(instSound);
+			instSound.loadEmbedded(instData);
 			loading = false;
 			ready = true;
-		});
 
-		if (trackSwap)
-		{
-			opponentVolume = 0;
+			if (!trackSwap && data.needsVoices)
+			{
+				final voiceUrl:String = 'assets/songs/' + songFolder + '/Voices.ogg';
+				final voiceData:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(voiceUrl);
+				if (voiceData != null)
+				{
+					final voiceTrack:FlxSound = new FlxSound();
+					addPlayerVocals(voiceTrack);
+					voiceTrack.loadEmbedded(voiceData);
+				}
+			}
 		}
-		else if (data.needsVoices)
+		else
 		{
-			final voiceTrack:FlxSound = new FlxSound();
-			addPlayerVocals(voiceTrack);
-			final voiceUrl:String = 'assets/songs/' + songFolder + '/Voices.ogg';
-			voiceTrack.loadStream(voiceUrl, false, false, null, null);
+			Logger.log('HTML5 song audio was not cached: ' + instUrl, ERROR);
+			final instSound:FlxSound = new FlxSound();
+			inst = instSound;
+			add(instSound);
+			instSound.loadStream(instUrl, false, false, null, function() {
+				loading = false;
+				ready = true;
+			});
 		}
 
-		// If the instrument stream cannot finish, do not leave the state stuck
-		// forever behind the stage/character screen. The stream loader remains
-		// responsible for playback when it is available.
+		if (trackSwap) opponentVolume = 0;
+
 		new FlxTimer().start(20, function(_) {
 			if (loading)
 			{
-				Logger.log('HTML5 instrument stream is taking too long: ' + instUrl, WARN);
+				Logger.log('HTML5 instrument audio is taking too long: ' + instUrl, WARN);
 				loading = false;
 				ready = true;
 			}
 		});
-
 		#else
 		if (trackSwap)
 		{
