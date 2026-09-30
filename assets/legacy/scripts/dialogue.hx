@@ -1,9 +1,7 @@
 import flixel.addons.text.FlxTypeText;
 
 import funkin.FunkinAssets;
-#if html5
-import js.Browser;
-#end
+import funkin.backend.Html5Video;
 
 using StringTools;
 
@@ -86,18 +84,9 @@ function onVidEnd()
 {
 	hideCaption();
 	vidPlaying = false;
-	#if html5
 	if (IS_HTML5)
 	{
-		try
-		{
-			if (video != null)
-			{
-				video.pause();
-				if (video.parentNode != null) video.parentNode.removeChild(video);
-			}
-		}
-		catch (_) {}
+		Html5Video.stop();
 		video = null;
 		camGame.visible = true;
 		skipText.visible = false;
@@ -108,7 +97,6 @@ function onVidEnd()
 		if (blackYnot != null) FlxTween.tween(blackYnot, {alpha: 0}, 0.5, {onComplete: function() blackYnot.kill()});
 		return;
 	}
-	#end
 	video.destroy();
 	camGame.visible = true;
 	skipText.visible = false;
@@ -119,10 +107,8 @@ function onVidEnd()
 	if (blackYnot != null) FlxTween.tween(blackYnot, {alpha: 0}, 0.5, {onComplete: function() blackYnot.kill()});
 }
 
-
 public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canSkip:Bool, ?onEnd:Void->Void, ?onFormat:Void->Void)
 {
-	#if html5
 	if (IS_HTML5)
 	{
 		if ((videoCheckStory && !isStoryMode) || PlayState.seenCutscene)
@@ -134,7 +120,6 @@ public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canS
 		skippableVideo = (canSkip ?? true);
 		dialogueAfter = (dAfter ?? true);
 		if (!dialogueAfter) PlayState.seenCutscene = true;
-
 		inCutscene = true;
 		vidPlaying = false;
 		blackYnot = new FlxSprite().makeScaledGraphic(FlxG.width + 3, FlxG.height, FlxColor.BLACK);
@@ -142,50 +127,21 @@ public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canS
 		add(blackYnot);
 
 		final videoPath:String = 'assets/videos/' + Paths.sanitize(vid) + '.mp4';
-		final browserVideo:Dynamic = Browser.document.createElement('video');
-		video = browserVideo;
-		browserVideo.preload = 'auto';
-		browserVideo.autoplay = false;
-		browserVideo.controls = false;
-		browserVideo.loop = false;
-		browserVideo.muted = false;
-		browserVideo.playsInline = true;
-		browserVideo.src = videoPath;
-		browserVideo.style.position = 'fixed';
-		browserVideo.style.left = '0';
-		browserVideo.style.top = '0';
-		browserVideo.style.width = '100vw';
-		browserVideo.style.height = '100vh';
-		browserVideo.style.objectFit = 'contain';
-		browserVideo.style.backgroundColor = 'black';
-		browserVideo.style.zIndex = '99999';
-
-		browserVideo.onloadeddata = function(_) {
+		video = videoPath;
+		final ready:Void->Void = function() {
 			vidPlaying = true;
 			camGame.visible = false;
 			textFade();
 			if (onFormat != null) onFormat();
-			try { browserVideo.play(); } catch (_) {}
 		};
-
-		browserVideo.onended = function(_) {
-			if (!vidPlaying) return;
+		final ended:Void->Void = function() {
 			if (onEnd != null) onEnd();
 			onVidEnd();
 		};
-
-		browserVideo.onerror = function(_) {
-			if (!vidPlaying)
-			{
-				if (onEnd != null) onEnd();
-				onVidEnd();
-			}
-		};
-
-		Browser.document.body.appendChild(browserVideo);
+		if (!Html5Video.play(videoPath, ready, ended, ended))
+			onVidEnd();
 		return;
 	}
-	#end
 
 	if ((videoCheckStory && !isStoryMode) || PlayState.seenCutscene) return;
 	songStartCallback = () -> return Function_Stop;
@@ -217,7 +173,6 @@ public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canS
 		onVidEnd();
 	}
 }
-
 
 public function textFade()
 {
@@ -435,9 +390,8 @@ public function readDialogue()
 	{
 		var dialogueMusic:Null<Dynamic> = null;
 		#if html5
-		final dialogueMusicPath:String = Paths.getPath('music/dialogue/' + safeSong);
-		if (FunkinAssets.exists(dialogueMusicPath, SOUND))
-			dialogueMusic = FunkinAssets.getSoundUnsafe(dialogueMusicPath);
+		final dialogueMusicPath:String = 'assets/music/dialogue/' + safeSong + '.ogg';
+		dialogueMusic = FunkinAssets.getSoundUnsafe(dialogueMusicPath);
 		#else
 		dialogueMusic = Paths.music('dialogue/' + safeSong);
 		#end
@@ -662,23 +616,17 @@ function onUpdate(elapsed)
 	if (hasDialogue) dialogueUpdate(elapsed);
 	if (vidPlaying)
 	{
-		#if html5
 		if (IS_HTML5)
 		{
 			if (ClientPrefs.inDevMode)
 			{
-				if (controls.UI_RIGHT_P && video != null) video.currentTime = Math.min(video.currentTime + 5, video.duration || video.currentTime + 5);
-				if (controls.UI_LEFT_P && video != null) video.currentTime = Math.max(video.currentTime - 5, 0);
+				if (controls.UI_RIGHT_P) Html5Video.seek(5);
+				if (controls.UI_LEFT_P) Html5Video.seek(-5);
 			}
-			if (controls.BACK && skippableVideo)
-			{
-				if (video != null) video.pause();
-				if (onEnd != null) onEnd();
-				onVidEnd();
-			}
+			if (controls.BACK && skippableVideo) Html5Video.skip();
 			return;
 		}
-		#end
+
 		if (ClientPrefs.inDevMode)
 		{
 			if (controls.UI_RIGHT_P) video.time = Math.min(video.time + 5, video.length);
