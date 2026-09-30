@@ -417,6 +417,59 @@ jobs:
                   print("\\t".join(parts))
           PY
 
+      - name: Verify packaged HTML5 gameplay assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUTPUT_DIR="export/release/html5/bin"
+
+          verify_tree() {
+            local source_root="$1"
+            local output_root="$2"
+            local missing=0
+            while IFS= read -r -d '' source_file; do
+              local rel="${source_file#"$source_root"/}"
+              local target="$output_root/$rel"
+              if [ ! -f "$target" ]; then
+                echo "MISSING: $target"
+                missing=1
+              fi
+            done < <(find "$source_root" -type f -print0)
+
+            if [ "$missing" -ne 0 ]; then
+              echo "ERROR: packaged asset tree is incomplete: $source_root"
+              return 1
+            fi
+          }
+
+          echo "Checking all song files are present in the HTML5 package..."
+          verify_tree "assets/legacy/songs" "$OUTPUT_DIR/assets/songs"
+
+          echo "Checking dialogue music files..."
+          verify_tree "assets/legacy/music/dialogue" "$OUTPUT_DIR/assets/music/dialogue"
+
+          echo "Checking browser video files..."
+          verify_tree "assets/legacy/videos" "$OUTPUT_DIR/assets/videos"
+
+          echo "Checking core note assets..."
+          test -s "$OUTPUT_DIR/assets/images/NOTE_assets.png"
+          test -s "$OUTPUT_DIR/assets/images/NOTE_assets.xml"
+          test -s "$OUTPUT_DIR/assets/data/noteskins/default.json"
+
+          echo "Checking Week 1 critical files..."
+          test -s "$OUTPUT_DIR/assets/songs/sussus-moogus/Inst.ogg"
+          test -s "$OUTPUT_DIR/assets/songs/sussus-moogus/Voices.ogg"
+          test -s "$OUTPUT_DIR/assets/songs/sussus-moogus/dialogue.txt"
+          test -s "$OUTPUT_DIR/assets/songs/sussus-moogus/info.txt"
+          test -s "$OUTPUT_DIR/assets/songs/sussus-moogus/data/normal.json"
+          test -s "$OUTPUT_DIR/assets/songs/sussus-moogus/data/events.json"
+          test -s "$OUTPUT_DIR/assets/music/dialogue/sussus-moogus.ogg"
+          test -s "$OUTPUT_DIR/assets/videos/week1/sussus-moogus.mp4"
+          test -s "$OUTPUT_DIR/assets/scripts/dialogue.hx"
+          test -s "$OUTPUT_DIR/assets/scripts/tasksong.hx"
+
+          echo "HTML5 gameplay asset package verification passed."
+
       - name: Report largest HTML5 assets after cleanup
         shell: bash
         run: |
