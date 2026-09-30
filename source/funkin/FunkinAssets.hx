@@ -217,11 +217,6 @@ class FunkinAssets
 				sound.addEventListener(Event.COMPLETE, function(_) {
 					if (handled) return;
 					handled = true;
-					for (key in cacheKeys)
-					{
-						cache.cacheSound(key, sound);
-						html5LoadedSounds.set(key, sound);
-					}
 					onComplete(sound);
 				});
 
