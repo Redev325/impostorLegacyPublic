@@ -289,9 +289,13 @@ class PlayableSong extends VocalGroup
 				}
 				else
 				{
-					loading = false;
-					ready = false;
-					Logger.log('HTML5 instrument could not be decoded: ' + instUrl, ERROR);
+					// Sound.load() can fail on a browser even though FlxSound's
+					// streaming path can play the same OGG. Try the stream backend
+					// before declaring the instrument unavailable.
+					instSound.loadStream(instUrl, false, false, null, function() {
+						loading = false;
+						ready = true;
+					});
 				}
 			});
 		}
@@ -312,7 +316,14 @@ class PlayableSong extends VocalGroup
 				addPlayerVocals(voiceTrack);
 				FunkinAssets.loadHtml5Sound(voiceUrl, [voiceUrl], function() {
 					final loaded:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(voiceUrl);
-					if (loaded != null) voiceTrack.loadEmbedded(loaded);
+					if (loaded != null)
+					{
+						voiceTrack.loadEmbedded(loaded);
+					}
+					else
+					{
+						voiceTrack.loadStream(voiceUrl, false, false, null, null);
+					}
 				});
 			}
 		}
