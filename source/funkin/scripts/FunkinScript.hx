@@ -381,6 +381,16 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		set("Paths", Paths);
 		#end
 		set("PathsTestMode", PathsTestMode);
+		#if html5
+		// Expose browser video operations to legacy HScript without requiring a
+		// direct HScript import of the compiled Html5Video class.
+		set("Html5Video", {
+			play: function(path:String, onReady:Void->Void, onEnd:Void->Void, onError:Void->Void):Bool return funkin.backend.Html5Video.play(path, onReady, onEnd, onError),
+			skip: function():Void funkin.backend.Html5Video.skip(),
+			stop: function():Void funkin.backend.Html5Video.stop(),
+			seek: function(delta:Float):Void funkin.backend.Html5Video.seek(delta)
+		});
+		#end
 		set("MusicBeatState", funkin.backend.MusicBeatState);
 		set("Conductor", funkin.backend.Conductor);
 		set("ClientPrefs", funkin.data.ClientPrefs);
