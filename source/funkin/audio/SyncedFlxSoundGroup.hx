@@ -261,6 +261,8 @@ class PlayableSong extends VocalGroup
 		final songFolder:String = songPath == 'dlow' ? "d'low" : songPath;
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
 		final instUrl:String = 'assets/songs/' + songFolder + '/' + instFile;
+		final songLibrary:String = 'song_' + (songPath == 'dlow' ? 'd_low' : songPath);
+		final instAssetId:String = songLibrary + ':' + instUrl;
 		
 		final instSound:FlxSound = new FlxSound();
 		inst = instSound;
@@ -268,7 +270,7 @@ class PlayableSong extends VocalGroup
 		
 		// Load the browser Sound asynchronously, then attach the decoded object
 		// to FlxSound. This matches the Flixel API available in this project.
-		FunkinAssets.loadHtml5SoundObject(instUrl, [instUrl], function(loaded:Null<Sound>) {
+		FunkinAssets.loadHtml5SoundObject(instAssetId, [instUrl], function(loaded:Null<Sound>) {
 			if (loaded == null)
 			{
 				Logger.log('HTML5 instrument URL load failed: ' + instUrl, ERROR);
@@ -293,10 +295,11 @@ class PlayableSong extends VocalGroup
 		if (!trackSwap && data.needsVoices)
 		{
 			final voiceUrl:String = 'assets/songs/' + songFolder + '/Voices.ogg';
+			final voiceAssetId:String = songLibrary + ':' + voiceUrl;
 			final voiceTrack:FlxSound = new FlxSound();
 			addPlayerVocals(voiceTrack);
 			
-			FunkinAssets.loadHtml5SoundObject(voiceUrl, [voiceUrl], function(loaded:Null<Sound>) {
+			FunkinAssets.loadHtml5SoundObject(voiceAssetId, [voiceUrl], function(loaded:Null<Sound>) {
 				if (loaded == null)
 				{
 					Logger.log('HTML5 vocals URL load failed: ' + voiceUrl, WARN);
