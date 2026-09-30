@@ -1,7 +1,6 @@
 import flixel.addons.text.FlxTypeText;
 
 import funkin.FunkinAssets;
-import funkin.backend.Html5Video;
 
 using StringTools;
 
