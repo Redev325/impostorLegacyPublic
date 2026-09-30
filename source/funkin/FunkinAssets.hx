@@ -365,10 +365,17 @@ class FunkinAssets
 				loadSongEvents(function() {
 					loadSongDialogue(function() {
 						loadSongInfo(function() {
-						loadSongScripts(function() {
-							loadDialogueMusic(function() onComplete());
+							loadSongScripts(function() {
+								loadDialogueMusic(function() {
+									loadSongAudio(instFile, function() {
+										if (needsVoices)
+										{
+											loadExternalSound(voicePath, [songLibrary + ':' + voicePath, voicePath], 1, function() onComplete());
+										}
+										else onComplete();
+									});
+								});
 						});
-					});
 					});
 				});
 			}
@@ -456,6 +463,24 @@ class FunkinAssets
 	{
 		final songPath:String = Paths.sanitize(songName);
 		return html5SongEventText.get(songPath);
+	}
+
+	public static function getHtml5SongScripts(songName:String):Array<String>
+	{
+		final safeSong:String = Paths.sanitize(songName);
+		final prefix:String = 'assets/songs/' + (safeSong == 'dlow' ? "d'low" : safeSong) + '/';
+		final result:Array<String> = [];
+		for (key in html5SongScriptText.keys())
+		{
+			final colon:Int = key.indexOf(':');
+			final normalized:String = colon > 0 ? key.substr(colon + 1) : key;
+			final lower:String = normalized.toLowerCase();
+			if (!normalized.startsWith(prefix)) continue;
+			if (!lower.endsWith('.hx') && !lower.endsWith('.hxs') && !lower.endsWith('.hscript')) continue;
+			if (!result.contains(normalized)) result.push(normalized);
+		}
+		result.sort(Reflect.compare);
+		return result;
 	}
 
 	public static function getHtml5SongScript(file:String):Null<String>
