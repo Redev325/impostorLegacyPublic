@@ -855,8 +855,18 @@ class PlayState extends MusicBeatState
 		playFields.cameras = [camHUD];
 		botplayTxt.cameras = [camHUD];
 		
+		#if html5
+		// The selected song library is already loaded and its scripts were
+		// downloaded into FunkinAssets' HTML5 script cache. Load those cached
+		// scripts directly so song cutscenes/dialogue/events actually run.
+		for (scriptFile in FunkinAssets.getHtml5SongScripts(SONG.song))
+		{
+			initFunkinScript(scriptFile);
+		}
+		#else
 		addSongScripts('songs/${Paths.sanitize(SONG.song)}/');
 		addSongScripts('songs/${Paths.sanitize(SONG.song)}/scripts/');
+		#end
 		
 		scripts.call('preNoteGeneration', []);
 		
