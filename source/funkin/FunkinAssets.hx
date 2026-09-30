@@ -509,24 +509,19 @@ class FunkinAssets
 			{
 				html5CurrentSongLibrary = songLibrary;
 				
-				if (Assets.hasLibrary(songLibrary))
-				{
-					Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
-						if (loadedLibrary == null)
-						{
-							fail('song library failed to load: ' + songLibrary);
-							return;
-						}
-						afterLibrary();
-					}).onError(function(error) {
-						fail('song library failed to load: ' + songLibrary + '\\nException: ' + error);
-					});
-					return;
-				}
-				
-				// Keep a direct-network fallback for builds where the per-song
-				// library is not present in the asset manifest.
-				afterLibrary();
+				// Do not gate this on Assets.hasLibrary(). Deferred libraries may
+				// not be registered until Assets.loadLibrary() resolves their
+				// manifest.
+				Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
+					if (loadedLibrary == null)
+					{
+						fail('song library failed to load: ' + songLibrary);
+						return;
+					}
+					afterLibrary();
+				}).onError(function(error) {
+					fail('song library failed to load: ' + songLibrary + '\\nException: ' + error);
+				});
 			}
 
 			function beginSongLoad():Void
