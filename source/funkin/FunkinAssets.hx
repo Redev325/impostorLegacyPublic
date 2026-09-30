@@ -500,17 +500,47 @@ class FunkinAssets
 				}
 			}
 
-			// All per-song files are physically packaged under assets/songs.
-			// HTML5 does not need Lime's deferred library registration here:
-			// loading the chart/text/audio directly avoids the asynchronous-only
-			// asset race and makes song restart deterministic.
-			if (html5SongChartText.exists(chartCacheKey))
+			// The stage, characters, song scripts, charts and other gameplay assets
+			// live in a deferred per-song Lime library. It MUST be loaded before
+			// PlayState is created; otherwise Assets.exists() can report a file
+			// while Assets.getBitmapData()/getText() still throws the
+			// "exists, but only asynchronously" error.
+			function loadSongLibrary(afterLibrary:Void->Void):Void
 			{
-				loadSongAssets();
-				return;
+				html5CurrentSongLibrary = songLibrary;
+				
+				if (Assets.hasLibrary(songLibrary))
+				{
+					Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
+						if (loadedLibrary == null)
+						{
+							fail('song library failed to load: ' + songLibrary);
+							return;
+						}
+						afterLibrary();
+					}).onError(function(error) {
+						fail('song library failed to load: ' + songLibrary + '\\nException: ' + error);
+					});
+					return;
+				}
+				
+				// Keep a direct-network fallback for builds where the per-song
+				// library is not present in the asset manifest.
+				afterLibrary();
 			}
 
-			loadChartFromNetwork();
+			function beginSongLoad():Void
+			{
+				if (html5SongChartText.exists(chartCacheKey))
+				{
+					loadSongAssets();
+					return;
+				}
+				
+				loadChartFromNetwork();
+			}
+
+			loadSongLibrary(beginSongLoad);
 		#else
 			onComplete();
 		#end
