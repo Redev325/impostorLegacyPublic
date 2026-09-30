@@ -17,7 +17,7 @@ class Html5Video
 	{
 		#if html5
 			stop();
-			final video:Dynamic = Browser.document.createElement('video');
+			final video:js.html.VideoElement = cast Browser.document.createElement('video');
 			currentVideo = video;
 			endCallback = onEnd;
 			errorCallback = onError;
@@ -80,7 +80,7 @@ class Html5Video
 				try video.pause() catch (e:Dynamic) {}
 				try
 				{
-					Browser.document.body.removeChild(video);
+					Browser.document.body.removeChild(cast video);
 				}
 				catch (e:Dynamic) {}
 			}
