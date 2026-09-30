@@ -108,6 +108,81 @@ class FunkinAssets
  	 * startup preloader. This lets menus stay fast while still making
  	 * gameplay assets available synchronously once a song starts.
  	 */
+	public static function loadHtml5Sound(url:String, cacheKeys:Array<String>, onComplete:Void->Void):Void
+	{
+		#if html5
+			for (key in cacheKeys)
+			{
+				if (html5LoadedSounds.exists(key) || cache.currentTrackedSounds.exists(key))
+				{
+					onComplete();
+					return;
+				}
+			}
+
+			function attemptLoad(attempt:Int):Void
+			{
+				final sound:Sound = new Sound();
+				var handled:Bool = false;
+
+				function finish():Void
+				{
+					if (handled) return;
+					handled = true;
+					for (key in cacheKeys)
+					{
+						cache.cacheSound(key, sound);
+						html5LoadedSounds.set(key, sound);
+					}
+					onComplete();
+				}
+
+				sound.addEventListener(Event.COMPLETE, function(_) {
+					finish();
+				});
+
+				sound.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
+					if (handled) return;
+					handled = true;
+
+					if (attempt < 3)
+					{
+						Timer.delay(() -> attemptLoad(attempt + 1), 500 * attempt);
+					}
+					else
+					{
+						Logger.log('HTML5 audio request failed after 3 attempts: ' + url + '\\nException: ' + error.text, ERROR);
+						onComplete();
+					}
+				});
+
+				try
+				{
+					sound.load(new URLRequest(url));
+				}
+				catch (e:Dynamic)
+				{
+					if (handled) return;
+					handled = true;
+
+					if (attempt < 3)
+					{
+						Timer.delay(() -> attemptLoad(attempt + 1), 500 * attempt);
+					}
+					else
+					{
+						Logger.log('HTML5 audio request failed after 3 attempts: ' + url + '\\nException: ' + e, ERROR);
+						onComplete();
+					}
+				}
+			}
+
+			attemptLoad(1);
+		#else
+			onComplete();
+		#end
+	}
+
 	public static function loadHtml5Libraries(libraries:Array<String>, onComplete:Void->Void):Void
 	{
 		#if html5
@@ -276,7 +351,7 @@ class FunkinAssets
 					return;
 				}
 				final relativePath:String = 'assets/music/dialogue/' + safeSongName + '.ogg';
-				loadExternalSound(relativePath, ['music:' + relativePath, relativePath], 1, afterMusic);
+				loadExternalSound(relativePath, ['music:' + relativePath, relativePath], afterMusic);
 			}
 
 			function loadSongEvents(afterEvents:Void->Void):Void
@@ -368,41 +443,42 @@ class FunkinAssets
 
 			function loadSongAssets():Void
 			{
-				// Load all text/script/audio dependencies before PlayState is
-				// entered. Every dependency completes (success or failure), so a
-				// missing optional file can never deadlock Story Mode/Freeplay.
+				// Load every dependency before switching into PlayState. The audio
+				// requests are independent and complete even when a non-critical
+				// file is missing, so one failed asset can never freeze the load.
 				var pending:Int = 1;
 
 				function done():Void
 				{
 					pending--;
-					if (pending <= 0) onComplete();
+					if (pending == 0) onComplete();
 				}
 
-				loadSongEvents(function() {
-					loadSongDialogue(function() {
-						loadSongInfo(function() {
-							loadSongScripts(function() {
+			loadSongEvents(function() {
+				loadSongDialogue(function() {
+					loadSongInfo(function() {
+						loadSongScripts(function() {
+							pending++;
+							loadSongAudio(instFile, done);
+
+							if (needsVoices)
+							{
 								pending++;
-								loadSongAudio(instFile, done);
+								loadExternalSound(voicePath, [songLibrary + ':' + voicePath, voicePath], done);
+							}
 
-								if (needsVoices)
-								{
-									pending++;
-									loadExternalSound(voicePath, [songLibrary + ':' + voicePath, voicePath], done);
-								}
+							final dialogueText:Null<String> = html5SongDialogueText.get(safeSongName);
+							if (dialogueText != null && dialogueText.trim().length > 0)
+							{
+								pending++;
+								loadDialogueMusic(done);
+							}
 
-								final dialogueText:Null<String> = html5SongDialogueText.get(safeSongName);
-								if (dialogueText != null && dialogueText.trim().length > 0)
-								{
-									pending++;
-									loadDialogueMusic(done);
-								}
-
-								done();
-							});
+							done();
 						});
+					});
 				});
+			});
 			}
 
 			function loadChartFromNetwork(attempt:Int = 1):Void
