@@ -77,12 +77,12 @@ class Html5Video
 			finished = true;
 			if (video != null)
 			{
-				try video.pause() catch (_) {}
+				try video.pause() catch (e:Dynamic) {}
 				try
 				{
 					if (video.parentNode != null) video.parentNode.removeChild(video);
 				}
-				catch (_) {}
+				catch (e:Dynamic) {}
 			}
 		#end
 	}
@@ -97,7 +97,7 @@ class Html5Video
 				final target:Float = currentVideo.currentTime + delta;
 				currentVideo.currentTime = Math.max(0, (Math.isNaN(duration) || duration <= 0) ? target : Math.min(target, duration));
 			}
-			catch (_) {}
+			catch (e:Dynamic) {}
 		#end
 	}
 
