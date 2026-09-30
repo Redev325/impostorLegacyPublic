@@ -545,6 +545,23 @@ class FunkinAssets
 			// PlayState is created; otherwise Assets.exists() can report a file
 			// while Assets.getBitmapData()/getText() still throws the
 			// "exists, but only asynchronously" error.
+			function loadSongLibrary(afterLibrary:Void->Void):Void
+			{
+				// Register/load only the song library manifest first. Its individual
+				// assets remain on-demand; gameplay audio is loaded separately with
+				// Assets.loadSound(), which is the asynchronous API for HTML5.
+				Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
+					if (loadedLibrary == null)
+					{
+						fail('song library failed to load: ' + songLibrary);
+						return;
+					}
+					afterLibrary();
+				}).onError(function(error) {
+					fail('song library failed to load: ' + songLibrary + '\\nException: ' + error);
+				});
+			}
+
 			function beginSongLoad():Void
 			{
 				if (html5SongChartText.exists(chartCacheKey))
@@ -556,7 +573,7 @@ class FunkinAssets
 				loadChartFromNetwork();
 			}
 
-			beginSongLoad();
+			loadSongLibrary(beginSongLoad);
 		#else
 			onComplete();
 		#end
