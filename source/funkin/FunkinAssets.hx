@@ -54,7 +54,7 @@ class FunkinAssets
 		'boiling-point' => ['script.hx'],
 		'chippin' => ['chippin.hx'],
 		'chlorophyll' => ['cholorophyll.hx'],
-		'd\\'low' => ['d\\'low.hx'],
+		'dlow' => ["d'low.hx"],
 		'danger' => ['script.hx'],
 		'defeat' => ['script.hx'],
 		'delusion' => ['delusion.hx'],
@@ -113,7 +113,15 @@ class FunkinAssets
 		#if html5
 			for (key in cacheKeys)
 			{
-				if (html5LoadedSounds.exists(key) || cache.currentTrackedSounds.exists(key))
+				final loaded:Null<Sound> = html5LoadedSounds.get(key);
+				if (loaded != null)
+				{
+					cache.cacheSound(key, loaded);
+					html5LoadedSounds.set(key, loaded);
+					onComplete();
+					return;
+				}
+				if (cache.currentTrackedSounds.exists(key))
 				{
 					onComplete();
 					return;
@@ -878,12 +886,20 @@ class FunkinAssets
 	{
 		#if html5
 		final preloadedSound:Null<Sound> = html5LoadedSounds.get(key);
-		if (preloadedSound != null) return preloadedSound;
+		if (preloadedSound != null)
+		{
+			cache.cacheSound(key, preloadedSound);
+			return preloadedSound;
+		}
 		final normalizedPreloaded:String = key.toLowerCase();
 		for (loadedKey in html5LoadedSounds.keys())
 		{
 			if (loadedKey.toLowerCase() == normalizedPreloaded)
-				return html5LoadedSounds.get(loadedKey);
+			{
+				final reused:Null<Sound> = html5LoadedSounds.get(loadedKey);
+				if (reused != null) cache.cacheSound(key, reused);
+				return reused;
+			}
 		}
 		#end
 		if (useCache)
