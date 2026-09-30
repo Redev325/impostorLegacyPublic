@@ -684,7 +684,12 @@ class FunkinAssets
 			}
 		}
 
-		// Finally accept a genuinely default/unqualified asset.
+		// For synchronous sound access, never fall back to an unqualified asset
+		// lookup because Assets.exists() may find a preload=false library and
+		// Assets.getSound() will then throw the async-only error.
+		if (type == SOUND) return null;
+		
+		// Finally accept a genuinely default/unqualified non-sound asset.
 		return Assets.exists(path, type) ? path : null;
 	}
 	#end
