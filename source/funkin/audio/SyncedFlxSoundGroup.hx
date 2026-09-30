@@ -256,27 +256,21 @@ class PlayableSong extends VocalGroup
 		#if html5
 		loading = true;
 		ready = false;
+
 		final songPath:String = Paths.sanitize(data.song);
-
 		final songFolder:String = songPath == 'dlow' ? "d'low" : songPath;
-		final songLibrary:String = 'song_' + (songPath == 'dlow' ? 'd_low' : songPath);
-
-		function getLoadedSound(fileName:String):Null<Sound>
-		{
-			final assetId:String = songLibrary + ':assets/songs/' + songFolder + '/' + fileName;
-			return FunkinAssets.getSoundUnsafe(assetId);
-		}
-
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
-		final instSound:Null<Sound> = getLoadedSound(instFile);
-		if (instSound == null)
-		{
-			Logger.log('Missing HTML5 instrument track: ' + songLibrary + ':assets/songs/' + songFolder + '/' + instFile, ERROR);
-			return;
-		}
+		final instUrl:String = 'assets/songs/' + songFolder + '/' + instFile;
 
-		inst = new FlxSound().loadEmbedded(instSound);
+		// HaxeFlixel's streaming loader is the reliable HTML5 path for these
+		// external OGG files. It avoids Lime's deferred-library synchronous
+		// asset guard entirely.
+		inst = new FlxSound();
 		add(inst);
+		inst.loadStream(instUrl, false, false, null, function() {
+			loading = false;
+			ready = true;
+		});
 
 		if (trackSwap)
 		{
@@ -284,33 +278,24 @@ class PlayableSong extends VocalGroup
 		}
 		else if (data.needsVoices)
 		{
-			final voiceSound:Null<Sound> = getLoadedSound('Voices.ogg');
-			if (voiceSound != null)
-			{
-				addPlayerVocals(new FlxSound().loadEmbedded(voiceSound));
-			}
-			else
-			{
-				// Some HTML5/Lime builds register Voices.ogg asynchronously even
-				// after the song library is available. Fall back to the browser
-				// stream instead of letting a synchronous asset lookup stall the song.
-				final voiceTrack:FlxSound = new FlxSound();
-				addPlayerVocals(voiceTrack);
-				voiceTrack.loadStream(
-					'assets/songs/' + songFolder + '/Voices.ogg',
-					false,
-					false,
-					null,
-					null
-				);
-			}
+			final voiceTrack:FlxSound = new FlxSound();
+			addPlayerVocals(voiceTrack);
+			final voiceUrl:String = 'assets/songs/' + songFolder + '/Voices.ogg';
+			voiceTrack.loadStream(voiceUrl, false, false, null, null);
 		}
 
-		// The selected song library is fully loaded before PlayState is created,
-		// so the instrument exists synchronously here and startup never waits on
-		// a browser audio COMPLETE callback.
-		loading = false;
-		ready = true;
+		// If the instrument stream cannot finish, do not leave the state stuck
+		// forever behind the stage/character screen. The stream loader remains
+		// responsible for playback when it is available.
+		new FlxTimer().start(20, function(_) {
+			if (loading)
+			{
+				Logger.log('HTML5 instrument stream is taking too long: ' + instUrl, WARN);
+				loading = false;
+				ready = true;
+			}
+		});
+
 		#else
 		if (trackSwap)
 		{
