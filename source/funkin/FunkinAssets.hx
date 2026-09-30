@@ -261,6 +261,8 @@ class FunkinAssets
 			final songFolder:String = safeSongName == 'dlow' ? "d'low" : safeSongName;
 			final songLibrary:String = 'song_' + (safeSongName == 'dlow' ? 'd_low' : safeSongName);
 			final chartId:String = songLibrary + ':assets/songs/' + songFolder + '/data/' + chartDifficulty + '.json';
+			final instFile:String = (PlayState.SONG?.trackSwap ?? false) ? 'Track-main.ogg' : 'Inst.ogg';
+			final voicePath:String = 'assets/songs/' + songFolder + '/Voices.ogg';
 
 			function fail(reason:Dynamic):Void
 			{
@@ -543,6 +545,15 @@ class FunkinAssets
 					Logger.log('Loaded song library but could not read chart ' + chartId + ': ' + e, WARN);
 				}
 				loadChartFromNetwork();
+			}
+
+			// On a song restart the chart is already cached. Skip the deferred
+			// library request and rebuild directly from the cached dependencies.
+			if (html5SongChartText.exists(chartCacheKey))
+			{
+				html5CurrentSongLibrary = songLibrary;
+				loadSongAssets();
+				return;
 			}
 
 			if (html5LoadedLibraries.exists(songLibrary) && Assets.hasLibrary(songLibrary))
