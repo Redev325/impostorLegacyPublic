@@ -186,36 +186,6 @@ class FunkinAssets
 				}
 			}
 
-			function loadExternalSound(url:String, cacheKeys:Array<String>, attempt:Int = 1, ?afterAudio:Void->Void):Void
-			{
-				final sound:Sound = new Sound();
-				sound.addEventListener(Event.COMPLETE, function(_) {
-					for (key in cacheKeys) cache.cacheSound(key, sound);
-					if (afterAudio != null) afterAudio();
-				});
-				sound.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
-					if (attempt < 3)
-					{
-						Timer.delay(() -> loadExternalSound(url, cacheKeys, attempt + 1, afterAudio), 500 * attempt);
-					}
-					else
-					{
-						fail('audio request failed after 3 attempts: ' + url);
-					}
-				});
-				try
-				{
-					sound.load(new URLRequest(url));
-				}
-				catch (e)
-				{
-					if (attempt < 3)
-						Timer.delay(() -> loadExternalSound(url, cacheKeys, attempt + 1, afterAudio), 500 * attempt);
-					else
-						fail(e);
-				}
-			}
-
 			function loadSongAudio(instFile:String, ?afterAudio:Void->Void):Void
 			{
 				final relativePath:String = 'assets/songs/' + songFolder + '/' + instFile;
