@@ -388,6 +388,7 @@ class FunkinAssets
 						});
 					});
 				});
+				});
 			}
 
 			function loadChartFromNetwork(attempt:Int = 1):Void
