@@ -52,8 +52,16 @@ function assignValues(info:Array<String>)
 
 function getInfo(?info = 'info')
 {
+	var taskSong:Array<String> = [];
+	#if html5
+	var cachedInfo:Null<String> = FunkinAssets.getHtml5SongInfo(Paths.sanitize(songName));
+	if (cachedInfo != null && cachedInfo.trim().length > 0)
+		taskSong = cachedInfo.split("\n");
+	#else
 	var txt = Paths.getPath('songs/' + Paths.sanitize(songName) + '/' + info + '.txt', null, PathsTestMode.NORMAL);
-	var taskSong:Array<String> = CoolUtil.coolTextFile(txt);
+	taskSong = CoolUtil.coolTextFile(txt);
+	#end
+	for (i in 0...taskSong.length) taskSong[i] = taskSong[i].replace("\r", "").trim();
 	// if (ClientPrefs.inDevMode) trace(taskSong);
 	
 	return taskSong.length > 0 ? taskSong : null;
