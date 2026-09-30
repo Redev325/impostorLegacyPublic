@@ -360,7 +360,6 @@ class FunkinAssets
 					fail('chart JSON could not be parsed');
 					return;
 				}
-				html5CurrentSongLibrary = songLibrary;
 				html5SongChartText.set(chartCacheKey, text);
 				afterChart();
 			}
@@ -581,25 +580,6 @@ class FunkinAssets
 			// PlayState is created; otherwise Assets.exists() can report a file
 			// while Assets.getBitmapData()/getText() still throws the
 			// "exists, but only asynchronously" error.
-			function loadSongLibrary(afterLibrary:Void->Void):Void
-			{
-				html5CurrentSongLibrary = songLibrary;
-				
-				// Do not gate this on Assets.hasLibrary(). Deferred libraries may
-				// not be registered until Assets.loadLibrary() resolves their
-				// manifest.
-				Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
-					if (loadedLibrary == null)
-					{
-						fail('song library failed to load: ' + songLibrary);
-						return;
-					}
-					afterLibrary();
-				}).onError(function(error) {
-					fail('song library failed to load: ' + songLibrary + '\\nException: ' + error);
-				});
-			}
-
 			function beginSongLoad():Void
 			{
 				if (html5SongChartText.exists(chartCacheKey))
@@ -611,7 +591,7 @@ class FunkinAssets
 				loadChartFromNetwork();
 			}
 
-			loadSongLibrary(beginSongLoad);
+			beginSongLoad();
 		#else
 			onComplete();
 		#end
