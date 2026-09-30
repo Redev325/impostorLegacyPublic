@@ -370,9 +370,14 @@ class FunkinAssets
 									loadSongAudio(instFile, function() {
 										if (needsVoices)
 										{
-											loadExternalSound(voicePath, [songLibrary + ':' + voicePath, voicePath], 1, function() onComplete());
+											loadExternalSound(voicePath, [songLibrary + ':' + voicePath, voicePath], 1, function() {
+												onComplete();
+											});
 										}
-										else onComplete();
+										else
+										{
+											onComplete();
+										}
 									});
 								});
 						});
