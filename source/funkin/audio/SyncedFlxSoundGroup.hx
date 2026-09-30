@@ -258,30 +258,28 @@ class PlayableSong extends VocalGroup
 		ready = false;
 		
 		final songPath:String = Paths.sanitize(data.song);
-		final songFolder:String = songPath == 'dlow' ? "d'low" : songPath;
+		final songFolder:String = songPath == 'dlow' ? "d'low' : songPath;
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
 		final instUrl:String = 'assets/songs/' + songFolder + '/' + instFile;
 		
-		// The song's deferred Lime library is loaded before PlayState is created.
-		// At this point the sound can be retrieved synchronously from that ready
-		// library without using the unreliable HTML5 streaming backend.
 		final instSound:FlxSound = new FlxSound();
 		inst = instSound;
 		add(instSound);
 		
-		final instData:Null<Sound> = FunkinAssets.getSoundUnsafe(instUrl);
-		if (instData != null)
-		{
-			instSound.loadEmbedded(instData);
+		FunkinAssets.loadHtml5Sound(instUrl, [instUrl], function() {
+			final loaded:Null<Sound> = FunkinAssets.getSoundUnsafe(instUrl);
+			if (loaded == null)
+			{
+				Logger.log('HTML5 instrument could not be loaded: ' + instUrl, ERROR);
+				loading = false;
+				ready = false;
+				return;
+			}
+			
+			instSound.loadEmbedded(loaded);
 			loading = false;
 			ready = true;
-		}
-		else
-		{
-			Logger.log('HTML5 instrument missing from loaded song library: ' + instUrl, ERROR);
-			loading = false;
-			ready = false;
-		}
+		});
 		
 		if (!trackSwap && data.needsVoices)
 		{
@@ -289,11 +287,16 @@ class PlayableSong extends VocalGroup
 			final voiceTrack:FlxSound = new FlxSound();
 			addPlayerVocals(voiceTrack);
 			
-			final voiceData:Null<Sound> = FunkinAssets.getSoundUnsafe(voiceUrl);
-			if (voiceData != null)
-				voiceTrack.loadEmbedded(voiceData);
-			else
-				Logger.log('HTML5 vocals missing from loaded song library: ' + voiceUrl, WARN);
+			FunkinAssets.loadHtml5Sound(voiceUrl, [voiceUrl], function() {
+				final loaded:Null<Sound> = FunkinAssets.getSoundUnsafe(voiceUrl);
+				if (loaded == null)
+				{
+					Logger.log('HTML5 vocals could not be loaded: ' + voiceUrl, WARN);
+					return;
+				}
+				
+				voiceTrack.loadEmbedded(loaded);
+			});
 		}
 		
 		if (trackSwap) opponentVolume = 0;
