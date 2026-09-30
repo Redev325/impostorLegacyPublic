@@ -115,7 +115,7 @@
 		<assets path="assets/legacy/sounds" rename="assets/sounds" library="gameplay"
 			exclude="confirmMenu.ogg|cancelMenu.ogg|scrollMenu.ogg|clickText.ogg|cosmicubePop.ogg|equip.ogg|equipPet.ogg|getbeans.ogg|hover.ogg|kill.ogg|locked.ogg|menu/looksie.ogg|panelAppear.ogg|panelDisappear.ogg|select.ogg|shopbuy.ogg|unlockSong.ogg" preload="true" embed="false" />
 		<assets path="assets/legacy/music" rename="assets/music" library="gameplay"
-			include="breakfast.ogg|gameOver.ogg|gameOverEnd.ogg" preload="true" embed="false" />
+			include="breakfast.ogg|gameOver.ogg|gameOverEnd.ogg" preload="true" embed="false" if="html5" />
 		<assets path="assets/legacy/music" rename="assets/music" library="music"
 			exclude="freakyMenu.ogg|finaleMenu.ogg" preload="false" embed="false" />
 		<!-- HTML5 loads only the selected song library when gameplay starts.
