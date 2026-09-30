@@ -302,6 +302,7 @@ class PlayableSong extends VocalGroup
 		}
 		
 		if (trackSwap) opponentVolume = 0;
+		#else
 		if (trackSwap)
 		{
 			final instSnd = Paths.trackSwap(data.song, 'main');
