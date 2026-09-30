@@ -522,57 +522,17 @@ class FunkinAssets
 				}
 			}
 
-			function libraryReady():Void
-			{
-				html5CurrentSongLibrary = songLibrary;
-
-				if (html5SongChartText.exists(chartCacheKey))
-				{
-					loadSongAssets();
-					return;
-				}
-
-				try
-				{
-					if (Assets.exists(chartId, AssetType.TEXT))
-					{
-						finishWithChart(Assets.getText(chartId), loadSongAssets);
-						return;
-					}
-				}
-				catch (e:Dynamic)
-				{
-					Logger.log('Loaded song library but could not read chart ' + chartId + ': ' + e, WARN);
-				}
-				loadChartFromNetwork();
-			}
-
-			// On a song restart the chart is already cached. Skip the deferred
-			// library request and rebuild directly from the cached dependencies.
+			// All per-song files are physically packaged under assets/songs.
+			// HTML5 does not need Lime's deferred library registration here:
+			// loading the chart/text/audio directly avoids the asynchronous-only
+			// asset race and makes song restart deterministic.
 			if (html5SongChartText.exists(chartCacheKey))
 			{
-				html5CurrentSongLibrary = songLibrary;
 				loadSongAssets();
 				return;
 			}
 
-			if (html5LoadedLibraries.exists(songLibrary) && Assets.hasLibrary(songLibrary))
-			{
-				libraryReady();
-				return;
-			}
-
-			Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
-				if (loadedLibrary == null || !Assets.hasLibrary(songLibrary))
-				{
-					fail('song library could not be loaded: ' + songLibrary);
-					return;
-				}
-				html5LoadedLibraries.set(songLibrary, true);
-				libraryReady();
-			}).onError(function(error) {
-				fail('song library request failed: ' + error);
-			});
+			loadChartFromNetwork();
 		#else
 			onComplete();
 		#end
