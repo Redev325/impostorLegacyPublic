@@ -391,6 +391,11 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 			seek: function(delta:Float):Void funkin.backend.Html5Video.seek(delta)
 		});
 		#end
+		#if html5
+		// Make the HTML5 song-asset cache available to legacy HScript without
+		// requiring an import that Iris cannot resolve on the browser target.
+		set("FunkinAssets", funkin.FunkinAssets);
+		#end
 		set("MusicBeatState", funkin.backend.MusicBeatState);
 		set("Conductor", funkin.backend.Conductor);
 		set("ClientPrefs", funkin.data.ClientPrefs);
