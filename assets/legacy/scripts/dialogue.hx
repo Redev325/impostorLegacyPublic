@@ -1,6 +1,9 @@
 import flixel.addons.text.FlxTypeText;
 
 import funkin.FunkinAssets;
+#if html5
+import js.Browser;
+#end
 
 using StringTools;
 
@@ -82,46 +85,117 @@ function onCreatePost()
 function onVidEnd()
 {
 	hideCaption();
-	
-	video.destroy();
 	vidPlaying = false;
+	#if html5
+	if (IS_HTML5)
+	{
+		try
+		{
+			if (video != null)
+			{
+				video.pause();
+				if (video.parentNode != null) video.parentNode.removeChild(video);
+			}
+		}
+		catch (_) {}
+		video = null;
+		camGame.visible = true;
+		skipText.visible = false;
+		if (dialogueAfter && (PlayState.isStoryMode || !videoCheckStory))
+			readDialogue();
+		else
+			startCountdown();
+		if (blackYnot != null) FlxTween.tween(blackYnot, {alpha: 0}, 0.5, {onComplete: function() blackYnot.kill()});
+		return;
+	}
+	#end
+	video.destroy();
 	camGame.visible = true;
 	skipText.visible = false;
-	// ^ for windowed fullscreen
 	if (dialogueAfter && (PlayState.isStoryMode || !videoCheckStory))
-	{
 		readDialogue();
-	}
 	else
-	{
 		startCountdown();
-	}
-	
 	if (blackYnot != null) FlxTween.tween(blackYnot, {alpha: 0}, 0.5, {onComplete: function() blackYnot.kill()});
 }
 
-/**
-	* Loads a video cutscene basically.
-	`vid` > what video
-	`hold on a second`
-**/
+
 public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canSkip:Bool, ?onEnd:Void->Void, ?onFormat:Void->Void)
 {
-	// HTML5 does not include the native video backend used by the desktop build.\n	// Continue the normal story flow instead of leaving song startup blocked.\n	if (IS_HTML5)\n	{\n		if ((dAfter ?? true) && (PlayState.isStoryMode || !videoCheckStory))\n		{\n			readDialogue();\n		}\n		else\n		{\n			startCountdown();\n		}\n		return;\n	}\n	if ((videoCheckStory && !isStoryMode) || PlayState.seenCutscene) return;
-	
+	#if html5
+	if (IS_HTML5)
+	{
+		if ((videoCheckStory && !isStoryMode) || PlayState.seenCutscene)
+		{
+			startCountdown();
+			return;
+		}
+
+		skippableVideo = (canSkip ?? true);
+		dialogueAfter = (dAfter ?? true);
+		if (!dialogueAfter) PlayState.seenCutscene = true;
+
+		inCutscene = true;
+		vidPlaying = false;
+		blackYnot = new FlxSprite().makeScaledGraphic(FlxG.width + 3, FlxG.height, FlxColor.BLACK);
+		blackYnot.camera = camOther;
+		add(blackYnot);
+
+		final videoPath:String = 'assets/videos/' + Paths.sanitize(vid) + '.mp4';
+		final browserVideo:Dynamic = Browser.document.createElement('video');
+		video = browserVideo;
+		browserVideo.preload = 'auto';
+		browserVideo.autoplay = false;
+		browserVideo.controls = false;
+		browserVideo.loop = false;
+		browserVideo.muted = false;
+		browserVideo.playsInline = true;
+		browserVideo.src = videoPath;
+		browserVideo.style.position = 'fixed';
+		browserVideo.style.left = '0';
+		browserVideo.style.top = '0';
+		browserVideo.style.width = '100vw';
+		browserVideo.style.height = '100vh';
+		browserVideo.style.objectFit = 'contain';
+		browserVideo.style.backgroundColor = 'black';
+		browserVideo.style.zIndex = '99999';
+
+		browserVideo.onloadeddata = function(_) {
+			vidPlaying = true;
+			camGame.visible = false;
+			textFade();
+			if (onFormat != null) onFormat();
+			try { browserVideo.play(); } catch (_) {}
+		};
+
+		browserVideo.onended = function(_) {
+			if (!vidPlaying) return;
+			if (onEnd != null) onEnd();
+			onVidEnd();
+		};
+
+		browserVideo.onerror = function(_) {
+			if (!vidPlaying)
+			{
+				if (onEnd != null) onEnd();
+				onVidEnd();
+			}
+		};
+
+		Browser.document.body.appendChild(browserVideo);
+		return;
+	}
+	#end
+
+	if ((videoCheckStory && !isStoryMode) || PlayState.seenCutscene) return;
 	songStartCallback = () -> return Function_Stop;
-	
-	skippableVideo = (canSkip ?? true); // fuck you hscript
+	skippableVideo = (canSkip ?? true);
 	dialogueAfter = (dAfter ?? true);
-	
 	if (!dialogueAfter) PlayState.seenCutscene = true;
-	
 	blackYnot = new FlxSprite().makeScaledGraphic(FlxG.width + 3, FlxG.height, FlxColor.BLACK);
 	blackYnot.camera = camOther;
 	add(blackYnot);
-	
 	video = new FunkinVideoSprite();
-	
 	video.onFormat(() -> {
 		vidPlaying = true;
 		video.camera = camOther;
@@ -130,26 +204,20 @@ public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canS
 		video.updateHitbox();
 		video.screenCenter();
 		camGame.visible = false;
-		// ^ for windowed fullscreen
 		textFade();
 	});
-	
 	add(video);
-	
 	if (onEnd != null) video.onEnd(onEnd);
 	if (onFormat != null) video.onFormat(onFormat);
 	video.onEnd(onVidEnd);
-	
-	if (video.load(Paths.video(Paths.sanitize(vid))))
-	{
-		video.delayAndStart();
-	}
+	if (video.load(Paths.video(Paths.sanitize(vid)))) video.delayAndStart();
 	else
 	{
 		if (onEnd != null) onEnd();
 		onVidEnd();
 	}
 }
+
 
 public function textFade()
 {
@@ -594,12 +662,28 @@ function onUpdate(elapsed)
 	if (hasDialogue) dialogueUpdate(elapsed);
 	if (vidPlaying)
 	{
+		#if html5
+		if (IS_HTML5)
+		{
+			if (ClientPrefs.inDevMode)
+			{
+				if (controls.UI_RIGHT_P && video != null) video.currentTime = Math.min(video.currentTime + 5, video.duration || video.currentTime + 5);
+				if (controls.UI_LEFT_P && video != null) video.currentTime = Math.max(video.currentTime - 5, 0);
+			}
+			if (controls.BACK && skippableVideo)
+			{
+				if (video != null) video.pause();
+				if (onEnd != null) onEnd();
+				onVidEnd();
+			}
+			return;
+		}
+		#end
 		if (ClientPrefs.inDevMode)
 		{
 			if (controls.UI_RIGHT_P) video.time = Math.min(video.time + 5, video.length);
 			if (controls.UI_LEFT_P) video.time = Math.min(video.time - 5, 0);
 		}
-		
 		if (controls.BACK && skippableVideo)
 		{
 			video.kill();
