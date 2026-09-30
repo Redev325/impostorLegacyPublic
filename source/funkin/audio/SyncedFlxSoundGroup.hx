@@ -266,22 +266,29 @@ class PlayableSong extends VocalGroup
 		inst = instSound;
 		add(instSound);
 		
-		// HaxeFlixel's URL loader is the native HTML5 path for external audio.
-		// It keeps the Sound owned by FlxSound instead of re-entering Lime's
-		// synchronous asset resolver.
-		try
-		{
-			instSound.loadFromURL(instUrl, function() {
+		// Load the browser Sound asynchronously, then attach the decoded object
+		// to FlxSound. This matches the Flixel API available in this project.
+		FunkinAssets.loadHtml5SoundObject(instUrl, [instUrl], function(loaded:Null<Sound>) {
+			if (loaded == null)
+			{
+				Logger.log('HTML5 instrument URL load failed: ' + instUrl, ERROR);
+				loading = false;
+				ready = false;
+				return;
+			}
+			try
+			{
+				instSound.loadEmbedded(loaded);
 				loading = false;
 				ready = true;
-			});
-		}
-		catch (e:Dynamic)
-		{
-			Logger.log('HTML5 instrument URL load failed: ' + instUrl + '\\nException: ' + e, ERROR);
-			loading = false;
-			ready = false;
-		}
+			}
+			catch (e:Dynamic)
+			{
+				Logger.log('HTML5 instrument attach failed: ' + instUrl + '\\nException: ' + e, ERROR);
+				loading = false;
+				ready = false;
+			}
+		});
 		
 		if (!trackSwap && data.needsVoices)
 		{
@@ -289,14 +296,21 @@ class PlayableSong extends VocalGroup
 			final voiceTrack:FlxSound = new FlxSound();
 			addPlayerVocals(voiceTrack);
 			
-			try
-			{
-				voiceTrack.loadFromURL(voiceUrl);
-			}
-			catch (e:Dynamic)
-			{
-				Logger.log('HTML5 vocals URL load failed: ' + voiceUrl + '\\nException: ' + e, WARN);
-			}
+			FunkinAssets.loadHtml5SoundObject(voiceUrl, [voiceUrl], function(loaded:Null<Sound>) {
+				if (loaded == null)
+				{
+					Logger.log('HTML5 vocals URL load failed: ' + voiceUrl, WARN);
+					return;
+				}
+				try
+				{
+					voiceTrack.loadEmbedded(loaded);
+				}
+				catch (e:Dynamic)
+				{
+					Logger.log('HTML5 vocals attach failed: ' + voiceUrl + '\\nException: ' + e, WARN);
+				}
+			});
 		}
 		
 		if (trackSwap) opponentVolume = 0;
