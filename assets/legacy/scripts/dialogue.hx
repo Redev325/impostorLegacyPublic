@@ -323,10 +323,28 @@ function v4SpeakerShit()
 **/
 public function readDialogue()
 {
-	if ((videoCheckStory && !isStoryMode) || PlayState.seenCutscene) return;
-	var txt = Paths.getPath('songs/' + Paths.sanitize(songName) + '/dialogue.txt', null, PathsTestMode.NORMAL);
+	if ((videoCheckStory && !isStoryMode) || PlayState.seenCutscene)
+	{
+		startCountdown();
+		return;
+	}
+	var safeSong:String = Paths.sanitize(songName);
+	#if html5
+	var cachedDialogue:Null<String> = FunkinAssets.getHtml5SongDialogue(safeSong);
+	if (cachedDialogue != null)
+		dialogueList = cachedDialogue.length > 0 ? cachedDialogue.split("\n") : [];
+	else
+		dialogueList = [];
+	#else
+	var txt = Paths.getPath('songs/' + safeSong + '/dialogue.txt', null, PathsTestMode.NORMAL);
 	dialogueList = CoolUtil.coolTextFile(txt);
-	if (dialogueList.length == 0) return;
+	#end
+	if (dialogueList.length == 0)
+	{
+		// A cutscene without dialogue must still release the song into gameplay.
+		startCountdown();
+		return;
+	}
 	
 	inCutscene = true;
 	
@@ -347,7 +365,15 @@ public function readDialogue()
 	// trace('Loading dialogue at ' + txt);
 	if (hasDialogueAudio)
 	{
-		FlxG.sound.playMusic(Paths.music('dialogue/' + Paths.sanitize(songName)));
+		var dialogueMusic:Null<Dynamic> = null;
+		#if html5
+		final dialogueMusicPath:String = Paths.getPath('music/dialogue/' + safeSong);
+		if (FunkinAssets.exists(dialogueMusicPath, SOUND))
+			dialogueMusic = FunkinAssets.getSoundUnsafe(dialogueMusicPath);
+		#else
+		dialogueMusic = Paths.music('dialogue/' + safeSong);
+		#end
+		if (dialogueMusic != null) FlxG.sound.playMusic(dialogueMusic);
 		FlxG.sound.music.volume = 0;
 		FlxG.sound.music.fadeIn(1, 0, 0.8);
 	}
