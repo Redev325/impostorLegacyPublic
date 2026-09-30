@@ -43,6 +43,7 @@ class FunkinAssets
 	static var html5SongDialogueText:Map<String, String> = [];
 	static var html5SongInfoText:Map<String, String> = [];
 	static var html5SongScriptText:Map<String, String> = [];
+	static var html5LoadedSounds:Map<String, Sound> = [];
 	#end
 
 	#if html5
@@ -160,7 +161,11 @@ class FunkinAssets
 			{
 				final sound:Sound = new Sound();
 				sound.addEventListener(Event.COMPLETE, function(_) {
-					for (key in cacheKeys) cache.cacheSound(key, sound);
+					for (key in cacheKeys)
+					{
+						cache.cacheSound(key, sound);
+						html5LoadedSounds.set(key, sound);
+					}
 					final callback:Null<Void->Void> = afterAudio;
 					if (callback != null) callback();
 				});
@@ -788,6 +793,16 @@ class FunkinAssets
 	 */
 	public static function getSoundUnsafe(key:String, useCache:Bool = true):Null<Sound>
 	{
+		#if html5
+		final preloadedSound:Null<Sound> = html5LoadedSounds.get(key);
+		if (preloadedSound != null) return preloadedSound;
+		final normalizedPreloaded:String = key.toLowerCase();
+		for (loadedKey in html5LoadedSounds.keys())
+		{
+			if (loadedKey.toLowerCase() == normalizedPreloaded)
+				return html5LoadedSounds.get(loadedKey);
+		}
+		#end
 		if (useCache)
 		{
 			if (cache.currentTrackedSounds.exists(key))
