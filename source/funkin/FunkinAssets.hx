@@ -41,6 +41,7 @@ class FunkinAssets
 	static var html5SongChartText:Map<String, String> = [];
 	static var html5SongEventText:Map<String, String> = [];
 	static var html5SongDialogueText:Map<String, String> = [];
+	static var html5SongScriptText:Map<String, String> = [];
 	#end
 
 	#if html5
@@ -303,6 +304,56 @@ class FunkinAssets
 				catch (_) afterEvents();
 			}
 
+			function loadSongScripts(afterScripts:Void->Void):Void
+			{
+				final prefix:String = songLibrary + ':assets/songs/' + songFolder + '/';
+				final assets:Array<String> = [];
+				for (asset in Assets.list())
+				{
+					if (!asset.startsWith(prefix)) continue;
+					final lower:String = asset.toLowerCase();
+					if (lower.endsWith('.hx') || lower.endsWith('.hxs') || lower.endsWith('.hscript'))
+						assets.push(asset);
+				}
+				assets.sort(Reflect.compare);
+
+				function loadNext(index:Int):Void
+				{
+					if (index >= assets.length)
+					{
+						afterScripts();
+						return;
+					}
+					final assetId:String = assets[index];
+					final relativePath:String = assetId.substr(songLibrary.length + 1);
+					if (html5SongScriptText.exists(relativePath) || html5SongScriptText.exists(assetId))
+					{
+						loadNext(index + 1);
+						return;
+					}
+					final loader:URLLoader = new URLLoader();
+					loader.addEventListener(Event.COMPLETE, function(_) {
+						final text:String = Std.string(loader.data);
+						html5SongScriptText.set(relativePath, text);
+						html5SongScriptText.set(assetId, text);
+						loadNext(index + 1);
+					});
+					loader.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
+						Logger.log('HTML5 song script unavailable: ' + relativePath + '\\nException: ' + error.text, WARN);
+						loadNext(index + 1);
+					});
+					try
+					{
+						loader.load(new URLRequest(relativePath));
+					}
+					catch (e)
+					{
+						loadNext(index + 1);
+					}
+				}
+				loadNext(0);
+			}
+
 			function loadSongAssets():Void
 			{
 				final trackSwap:Bool = PlayState.SONG?.trackSwap ?? false;
@@ -312,16 +363,8 @@ class FunkinAssets
 
 				loadSongEvents(function() {
 					loadSongDialogue(function() {
-						loadSongAudio(instFile, function() {
-							final finishAudio:Void->Void = function() {
-								loadDialogueMusic(function() onComplete());
-							};
-							if (!needsVoices)
-							{
-								finishAudio();
-								return;
-							}
-							loadExternalSound(voicePath, [songLibrary + ':' + voicePath, voicePath], 1, finishAudio);
+						loadSongScripts(function() {
+							loadDialogueMusic(function() onComplete());
 						});
 					});
 				});
@@ -410,6 +453,16 @@ class FunkinAssets
 	{
 		final songPath:String = Paths.sanitize(songName);
 		return html5SongEventText.get(songPath);
+	}
+
+	public static function getHtml5SongScript(file:String):Null<String>
+	{
+		final normalized:String = file.indexOf(':') > 0 ? file : file;
+		final cached:Null<String> = html5SongScriptText.get(normalized);
+		if (cached != null) return cached;
+		if (html5CurrentSongLibrary != null)
+			return html5SongScriptText.get(html5CurrentSongLibrary + ':' + normalized);
+		return null;
 	}
 
 	public static function getHtml5SongDialogue(songName:String):Null<String>
@@ -523,6 +576,8 @@ class FunkinAssets
 		if (FileSystem.exists(path)) return File.getContent(path);
 		#end
 		#if html5
+		final cachedText:Null<String> = getHtml5SongScript(path);
+		if (cachedText != null) return cachedText;
 		final resolved = resolveHtml5AssetId(path, TEXT);
 		if (resolved != null) return Assets.getText(resolved);
 		#else
