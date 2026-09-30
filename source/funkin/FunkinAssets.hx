@@ -362,32 +362,17 @@ class FunkinAssets
 
 			function loadSongAssets():Void
 			{
-				final trackSwap:Bool = PlayState.SONG?.trackSwap ?? false;
-				final needsVoices:Bool = PlayState.SONG?.needsVoices ?? false;
-				final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
-				final voicePath:String = 'assets/songs/' + songFolder + '/Voices.ogg';
-
+				// Do not block the state transition on large OGG downloads.
+				// PlayableSong owns the actual HTML5 instrument/vocal streams and
+				// will hold the countdown until the instrument is ready.
 				loadSongEvents(function() {
 					loadSongDialogue(function() {
 						loadSongInfo(function() {
 							loadSongScripts(function() {
-								loadDialogueMusic(function() {
-									loadSongAudio(instFile, function() {
-										if (needsVoices)
-										{
-											loadExternalSound(voicePath, [songLibrary + ':' + voicePath, voicePath], 1, function() {
-												onComplete();
-											});
-										}
-										else
-										{
-											onComplete();
-										}
-									});
-								});
+								onComplete();
+							});
 						});
 					});
-				});
 				});
 			}
 
