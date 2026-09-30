@@ -262,26 +262,23 @@ class PlayableSong extends VocalGroup
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
 		final instUrl:String = 'assets/songs/' + songFolder + '/' + instFile;
 		
-		// HTML5 gameplay audio must use Flixel's streaming backend. Calling
-		// Sound.load()/Assets.getSound() on a deferred Lime library can throw
-		// "exists, but only asynchronously" even when the file is present.
+		// The song's deferred Lime library is loaded before PlayState is created.
+		// At this point the sound can be retrieved synchronously from that ready
+		// library without using the unreliable HTML5 streaming backend.
 		final instSound:FlxSound = new FlxSound();
 		inst = instSound;
 		add(instSound);
 		
-		function markInstReady():Void
+		final instData:Null<Sound> = FunkinAssets.getSoundUnsafe(instUrl);
+		if (instData != null)
 		{
+			instSound.loadEmbedded(instData);
 			loading = false;
 			ready = true;
 		}
-		
-		try
+		else
 		{
-			instSound.loadStream(instUrl, false, false, null, markInstReady);
-		}
-		catch (e:Dynamic)
-		{
-			Logger.log('HTML5 instrument stream failed to start: ' + instUrl + '\\nException: ' + e, ERROR);
+			Logger.log('HTML5 instrument missing from loaded song library: ' + instUrl, ERROR);
 			loading = false;
 			ready = false;
 		}
@@ -291,14 +288,12 @@ class PlayableSong extends VocalGroup
 			final voiceUrl:String = 'assets/songs/' + songFolder + '/Voices.ogg';
 			final voiceTrack:FlxSound = new FlxSound();
 			addPlayerVocals(voiceTrack);
-			try
-			{
-				voiceTrack.loadStream(voiceUrl, false, false, null, null);
-			}
-			catch (e:Dynamic)
-			{
-				Logger.log('HTML5 vocal stream failed to start: ' + voiceUrl + '\\nException: ' + e, WARN);
-			}
+			
+			final voiceData:Null<Sound> = FunkinAssets.getSoundUnsafe(voiceUrl);
+			if (voiceData != null)
+				voiceTrack.loadEmbedded(voiceData);
+			else
+				Logger.log('HTML5 vocals missing from loaded song library: ' + voiceUrl, WARN);
 		}
 		
 		if (trackSwap) opponentVolume = 0;
