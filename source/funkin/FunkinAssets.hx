@@ -203,28 +203,49 @@ class FunkinAssets
 					return;
 				}
 			}
-
-			// OpenFL's asynchronous Assets.loadSound() path is designed for
-			// HTML5/deferred assets. It resolves the asset through Lime without
-			// calling the synchronous Assets.getSound() API that can throw the
-			// "exists, but only asynchronously" error.
+			
+			function complete(sound:Null<Sound>):Void
+			{
+				if (sound != null)
+				{
+					for (key in cacheKeys)
+						html5LoadedSounds.set(key, sound);
+				}
+				onComplete(sound);
+			}
+			
+			function loadDirect():Void
+			{
+				final directUrl:String = cacheKeys.length > 0 ? cacheKeys[0] : url;
+				try
+				{
+					Sound.loadFromFile(directUrl)
+						.onComplete(function(sound:Sound) complete(sound))
+						.onError(function(_) {
+							Logger.log('HTML5 audio request failed: ' + directUrl, ERROR);
+							complete(null);
+						});
+				}
+				catch (e:Dynamic)
+				{
+					Logger.log('HTML5 audio request could not start: ' + directUrl + '\\nException: ' + e, ERROR);
+					complete(null);
+				}
+			}
+			
+			// Qualified IDs use Lime's registered asset library. If that cannot
+			// resolve the deferred library at runtime, fall back to the actual
+			// packaged browser URL so gameplay does not depend on Lime's library
+			// registration state.
 			try
 			{
 				Assets.loadSound(url, true)
-					.onComplete(function(sound:Sound) {
-						for (key in cacheKeys)
-							html5LoadedSounds.set(key, sound);
-						onComplete(sound);
-					})
-					.onError(function(error) {
-						Logger.log('HTML5 audio request failed: ' + url + '\\nException: ' + error, ERROR);
-						onComplete(null);
-					});
+					.onComplete(function(sound:Sound) complete(sound))
+					.onError(function(_) loadDirect());
 			}
 			catch (e:Dynamic)
 			{
-				Logger.log('HTML5 audio request could not start: ' + url + '\\nException: ' + e, ERROR);
-				onComplete(null);
+				loadDirect();
 			}
 		#else
 			onComplete(null);
