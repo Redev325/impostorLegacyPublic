@@ -262,53 +262,30 @@ class PlayableSong extends VocalGroup
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
 		final instUrl:String = 'assets/songs/' + songFolder + '/' + instFile;
 
-		// FunkinAssets preloads the selected song's OGG files before PlayState
-		// is created. Use the decoded Sound directly so the countdown and notes
-		// are not blocked by the HTML5 deferred-library timing race.
-		final instData:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(instUrl);
-		if (instData != null)
-		{
-			final instSound:FlxSound = new FlxSound();
-			inst = instSound;
-			add(instSound);
-			instSound.loadEmbedded(instData);
+		// HTML5 song audio is streamed after the PlayState has been created.
+		// Do not depend on Lime's synchronous Sound cache: deferred song
+		// libraries can report an OGG as "exists, but only asynchronously".
+		final instSound:FlxSound = new FlxSound();
+		inst = instSound;
+		add(instSound);
+
+		instSound.loadStream(instUrl, false, false, null, function() {
 			loading = false;
 			ready = true;
+		});
 
-			if (!trackSwap && data.needsVoices)
-			{
-				final voiceUrl:String = 'assets/songs/' + songFolder + '/Voices.ogg';
-				final voiceData:Null<Sound> = funkin.FunkinAssets.getSoundUnsafe(voiceUrl);
-				if (voiceData != null)
-				{
-					final voiceTrack:FlxSound = new FlxSound();
-					addPlayerVocals(voiceTrack);
-					voiceTrack.loadEmbedded(voiceData);
-				}
-			}
-		}
-		else
+		if (!trackSwap && data.needsVoices)
 		{
-			Logger.log('HTML5 song audio was not cached: ' + instUrl, ERROR);
-			final instSound:FlxSound = new FlxSound();
-			inst = instSound;
-			add(instSound);
-			instSound.loadStream(instUrl, false, false, null, function() {
-				loading = false;
-				ready = true;
-			});
+			final voiceUrl:String = 'assets/songs/' + songFolder + '/Voices.ogg';
+			final voiceTrack:FlxSound = new FlxSound();
+			addPlayerVocals(voiceTrack);
+			voiceTrack.loadStream(voiceUrl, false, false, null, null);
 		}
 
 		if (trackSwap) opponentVolume = 0;
 
-		new FlxTimer().start(20, function(_) {
-			if (loading)
-			{
-				Logger.log('HTML5 instrument audio is taking too long: ' + instUrl, WARN);
-				loading = false;
-				ready = true;
-			}
-		});
+		// Never force ready after a timeout. Doing so can start the countdown
+		// with a zero-length/unloaded instrument and leave PlayState frozen.
 		#else
 		if (trackSwap)
 		{
