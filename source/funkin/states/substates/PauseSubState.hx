@@ -351,6 +351,27 @@ class PauseSubState extends funkin.backend.MusicBeatSubstate
 	{
 		PlayState.instance.paused = true;
 		PlayState.instance.audio?.stop();
+
+		#if html5
+			// Revalidate/reload the selected song resources before rebuilding the
+			// PlayState. This makes restart use the same deterministic asset path
+			// as the initial Story Mode/Freeplay launch instead of racing resetState
+			// against a still-loading OGG or script.
+			final songName:String = PlayState.SONG == null ? '' : Paths.sanitize(PlayState.SONG.song);
+			if (songName.length > 0)
+			{
+				FunkinAssets.loadHtml5SongAssets(songName, function() {
+					FlxG.resetState();
+				}, function() {
+					// The chart is normally already cached at this point. If a browser
+					// request does fail, still rebuild the state so it can use its
+					// existing cached chart/audio instead of remaining on the pause screen.
+					FlxG.resetState();
+				});
+				return;
+			}
+		#end
+
 		FlxG.resetState();
 	}
 }
