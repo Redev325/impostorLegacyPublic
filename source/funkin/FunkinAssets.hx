@@ -41,6 +41,7 @@ class FunkinAssets
 	static var html5SongChartText:Map<String, String> = [];
 	static var html5SongEventText:Map<String, String> = [];
 	static var html5SongDialogueText:Map<String, String> = [];
+	static var html5SongInfoText:Map<String, String> = [];
 	static var html5SongScriptText:Map<String, String> = [];
 	#end
 
@@ -192,6 +193,35 @@ class FunkinAssets
 				loadExternalSound(relativePath, [songLibrary + ':' + relativePath, relativePath], 1, afterAudio);
 			}
 
+			function loadSongInfo(afterInfo:Void->Void):Void
+			{
+				final infoKey:String = safeSongName;
+				if (html5SongInfoText.exists(infoKey))
+				{
+					afterInfo();
+					return;
+				}
+				final infoUrl:String = 'assets/songs/' + songFolder + '/info.txt';
+				final loader:URLLoader = new URLLoader();
+				loader.addEventListener(Event.COMPLETE, function(_) {
+					html5SongInfoText.set(infoKey, Std.string(loader.data));
+					afterInfo();
+				});
+				loader.addEventListener(IOErrorEvent.IO_ERROR, function(_) {
+					html5SongInfoText.set(infoKey, '');
+					afterInfo();
+				});
+				try
+				{
+					loader.load(new URLRequest(infoUrl));
+				}
+				catch (e)
+				{
+					html5SongInfoText.set(infoKey, '');
+					afterInfo();
+				}
+			}
+
 			function loadSongDialogue(afterDialogue:Void->Void):Void
 			{
 				final dialogueKey:String = safeSongName;
@@ -334,9 +364,11 @@ class FunkinAssets
 
 				loadSongEvents(function() {
 					loadSongDialogue(function() {
+						loadSongInfo(function() {
 						loadSongScripts(function() {
 							loadDialogueMusic(function() onComplete());
 						});
+					});
 					});
 				});
 			}
@@ -434,6 +466,13 @@ class FunkinAssets
 		if (html5CurrentSongLibrary != null)
 			return html5SongScriptText.get(html5CurrentSongLibrary + ':' + normalized);
 		return null;
+	}
+
+
+	public static function getHtml5SongInfo(songName:String):Null<String>
+	{
+		final songPath:String = Paths.sanitize(songName);
+		return html5SongInfoText.get(songPath);
 	}
 
 	public static function getHtml5SongDialogue(songName:String):Null<String>
