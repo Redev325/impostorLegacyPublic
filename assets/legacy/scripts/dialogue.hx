@@ -120,6 +120,7 @@ public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canS
 		dialogueAfter = (dAfter ?? true);
 		if (!dialogueAfter) PlayState.seenCutscene = true;
 		inCutscene = true;
+		songStartCallback = () -> return Function_Stop;
 		vidPlaying = false;
 		blackYnot = new FlxSprite().makeScaledGraphic(FlxG.width + 3, FlxG.height, FlxColor.BLACK);
 		blackYnot.camera = camOther;
