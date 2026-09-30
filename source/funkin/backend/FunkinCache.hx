@@ -78,7 +78,9 @@ class FunkinCache
 		}
 		// flags everything to be cleared out next unused memory clear
 		localTrackedAssets.resize(0);
+		#if !html5
 		openfl.Assets.cache.clear("songs");
+		#end
 	}
 	
 	/**
