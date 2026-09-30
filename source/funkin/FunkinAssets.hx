@@ -184,11 +184,40 @@ class FunkinAssets
 				}
 			}
 
+			function loadExternalSound(url:String, cacheKeys:Array<String>, attempt:Int = 1, ?afterAudio:Void->Void):Void
+			{
+				final sound:Sound = new Sound();
+				sound.addEventListener(Event.COMPLETE, function(_) {
+					for (key in cacheKeys) cache.cacheSound(key, sound);
+					if (afterAudio != null) afterAudio();
+				});
+				sound.addEventListener(IOErrorEvent.IO_ERROR, function(error) {
+					if (attempt < 3)
+					{
+						Timer.delay(() -> loadExternalSound(url, cacheKeys, attempt + 1, afterAudio), 500 * attempt);
+					}
+					else
+					{
+						fail('audio request failed after 3 attempts: ' + url);
+					}
+				});
+				try
+				{
+					sound.load(new URLRequest(url));
+				}
+				catch (e)
+				{
+					if (attempt < 3)
+						Timer.delay(() -> loadExternalSound(url, cacheKeys, attempt + 1, afterAudio), 500 * attempt);
+					else
+						fail(e);
+				}
+			}
+
 			function loadSongAudio(instFile:String, ?afterAudio:Void->Void):Void
 			{
 				final relativePath:String = 'assets/songs/' + songFolder + '/' + instFile;
-				final qualifiedId:String = songLibrary + ':' + relativePath;
-				loadExternalSound(relativePath, [qualifiedId, relativePath], 1, afterAudio);
+				loadExternalSound(relativePath, [songLibrary + ':' + relativePath, relativePath], 1, afterAudio);
 			}
 
 			function loadSongDialogue(afterDialogue:Void->Void):Void
@@ -203,8 +232,7 @@ class FunkinAssets
 				final dialogueUrl:String = 'assets/songs/' + songFolder + '/dialogue.txt';
 				final loader:URLLoader = new URLLoader();
 				loader.addEventListener(Event.COMPLETE, function(_) {
-					final text:String = Std.string(loader.data);
-					html5SongDialogueText.set(dialogueKey, text);
+					html5SongDialogueText.set(dialogueKey, Std.string(loader.data));
 					afterDialogue();
 				});
 				loader.addEventListener(IOErrorEvent.IO_ERROR, function(_) {
@@ -230,7 +258,6 @@ class FunkinAssets
 					afterMusic();
 					return;
 				}
-
 				final relativePath:String = 'assets/music/dialogue/' + safeSongName + '.ogg';
 				loadExternalSound(relativePath, ['music:' + relativePath, relativePath], 1, afterMusic);
 			}
@@ -268,17 +295,12 @@ class FunkinAssets
 						html5SongEventText.set(eventCacheKey, text);
 					afterEvents();
 				});
-				loader.addEventListener(IOErrorEvent.IO_ERROR, function(_) {
-					afterEvents();
-				});
+				loader.addEventListener(IOErrorEvent.IO_ERROR, function(_) afterEvents());
 				try
 				{
 					loader.load(new URLRequest(eventUrl));
 				}
-				catch (_)
-				{
-					afterEvents();
-				}
+				catch (_) afterEvents();
 			}
 
 			function loadSongAssets():Void
@@ -294,15 +316,12 @@ class FunkinAssets
 							final finishAudio:Void->Void = function() {
 								loadDialogueMusic(function() onComplete());
 							};
-
 							if (!needsVoices)
 							{
 								finishAudio();
 								return;
 							}
-
-							final voiceId:String = songLibrary + ':' + voicePath;
-							loadExternalSound(voicePath, [voiceId, voicePath], 1, finishAudio);
+							loadExternalSound(voicePath, [songLibrary + ':' + voicePath, voicePath], 1, finishAudio);
 						});
 					});
 				});
