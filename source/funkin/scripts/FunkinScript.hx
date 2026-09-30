@@ -128,7 +128,13 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		name ??= file;
 		
 		modFolder ??= Paths.getModFolder(file, 'scripts');
-		
+
+		#if html5
+		final cachedText:Null<String> = FunkinAssets.getHtml5SongScript(file);
+		if (cachedText != null)
+			return new FunkinScript(cachedText, name, additionalVars, shareables, modFolder);
+		#end
+
 		return new FunkinScript(FunkinAssets.getContent(file), name, additionalVars, shareables, modFolder);
 	}
 	
