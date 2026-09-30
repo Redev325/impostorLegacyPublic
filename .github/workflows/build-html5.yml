@@ -429,6 +429,14 @@ jobs:
             local missing=0
             while IFS= read -r -d '' source_file; do
               local rel="${source_file#"$source_root"/}"
+
+              # songs.txt is source-tree bookkeeping for the song folder; it is
+              # not part of the browser asset package and Lime does not emit it
+              # under assets/songs in the HTML5 output.
+              if [ "$rel" = "songs.txt" ]; then
+                continue
+              fi
+
               local target="$output_root/$rel"
               if [ ! -f "$target" ]; then
                 echo "MISSING: $target"
