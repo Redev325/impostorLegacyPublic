@@ -287,12 +287,12 @@ function onFirstEventPush(event:EventNote) // I had to add this callback to all 
 			if (ClientPrefs.photosensitive)
 			{
 				flashSprite.camera = camHUD;
-				insert(0, flashSprite);
+				addToState(flashSprite);
 			}
 			else
 			{
 				flashSprite.camera = camOther;
-				add(flashSprite);
+				addToState(flashSprite);
 			}
 		case 'Optional Captions':
 			prepareCaptions();
