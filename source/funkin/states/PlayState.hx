@@ -920,7 +920,17 @@ class PlayState extends MusicBeatState
 		Paths.sound('missnote1');
 		Paths.sound('missnote2');
 		Paths.sound('missnote3');
+		#if html5
+		// breakfast is only warmed for pause/game-over use. Do not resolve it
+		// synchronously from the non-preloaded music library during PlayState.create.
+		FunkinAssets.loadHtml5SoundObject(
+			'music:assets/music/breakfast.ogg',
+			['assets/music/breakfast.ogg'],
+			function(_) {}
+		);
+		#else
 		Paths.music(Paths.sanitize('breakfast'));
+		#end
 		
 		// Updating Discord Rich Presence.
 		resetDiscordRPC();
