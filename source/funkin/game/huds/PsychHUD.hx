@@ -102,6 +102,12 @@ class PsychHUD extends BaseHUD
 		
 		onUpdateScore(0, 0, 0);
 		
+		// Initialize the health display before the first update tick so the
+		// opponent icon cannot appear to be winning during state setup.
+		onHealthChange(parent.health);
+		updateIconsAnimation();
+		updateIconsPosition();
+		
 		parent.scripts.set('healthBar', healthBar);
 		parent.scripts.set('iconP1', iconP1);
 		parent.scripts.set('iconP2', iconP2);
