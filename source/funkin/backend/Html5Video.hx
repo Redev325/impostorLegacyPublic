@@ -42,13 +42,7 @@ class Html5Video
 			video.onloadeddata = function(_) {
 				if (currentVideo != video || finished) return;
 				onReady();
-				try
-				{
-					final promise:Dynamic = video.play();
-					if (promise != null && promise.catch != null)
-						promise.catch(function(_) {});
-				}
-				catch (_) {}
+				try video.play() catch (e:Dynamic) {}
 			};
 
 			video.onended = function(_) {
@@ -112,10 +106,22 @@ class Html5Video
 	{
 		if (finished) return;
 		finished = true;
+		final video = currentVideo;
 		currentVideo = null;
 		final cb = callback;
 		endCallback = null;
 		errorCallback = null;
+
+		if (video != null)
+		{
+			try video.pause() catch (e:Dynamic) {}
+			try
+			{
+				if (video.parentNode != null) video.parentNode.removeChild(video);
+			}
+			catch (e:Dynamic) {}
+		}
+
 		if (cb != null) cb();
 	}
 	#end
