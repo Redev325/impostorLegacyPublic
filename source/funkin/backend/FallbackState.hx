@@ -28,10 +28,13 @@ class FallbackState extends MusicBeatState
 		add(error);
 		FlxTween.tween(error, {y: error.y + 45}, 2, {ease: FlxEase.sineInOut, type: PINGPONG});
 		
-		var text = new FlxText(25, 0, FlxG.width - 50, warningMessage, 32);
-		text.setFormat(Paths.DEFAULT_FONT, 32, FlxColor.WHITE, CENTER, OUTLINE, FlxColor.BLACK);
+		// Keep the full report on-screen even when the JavaScript callstack is
+		// very large. The previous centered 32px block could push the most
+		// important "Exception caught:" line above the viewport.
+		var text = new FlxText(25, 78, FlxG.width - 50, warningMessage, 18);
+		text.setFormat(Paths.DEFAULT_FONT, 18, FlxColor.WHITE, LEFT, OUTLINE, FlxColor.BLACK);
+		text.y = 78;
 		add(text);
-		text.screenCenter(Y);
 		
 		var text = new FlxText(0, FlxG.height - 25 - 32, FlxG.width, 'Press Confirm to continue.', 32);
 		text.setFormat(Paths.DEFAULT_FONT, 32, FlxColor.WHITE, CENTER, OUTLINE, FlxColor.BLACK);
