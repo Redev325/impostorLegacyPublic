@@ -50,7 +50,7 @@ var hasRGBpet:Bool = false;
 
 function applyPetRGB(pet:Pet)
 {
-	if (!pet.getFlag('rgb')) return; // WHAT DO YOU MEAN WE DONT EVEN HAVE AN RGB PET ON
+	if (pet == null || !pet.getFlag('rgb')) return; // WHAT DO YOU MEAN WE DONT EVEN HAVE AN RGB PET ON
 	if (!pet.isAnimate)
 	{
 		trace('RGB pet ${pet.curPet} must be a texture atlas');
@@ -77,8 +77,11 @@ function applyPetRGB(pet:Pet)
 
 function onCreatePost()
 {
-	applyPetRGB(pet);
-	pet.onChange.add(applyPetRGB);
+	if (pet != null)
+	{
+		applyPetRGB(pet);
+		pet.onChange.add(applyPetRGB);
+	}
 	
 	reloadPetRGB(boyfriend);
 }
@@ -102,7 +105,7 @@ function convertColor(col:FlxColor = 0xFFFFFF):Array<Float> {
 	```
 **/
 public function reloadPetRGB(?based:Character = boyfriend) {
-	if (petRGB == null) return;
+	if (petRGB == null || based == null) return;
 	
 	if (overwriteColors.exists(based.curCharacter))
 	{
