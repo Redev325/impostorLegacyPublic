@@ -38,8 +38,8 @@ public var repeatedCutscenes:Bool = false;
 public var videoCheckStory:Bool = true;
 
 public var skippableVideo:Bool = true;
-public var video:Dynamic;
-public var skipText:FlxText; // skip video text
+public var dialogueVideo:Dynamic;
+public var skipText:FlxText; // skip dialogueVideo text
 var bgFade:FlxSprite;
 var box:RGBSprite;
 var bubble:FlxSprite;
@@ -86,7 +86,7 @@ function onVidEnd()
 	if (IS_HTML5)
 	{
 		Html5Video.stop();
-		video = null;
+		dialogueVideo = null;
 		camGame.visible = true;
 		skipText.visible = false;
 		if (dialogueAfter && (PlayState.isStoryMode || !videoCheckStory))
@@ -96,7 +96,7 @@ function onVidEnd()
 		if (blackYnot != null) FlxTween.tween(blackYnot, {alpha: 0}, 0.5, {onComplete: function() blackYnot.kill()});
 		return;
 	}
-	video.destroy();
+	dialogueVideo.destroy();
 	camGame.visible = true;
 	skipText.visible = false;
 	if (dialogueAfter && (PlayState.isStoryMode || !videoCheckStory))
@@ -127,7 +127,7 @@ public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canS
 		add(blackYnot);
 
 		final videoPath:String = 'assets/videos/' + Paths.sanitize(vid) + '.mp4';
-		video = videoPath;
+		dialogueVideo = videoPath;
 		final ready:Void->Void = function() {
 			vidPlaying = true;
 			camGame.visible = false;
@@ -151,22 +151,22 @@ public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canS
 	blackYnot = new FlxSprite().makeScaledGraphic(FlxG.width + 3, FlxG.height, FlxColor.BLACK);
 	blackYnot.camera = camOther;
 	add(blackYnot);
-	video = new FunkinVideoSprite();
-	video.onFormat(() -> {
+	dialogueVideo = new FunkinVideoSprite();
+	dialogueVideo.onFormat(() -> {
 		vidPlaying = true;
-		video.camera = camOther;
-		video.setGraphicSize(0, FlxG.height);
-		video.antialiasing = ClientPrefs.globalAntialiasing;
-		video.updateHitbox();
-		video.screenCenter();
+		dialogueVideo.camera = camOther;
+		dialogueVideo.setGraphicSize(0, FlxG.height);
+		dialogueVideo.antialiasing = ClientPrefs.globalAntialiasing;
+		dialogueVideo.updateHitbox();
+		dialogueVideo.screenCenter();
 		camGame.visible = false;
 		textFade();
 	});
-	add(video);
-	if (onEnd != null) video.onEnd(onEnd);
-	if (onFormat != null) video.onFormat(onFormat);
-	video.onEnd(onVidEnd);
-	if (video.load(Paths.video(Paths.sanitize(vid)))) video.delayAndStart();
+	add(dialogueVideo);
+	if (onEnd != null) dialogueVideo.onEnd(onEnd);
+	if (onFormat != null) dialogueVideo.onFormat(onFormat);
+	dialogueVideo.onEnd(onVidEnd);
+	if (dialogueVideo.load(Paths.dialogueVideo(Paths.sanitize(vid)))) dialogueVideo.delayAndStart();
 	else
 	{
 		if (onEnd != null) onEnd();
@@ -629,13 +629,13 @@ function onUpdate(elapsed)
 
 		if (ClientPrefs.inDevMode)
 		{
-			if (controls.UI_RIGHT_P) video.time = Math.min(video.time + 5, video.length);
-			if (controls.UI_LEFT_P) video.time = Math.min(video.time - 5, 0);
+			if (controls.UI_RIGHT_P) dialogueVideo.time = Math.min(dialogueVideo.time + 5, dialogueVideo.length);
+			if (controls.UI_LEFT_P) dialogueVideo.time = Math.min(dialogueVideo.time - 5, 0);
 		}
 		if (controls.BACK && skippableVideo)
 		{
-			video.kill();
-			video.bitmap.onEndReached.dispatch();
+			dialogueVideo.kill();
+			dialogueVideo.bitmap.onEndReached.dispatch();
 		}
 	}
 }
