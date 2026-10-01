@@ -33,7 +33,10 @@ class FunkinAssets
 	public static final cache:FunkinCache = new FunkinCache();
 
 	static final HTML5_PRELOADED_LIBRARIES:Array<String> = ['title', 'mainmenu', 'menus'];
-	static final HTML5_LIBRARIES:Array<String> = ['title', 'mainmenu', 'menus', 'embedded', 'gameplay', 'music', 'fonts'];
+	// Only these libraries are valid sources for synchronous HTML5 asset access.
+	// Do not resolve through deferred music/fonts/embedded libraries: Lime will
+	// correctly report those assets as existing, but only asynchronously.
+	static final HTML5_SYNCHRONOUS_LIBRARIES:Array<String> = ['title', 'mainmenu', 'menus', 'gameplay'];
 
 	#if html5
 	static final html5LoadedLibraries:Map<String, Bool> = [];
@@ -315,7 +318,6 @@ class FunkinAssets
 			// PlayableSong class already streams Inst.ogg/Voices.ogg after the
 			// state is created, so waiting for audio here can make Story Mode
 			// appear stuck on slower connections.
-			html5CurrentSongLibrary = null;
 			final safeSongName:String = Paths.sanitize(songName);
 			final effectiveDifficulty:Int = PlayState.storyMeta.difficulty;
 			final chartDifficulty:String = Difficulty.getDifficultyFilePath(effectiveDifficulty);
@@ -561,33 +563,12 @@ class FunkinAssets
 				}
 			}
 
-			// The stage, characters, song scripts, charts and other gameplay assets
-			// live in a deferred per-song Lime library. It MUST be loaded before
-			// PlayState is created; otherwise Assets.exists() can report a file
-			// while Assets.getBitmapData()/getText() still throws the
-			// "exists, but only asynchronously" error.
-			function loadSongLibrary(afterLibrary:Void->Void):Void
-			{
-				// Register/load only the song library manifest first. Its individual
-				// assets remain on-demand; gameplay audio is loaded separately with
-				// Assets.loadSound(), which is the asynchronous API for HTML5.
-				Assets.loadLibrary(songLibrary).onComplete(function(loadedLibrary) {
-					if (loadedLibrary == null)
-					{
-						fail('song library failed to load: ' + songLibrary);
-						return;
-					}
-
-					// The selected song library is now fully preloaded on HTML5.
-					// Keep it as the authoritative synchronous source for any
-					// song-specific asset requested while PlayState is active.
-					html5CurrentSongLibrary = songLibrary;
-					html5LoadedLibraries.set(songLibrary, true);
-					afterLibrary();
-				}).onError(function(error) {
-					fail('song library failed to load: ' + songLibrary + '\\nException: ' + error);
-				});
-			}
+			// HTML5 gameplay dependencies are already in the preloaded gameplay
+			// library. Song-specific chart/script/dialogue/info data and audio are
+			// fetched through the explicit HTML5 network/cache paths above.
+			// Avoid Assets.loadLibrary(songLibrary) here: runtime library registration
+			// can collide with Lime/OpenFL's existing library objects and leave the
+			// library's assets marked as async-only on HTML5.
 
 			function beginSongLoad():Void
 			{
@@ -600,7 +581,7 @@ class FunkinAssets
 				loadChartFromNetwork();
 			}
 
-			loadSongLibrary(beginSongLoad);
+			beginSongLoad();
 		#else
 			onComplete();
 		#end
@@ -629,8 +610,6 @@ class FunkinAssets
 		final normalized:String = colon > 0 ? file.substr(colon + 1) : file;
 		final cached:Null<String> = html5SongScriptText.get(file) ?? html5SongScriptText.get(normalized);
 		if (cached != null) return cached;
-		if (html5CurrentSongLibrary != null)
-			return html5SongScriptText.get(html5CurrentSongLibrary + ':' + normalized);
 		return null;
 	}
 
@@ -682,7 +661,7 @@ class FunkinAssets
 		// load path and Assets.getSound() will throw the async-only error.
 		if (type != SOUND)
 		{
-			for (library in HTML5_LIBRARIES)
+			for (library in HTML5_SYNCHRONOUS_LIBRARIES)
 			{
 				if (!Assets.hasLibrary(library)) continue;
 				final id = library + ':' + path;
