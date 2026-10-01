@@ -577,6 +577,12 @@ class FunkinAssets
 						fail('song library failed to load: ' + songLibrary);
 						return;
 					}
+
+					// The selected song library is now fully preloaded on HTML5.
+					// Keep it as the authoritative synchronous source for any
+					// song-specific asset requested while PlayState is active.
+					html5CurrentSongLibrary = songLibrary;
+					html5LoadedLibraries.set(songLibrary, true);
 					afterLibrary();
 				}).onError(function(error) {
 					fail('song library failed to load: ' + songLibrary + '\\nException: ' + error);
