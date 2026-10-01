@@ -1,4 +1,4 @@
-var video:FunkinVideoSprite;
+var meltdownVideo:FunkinVideoSprite;
 var outroCutscene:Bool = false;
 
 function onLoad()
@@ -8,13 +8,13 @@ function onLoad()
 
 function onCreatePost()
 {
-	video = new FunkinVideoSprite(0, 0, false);
-	insert(0, video);
-	video.onFormat(() -> {
-		video.camera = camOther;
-		video.setGraphicSize(0, FlxG.height);
-		video.updateHitbox();
-		video.screenCenter();
+	meltdownVideo = new FunkinVideoSprite(0, 0, false);
+	insert(0, meltdownVideo);
+	meltdownVideo.onFormat(() -> {
+		meltdownVideo.camera = camOther;
+		meltdownVideo.setGraphicSize(0, FlxG.height);
+		meltdownVideo.updateHitbox();
+		meltdownVideo.screenCenter();
 	});
 	if (isStoryMode || !videoCheckStory || repeatedCutscenes) songEndCallback = meltEnd;
 }
@@ -35,7 +35,8 @@ function onUpdate()
 		if (controls.BACK)
 		{
 			outroCutscene = false;
-			video.destroy();
+			meltdownVideo.destroy();
+			meltdownVideo = null;
 			endSong();
 		}
 	}
@@ -63,5 +64,5 @@ function meltEnd()
 function meltdownVid()
 {
 	if (ClientPrefs.lowQuality) return;
-	if (video.load(Paths.video(Paths.sanitize('week1/meltdownEnd')))) video.delayAndStart();
+	if (meltdownVideo != null && meltdownVideo.load(Paths.video(Paths.sanitize('week1/meltdownEnd')))) meltdownVideo.delayAndStart();
 }
