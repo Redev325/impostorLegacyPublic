@@ -236,6 +236,11 @@
 		<assets path="assets/legacy/songs/victory" rename="assets/songs/victory" library="song_victory" preload="true" embed="false" unless="html5" />
 		<assets path="assets/legacy/songs/voting-time" rename="assets/songs/voting-time" library="song_voting-time" preload="true" embed="false" unless="html5" />
 		<assets path="assets/legacy/songs/who" rename="assets/songs/who" library="song_who" preload="true" embed="false" unless="html5" />
+		<!-- These two fonts are used by global gameplay scripts during PlayState setup.
+			They must be synchronously available on HTML5 because tasksong/dialogue
+			create FlxText during onCreatePost. Keep the rest of the font library deferred. -->
+		<assets path="assets/legacy/fonts" rename="assets/fonts" library="gameplay"
+			include="liber.ttf|liberbold.ttf" preload="true" embed="false" if="html5" />
 		<assets path="assets/legacy/fonts" rename="assets/fonts" library="fonts"
 			exclude="vcr.ttf|vcr-srb.ttf" preload="false" embed="false" />
 
