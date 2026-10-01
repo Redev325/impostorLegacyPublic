@@ -106,7 +106,9 @@
 		<assets path="assets/legacy/data" rename="assets/data" library="gameplay" exclude="introText.txt" preload="true" embed="false" />
 		<assets path="assets/legacy/lang" rename="assets/lang" library="gameplay" exclude="english.json" preload="true" embed="false" />
 		<assets path="assets/legacy/scripts" rename="assets/scripts" library="gameplay" preload="true" embed="false" />
-		<assets path="assets/legacy/shaders" rename="assets/shaders" library="gameplay" preload="false" embed="false" />
+		<!-- amongRgb.frag is read synchronously by the RGB-pet legacy script during PlayState.onCreatePost. -->
+		<assets path="assets/legacy/shaders" rename="assets/shaders" library="gameplay" include="amongRgb.frag" preload="true" embed="false" if="html5" />
+		<assets path="assets/legacy/shaders" rename="assets/shaders" library="gameplay" exclude="amongRgb.frag" preload="false" embed="false" />
 		<assets path="assets/embeds" rename="assets" library="embedded" preload="false" embed="false" />
 		<assets path="assets/legacy/videos" rename="assets/videos" library="embedded" if="html5" preload="false" embed="false" />
 		<assets path="content/securitydlc" rename="content/securitydlc" library="embedded" embed="false" if="DLC" />
