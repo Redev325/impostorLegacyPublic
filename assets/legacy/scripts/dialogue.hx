@@ -39,7 +39,7 @@ public var videoCheckStory:Bool = true;
 
 public var skippableVideo:Bool = true;
 public var dialogueVideo:Dynamic;
-public var skipText:FlxText; // skip dialogueVideo text
+public var skipText:FlxText; // skip dialogue video text
 var bgFade:FlxSprite;
 var box:RGBSprite;
 var bubble:FlxSprite;
@@ -166,7 +166,7 @@ public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canS
 	if (onEnd != null) dialogueVideo.onEnd(onEnd);
 	if (onFormat != null) dialogueVideo.onFormat(onFormat);
 	dialogueVideo.onEnd(onVidEnd);
-	if (dialogueVideo.load(Paths.dialogueVideo(Paths.sanitize(vid)))) dialogueVideo.delayAndStart();
+	if (dialogueVideo.load(Paths.video(Paths.sanitize(vid)))) dialogueVideo.delayAndStart();
 	else
 	{
 		if (onEnd != null) onEnd();
