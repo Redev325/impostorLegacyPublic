@@ -97,8 +97,15 @@ class ScriptGroup implements IFlxDestroyable
 			}
 			catch (e:Dynamic)
 			{
-				// A leaked HScript SReturn is script control flow, not a game crash.
-				if (!FunkinScript.isEscapedScriptReturn(e)) throw e;
+				// Keep real script failures visible, but attach the exact script/event
+				// so the HTML5 fallback identifies the offending callback instead of
+				// leaving only generated-JavaScript line numbers.
+				if (!FunkinScript.isEscapedScriptReturn(e))
+				{
+					final context:String = 'Script runtime exception in "' + i.name + '" during "' + event + '": ' + Std.string(e);
+					Logger.log(context, ERROR, false);
+					throw context;
+				}
 			}
 			
 			if (ret != null)
