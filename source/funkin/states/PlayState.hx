@@ -841,12 +841,16 @@ class PlayState extends MusicBeatState
 		botplayTxt.cameras = [camHUD];
 		
 		#if html5
-		// The selected song library is already loaded and its scripts were
-		// downloaded into FunkinAssets' HTML5 script cache. Load those cached
-		// scripts directly so song cutscenes/dialogue/events actually run.
+		// Song scripts are downloaded into FunkinAssets' HTML5 script cache.
+		// Always preserve the song directory when initializing them; passing only
+		// the filename (for example "ashes.hx") bypasses that cache and makes
+		// FunkinAssets try to resolve a root-level file that does not exist.
+		final html5SongName:String = Paths.sanitize(SONG.song);
+		final html5SongFolder:String = html5SongName == 'dlow' ? "d'low" : html5SongName;
 		for (scriptFile in FunkinAssets.getHtml5SongScripts(SONG.song))
 		{
-			initFunkinScript(scriptFile);
+			final scriptPath:String = 'assets/songs/' + html5SongFolder + '/' + scriptFile;
+			initFunkinScript(scriptPath, scriptPath);
 		}
 		#else
 		addSongScripts('songs/${Paths.sanitize(SONG.song)}/');
