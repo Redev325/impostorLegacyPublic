@@ -2195,7 +2195,12 @@ class PlayState extends MusicBeatState
 		scripts.call('onUpdate', [elapsed]);
 		
 		super.update(elapsed);
-		input.update();
+		
+		// A legacy callback can switch states during super.update(), destroying this
+		// PlayState and its input system before control returns here. Never call into
+		// the destroyed input system or keep executing the old state after the switch.
+		if (FlxG.state != this) return;
+		if (input != null) input.update();
 		
 		if (controls.NOTE_TAUNT_P && !inCutscene && !cpuControlled)
 		{

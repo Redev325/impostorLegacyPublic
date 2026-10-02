@@ -245,6 +245,29 @@ class MusicBeatState extends FlxUIState
 	}
 	
 	inline function updateSection(rollback:Bool = false):Void
+	{
+		final lastSection:Int = curSection;
+		
+		if (rollback)
+		{
+			curSection = Math.floor(curDecSection);
+			updateSectionStep();
+			
+			if (curSection != lastSection && curSection >= 0) sectionHit();
+		}
+		else
+		{
+			while (curStep >= nextSectionStep)
+			{
+				curSection ++;
+				curSectionStep = nextSectionStep;
+				nextSectionStep += (getBeatsOnSection() * 4);
+				
+				if (curSection >= 0) sectionHit();
+			}
+		}
+	}
+	
 	#if html5
 	static function installHtml5GroupUpdateTracer():Void
 	{
@@ -283,29 +306,6 @@ class MusicBeatState extends FlxUIState
 	}
 	#end
 
-	{
-		final lastSection:Int = curSection;
-		
-		if (rollback)
-		{
-			curSection = Math.floor(curDecSection);
-			updateSectionStep();
-			
-			if (curSection != lastSection && curSection >= 0) sectionHit();
-		}
-		else
-		{
-			while (curStep >= nextSectionStep)
-			{
-				curSection ++;
-				curSectionStep = nextSectionStep;
-				nextSectionStep += (getBeatsOnSection() * 4);
-				
-				if (curSection >= 0) sectionHit();
-			}
-		}
-	}
-	
 	inline function updateSectionStep():Void
 	{
 		curSectionStep = Math.round(Conductor.getStep(Conductor.sectionToSeconds(curSection)));
