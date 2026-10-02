@@ -17,6 +17,10 @@ import funkin.scripts.*;
 class MusicBeatState extends FlxUIState
 {
 	static final _defaultTransState:Class<BaseTransitionState> = SwipeTransition;
+
+	#if html5
+	static var _html5GroupUpdateTracerInstalled:Bool = false;
+	#end
 	
 	// change these to change the transition
 	public static var transitionInState:Null<Class<BaseTransitionState>> = null;
@@ -199,6 +203,10 @@ class MusicBeatState extends FlxUIState
 		group.sort(SortUtil.sortByZ, flixel.util.FlxSort.ASCENDING);
 	}
 	
+	#if html5
+		installHtml5GroupUpdateTracer();
+	#end
+
 	override function update(elapsed:Float)
 	{
 		addPlayTimeDelta();
@@ -237,6 +245,44 @@ class MusicBeatState extends FlxUIState
 	}
 	
 	inline function updateSection(rollback:Bool = false):Void
+	#if html5
+	static function installHtml5GroupUpdateTracer():Void
+	{
+		if (_html5GroupUpdateTracerInstalled) return;
+		_html5GroupUpdateTracerInstalled = true;
+
+		final probe = new FlxTypedGroup<flixel.FlxBasic>();
+		final prototype:Dynamic = untyped __js__('Object.getPrototypeOf({0})', probe);
+		FlxDestroyUtil.destroy(probe);
+
+		if (prototype == null || prototype.update == null) return;
+
+		prototype.update = function(updateElapsed:Float):Void
+		{
+			final group:Dynamic = this;
+			final groupMembers:Array<Dynamic> = cast group.members;
+			final groupClass:Class<Dynamic> = Type.getClass(group);
+			final groupName:String = groupClass == null ? 'unknown group' : (Type.getClassName(groupClass) ?? 'unknown group');
+
+			for (child in groupMembers)
+			{
+				if (child == null || child.exists != true || child.active != true) continue;
+
+				try
+				{
+					child.update(updateElapsed);
+				}
+				catch (e:Dynamic)
+				{
+					final childClass:Class<Dynamic> = Type.getClass(child);
+					final childName:String = childClass == null ? 'unknown child' : (Type.getClassName(childClass) ?? 'unknown child');
+					throw 'HTML5 child update failed in ' + childName + ' inside ' + groupName + ': ' + Std.string(e);
+				}
+			}
+		};
+	}
+	#end
+
 	{
 		final lastSection:Int = curSection;
 		
