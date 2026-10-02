@@ -137,6 +137,27 @@ jobs:
             echo "Verified repository favicon was copied into the build."
           fi
 
+      - name: Save small HTML5 JS diagnostic artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          JS="$(find extracted -type f -name ImpostorLegacy.js -print -quit)"
+          if [ -z "$JS" ]; then
+            echo "ERROR: ImpostorLegacy.js not found."
+            exit 1
+          fi
+          mkdir -p js-diagnostic
+          cp "$JS" js-diagnostic/ImpostorLegacy.js
+          MAP="$(find extracted -type f \( -name 'ImpostorLegacy.js.map' -o -name '*.js.map' \) -print -quit || true)"
+          if [ -n "$MAP" ]; then cp "$MAP" js-diagnostic/$(basename "$MAP"); fi
+          ls -lh js-diagnostic
+      - name: Upload small HTML5 JS diagnostic
+        uses: actions/upload-artifact@v4
+        with:
+          name: html5-js-diagnostic
+          path: js-diagnostic
+          retention-days: 3
+
       - name: Upload optimized HTML5 artifact
         uses: actions/upload-artifact@v4
         with:
