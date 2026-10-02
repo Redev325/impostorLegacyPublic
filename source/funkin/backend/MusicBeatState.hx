@@ -203,12 +203,12 @@ class MusicBeatState extends FlxUIState
 		group.sort(SortUtil.sortByZ, flixel.util.FlxSort.ASCENDING);
 	}
 	
-	#if html5
-		installHtml5GroupUpdateTracer();
-	#end
-
 	override function update(elapsed:Float)
 	{
+		#if html5
+		installHtml5GroupUpdateTracer();
+		#end
+
 		addPlayTimeDelta();
 		
 		final oldStep:Int = curStep;
