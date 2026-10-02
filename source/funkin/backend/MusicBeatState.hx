@@ -231,23 +231,9 @@ class MusicBeatState extends FlxUIState
 		}
 		
 		final scriptArgs = [elapsed];
-		try
-		{
-			scriptGroup.call('onUpdate', scriptArgs);
-			PluginsManager.callOnScripts('onUpdate', scriptArgs);
-		}
-		catch (e:Dynamic)
-		{
-			throw 'MusicBeatState script onUpdate failed: ' + Std.string(e);
-		}
-		try
-		{
-			super.update(elapsed);
-		}
-		catch (e:Dynamic)
-		{
-			throw 'MusicBeatState FlxUIState.update failed: ' + Std.string(e);
-		}
+		scriptGroup.call('onUpdate', scriptArgs);
+		PluginsManager.callOnScripts('onUpdate', scriptArgs);
+		super.update(elapsed);
 	}
 	
 	inline function updateSection(rollback:Bool = false):Void
