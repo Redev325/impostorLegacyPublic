@@ -87,14 +87,18 @@ function onSongStart()
 
 function onBeatHit()
 {
-	if (curBeat % 1 == 0) speaker.animation.play('bop');
-	if (curBeat % 2 == 0) crowd.animation.play('bop');
+	if (speaker != null && speaker.animation != null && curBeat % 1 == 0)
+		speaker.animation.play('bop');
+	if (crowd != null && crowd.animation != null && curBeat % 2 == 0)
+		crowd.animation.play('bop');
 }
 
 function onStartCountdown()
 {
 	var fakeStartTimer = new FlxTimer().start((Conductor.crotchet / 1000) / playbackRate, function(tmr:FlxTimer) {
-		if (tmr.loopsLeft % 2 == 0) crowd.animation.play('bop');
-		if (tmr.loopsLeft % 1 == 0) speaker.animation.play('bop');
+		if (crowd != null && crowd.animation != null && tmr.loopsLeft % 2 == 0)
+			crowd.animation.play('bop');
+		if (speaker != null && speaker.animation != null && tmr.loopsLeft % 1 == 0)
+			speaker.animation.play('bop');
 	}, 5);
 }
