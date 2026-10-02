@@ -344,6 +344,21 @@ function v4SpeakerShit()
 /** 
  * Run this function to read the songs/SONG_NAME/dialogue.txt file
 **/
+/**
+ * Compatibility helper used by older V5 song scripts.
+ * Returns the HTML5-cached dialogue for the active song when available.
+ */
+public function getHudV5SongDialogue(?song:String):Null<String>
+{
+	final safeSong:String = Paths.sanitize(song ?? songName);
+	#if html5
+	return FunkinAssets.getHtml5SongDialogue(safeSong);
+	#else
+	final txtPath:String = Paths.getPath('songs/' + safeSong + '/dialogue.txt', null, PathsTestMode.NORMAL);
+	return FunkinAssets.exists(txtPath, TEXT) ? FunkinAssets.getContent(txtPath) : null;
+	#end
+}
+
 public function readDialogue()
 {
 	if ((videoCheckStory && !isStoryMode) || PlayState.seenCutscene)
