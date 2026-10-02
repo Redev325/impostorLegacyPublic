@@ -396,6 +396,14 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		// requiring an import that Iris cannot resolve on the browser target.
 		set("FunkinAssets", funkin.FunkinAssets);
 		#end
+		#if html5
+		// V5 legacy song scripts call this as a global helper. Expose it here
+		// rather than relying on another HScript file's local scope.
+		set("getHudV5SongDialogue", function(?song:String):Null<String> {
+			final safeSong:String = Paths.sanitize(song ?? cast FlxG.state.get("songName"));
+			return funkin.FunkinAssets.getHtml5SongDialogue(safeSong);
+		});
+		#end
 		set("MusicBeatState", funkin.backend.MusicBeatState);
 		set("Conductor", funkin.backend.Conductor);
 		set("ClientPrefs", funkin.data.ClientPrefs);
