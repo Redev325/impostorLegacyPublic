@@ -3,7 +3,7 @@ var wtf:FlxText;
 function onCreatePost()
 {
 	wtf = new flixel.text.FlxText(0, 0, 600, '');
-	wtf.setFormat(Paths.font('vcr.ttf'), 96, boyfriend.healthColour, 'center');
+	wtf.setFormat(Paths.font('vcr.ttf'), 96, boyfriend.healthColour, FlxTextAlign.CENTER);
 	wtf.camera = camHUD;
 	wtf.x = (FlxG.width - wtf.width) / 2;
 	wtf.y = (FlxG.height - wtf.height) / 2;
