@@ -338,7 +338,13 @@ class Character extends Bopper implements IFlags
 		if (ghostsEnabled)
 		{
 			for (ghost in doubleGhosts)
-				ghost.update(elapsed);
+			{
+				// A legacy script can remove/rebuild afterimage entries while the
+				// character is still in the Flixel update pass. Never call update()
+				// through a null entry.
+				if (ghost != null && ghost.exists && ghost.active)
+					ghost.update(elapsed);
+			}
 		}
 		
 		super.update(elapsed);
