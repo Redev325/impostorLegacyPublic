@@ -5,8 +5,9 @@ function onCreatePost()
 	wtf = new flixel.text.FlxText(0, 0, 600, '');
 	wtf.setFormat(Paths.font('vcr.ttf'), 96, boyfriend.healthColour, 'center');
 	wtf.camera = camHUD;
-	wtf.screenCenter();
-	insert(0, wtf);
+	wtf.x = (FlxG.width - wtf.width) / 2;
+	wtf.y = (FlxG.height - wtf.height) / 2;
+	addToState(wtf);
 	
 	camSpecialThing([700, 700], [980, 700]);
 	snapCamToPos(800, 670);
@@ -30,14 +31,18 @@ function onEvent(event, v1, v2)
 				wtf.text = Lang.str('o22');
 				
 			case 'die':
-				wtf.destroy();
+				if (wtf != null) wtf.kill();
 				camHUD.alpha = .001;
 				if (ClientPrefs.flashing) camOther.flash(0xff950000, Conductor.crotchet / 1000);
 				
 				prepareScary();
 		}
 		
-		wtf.screenCenter();
+		if (wtf != null)
+		{
+			wtf.x = (FlxG.width - wtf.width) / 2;
+			wtf.y = (FlxG.height - wtf.height) / 2;
+		}
 	}
 	else if (event == 'Change Character' && v2 == 'meangus')
 	{
