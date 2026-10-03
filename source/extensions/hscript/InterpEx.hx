@@ -129,7 +129,20 @@ class InterpEx extends crowplexus.hscript.Interp
 				
 		if (imports.exists(id)) return imports.get(id);
 		
-		if (parentFields.contains(id) || parentFields.contains('get_$id')) return Reflect.getProperty(parent, id);
+		if (parentFields.contains(id) || parentFields.contains('get_$id'))
+		{
+			final parentValue:Dynamic = Reflect.getProperty(parent, id);
+			if (parentValue != null && Reflect.isFunction(parentValue))
+			{
+				// Bare HScript calls use call(null, function, args). Returning the
+				// raw PlayState method here loses its receiver on JavaScript. Wrap it
+				// as a concrete closure so the original PlayState remains the caller.
+				return Reflect.makeVarArgs(function(args:Array<Dynamic>):Dynamic {
+					return Reflect.callMethod(parent, parentValue, args);
+				});
+			}
+			return parentValue;
+		}
 		
 		if (sharedFields?.exists(id)) return sharedFields.get(id);
 		
