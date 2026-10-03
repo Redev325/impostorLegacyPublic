@@ -2897,7 +2897,7 @@ class PlayState extends MusicBeatState
 	 * 'Snaps the camera to a position.'
 	 * @param lockPosition 'if true, locks the camera position after snapping.'
 	 */
-	function snapCamToPos(x:Float = 0, y:Float = 0, lockPosition:Bool = false):Void
+	public function snapCamToPos(x:Float = 0, y:Float = 0, lockPosition:Bool = false):Void
 	{
 		camFollow.setPosition(x, y);
 		FlxG.camera.snapToTarget();
