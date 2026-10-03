@@ -410,9 +410,18 @@ public function readDialogue()
 		#else
 		dialogueMusic = Paths.music('dialogue/' + safeSong);
 		#end
+		#if html5
+		if (dialogueMusic != null)
+		{
+			// Use the audio frontend's volume argument instead of HScript property
+			// reflection on FlxSound.volume, which is unreliable on JavaScript.
+			funkin.audio.FunkinSound.playMusic(dialogueMusic, 0.8);
+		}
+		#else
 		if (dialogueMusic != null) FlxG.sound.playMusic(dialogueMusic);
 		FlxG.sound.music.volume = 0;
 		FlxTween.tween(FlxG.sound.music, {volume: 0.8}, 1);
+		#end
 	}
 	
 	bgFade = new FlxSprite(-200, -200).makeScaledGraphic(Std.int(FlxG.width * 1.3), Std.int(FlxG.height * 1.3), 0xFFFFFFFF);
