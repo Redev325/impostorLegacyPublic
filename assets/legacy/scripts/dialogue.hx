@@ -412,7 +412,7 @@ public function readDialogue()
 		#end
 		if (dialogueMusic != null) FlxG.sound.playMusic(dialogueMusic);
 		FlxG.sound.music.volume = 0;
-		FlxG.sound.music.fadeIn(1, 0, 0.8);
+		FlxTween.tween(FlxG.sound.music, {volume: 0.8}, 1);
 	}
 	
 	bgFade = new FlxSprite(-200, -200).makeScaledGraphic(Std.int(FlxG.width * 1.3), Std.int(FlxG.height * 1.3), 0xFFFFFFFF);
