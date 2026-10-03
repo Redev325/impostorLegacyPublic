@@ -207,14 +207,35 @@ class FunkinAssets
 				}
 			}
 			
+			var finished:Bool = false;
 			function complete(sound:Null<Sound>):Void
 			{
+				if (finished) return;
+				finished = true;
 				if (sound != null)
 				{
 					for (key in cacheKeys)
 						html5LoadedSounds.set(key, sound);
 				}
 				onComplete(sound);
+			}
+			
+			function loadViaAssetLibrary():Void
+			{
+				try
+				{
+					Assets.loadSound(url, true)
+						.onComplete(function(sound:Sound) complete(sound))
+						.onError(function(_) {
+							Logger.log('HTML5 asset-library audio request failed: ' + url, WARN);
+							complete(null);
+						});
+				}
+				catch (e:Dynamic)
+				{
+					Logger.log('HTML5 asset-library audio request could not start: ' + url + '\\nException: ' + e, WARN);
+					complete(null);
+				}
 			}
 			
 			function loadDirect():Void
@@ -225,31 +246,22 @@ class FunkinAssets
 					Sound.loadFromFile(directUrl)
 						.onComplete(function(sound:Sound) complete(sound))
 						.onError(function(_) {
-							Logger.log('HTML5 audio request failed: ' + directUrl, ERROR);
-							complete(null);
+							Logger.log('HTML5 direct audio request failed: ' + directUrl, ERROR);
+							loadViaAssetLibrary();
 						});
 				}
 				catch (e:Dynamic)
 				{
-					Logger.log('HTML5 audio request could not start: ' + directUrl + '\\nException: ' + e, ERROR);
-					complete(null);
+					Logger.log('HTML5 direct audio request could not start: ' + directUrl + '\\nException: ' + e, ERROR);
+					loadViaAssetLibrary();
 				}
 			}
 			
-			// Qualified IDs use Lime's registered asset library. If that cannot
-			// resolve the deferred library at runtime, fall back to the actual
-			// packaged browser URL so gameplay does not depend on Lime's library
-			// registration state.
-			try
-			{
-				Assets.loadSound(url, true)
-					.onComplete(function(sound:Sound) complete(sound))
-					.onError(function(_) loadDirect());
-			}
-			catch (e:Dynamic)
-			{
-				loadDirect();
-			}
+			// Song libraries are intentionally deferred and may not be registered
+			// with Lime when gameplay begins. Start with the real packaged browser
+			// URL so a deferred library can never leave PlayableSong.ready false
+			// indefinitely. The qualified asset-library ID remains a fallback.
+			loadDirect();
 		#else
 			onComplete(null);
 		#end
