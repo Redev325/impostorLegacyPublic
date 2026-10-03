@@ -249,6 +249,19 @@ class InterpEx extends crowplexus.hscript.Interp
 			if (v != null) return v;
 		}
 		
+		// A bare HScript call such as snapCamToPos() or add() can resolve to
+		// a PlayState instance method through parent. On JavaScript, retrieving
+		// the method with Reflect.getProperty() and then calling it without the
+		// original receiver loses the PlayState this binding. The method then
+		// sees its fields (for example camFollow) as undefined.
+		// Bind bare parent-method calls back to the actual parent instance.
+		if (o == null && parent != null && parentFields.contains(f))
+		{
+			final parentMethod:Dynamic = Reflect.getProperty(parent, f);
+			if (parentMethod != null && Reflect.isFunction(parentMethod))
+				return Reflect.callMethod(parent, parentMethod, args);
+		}
+		
 		final method = get(o, f);
 		
 		if (method == null)
