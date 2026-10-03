@@ -42,7 +42,20 @@ class Html5Video
 			video.onloadeddata = function(_) {
 				if (currentVideo != video || finished) return;
 				onReady();
-				try video.play() catch (e:Dynamic) {}
+				try
+				{
+					// Browser autoplay can reject play() after the asynchronous
+					// media load finishes. Treat that as a clean video failure
+					// instead of leaving the game permanently behind the black
+					// cutscene overlay.
+					final playResult:Dynamic = untyped video.play();
+					if (playResult != null)
+						untyped playResult.catch(function(_) finish(errorCallback));
+				}
+				catch (e:Dynamic)
+				{
+					finish(errorCallback);
+				}
 			};
 
 			video.onended = function(_) {
