@@ -50,7 +50,11 @@ class Html5Video
 					// cutscene overlay.
 					final playResult:Dynamic = untyped video.play();
 					if (playResult != null)
-						untyped playResult.catch(function(_) finish(errorCallback));
+					{
+						final rejectHandler:Dynamic = Reflect.field(playResult, 'catch');
+						if (rejectHandler != null)
+							Reflect.callMethod(playResult, rejectHandler, [function(_) finish(errorCallback)]);
+					}
 				}
 				catch (e:Dynamic)
 				{
