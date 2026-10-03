@@ -201,10 +201,6 @@ class MusicBeatState extends FlxUIState
 	
 	override function update(elapsed:Float)
 	{
-		#if html5
-		installHtml5GroupUpdateTracer();
-		#end
-
 		addPlayTimeDelta();
 		
 		final oldStep:Int = curStep;
