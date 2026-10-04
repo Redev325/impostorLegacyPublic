@@ -249,6 +249,17 @@ class InterpEx extends crowplexus.hscript.Interp
 			if (v != null) return v;
 		}
 		
+		// Legacy song callbacks such as videoCutscene() and readDialogue() are
+		// shared HScript functions. On HTML5, routing a shared function through
+		// get(null, f) can enter the reflective lookup path with an undefined
+		// receiver and produce the undefined.indexOf JavaScript exception.
+		if (o == null && sharedFields != null && sharedFields.exists(f))
+		{
+			final sharedMethod:Dynamic = sharedFields.get(f);
+			if (sharedMethod != null && Reflect.isFunction(sharedMethod))
+				return Reflect.callMethod(null, sharedMethod, args);
+		}
+		
 		final method = get(o, f);
 		
 		if (method == null)
