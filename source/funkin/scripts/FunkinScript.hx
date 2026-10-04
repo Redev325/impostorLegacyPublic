@@ -429,6 +429,12 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		set("StageData", funkin.data.StageData);
 		set("PlayState", PlayState);
 		set('FunkinSound', funkin.audio.FunkinSound);
+
+		#if html5
+		set('snapCamToPos', function(x:Float = 0, y:Float = 0, lockPosition:Bool = false):Void {
+			if (PlayState.instance != null) PlayState.instance.snapCamToPos(x, y, lockPosition);
+		});
+		#end
 		
 		#if html5
 		// Avoid reflective method lookup for shader helpers on the JavaScript target.
@@ -472,7 +478,9 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		// objects
 		set("Note", funkin.objects.note.Note);
 		set("Bar", funkin.objects.Bar);
-		#if VIDEOS_ALLOWED
+		#if html5
+		set("FunkinVideoSprite", funkin.video.Html5FunkinVideoSprite);
+		#elseif VIDEOS_ALLOWED
 		set("FunkinVideoSprite", funkin.video.FunkinVideoSprite);
 		#end
 		set("HealthIcon", HealthIcon);

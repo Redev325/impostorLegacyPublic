@@ -1248,15 +1248,12 @@ class PlayState extends MusicBeatState
 	
 	#if html5
 	var waitingForAudio:Bool = false;
-	var audioFallbackTimer:Null<FlxTimer> = null;
 	#end
 	
 	public function startCountdown():Void
 	{
 		#if html5
-		// Do not block the gameplay countdown forever on browser audio decoding.
-		// The song stream can finish loading while the countdown is already running.
-		if (audio != null && !audio.ready && !startedCountdown)
+		if (audio != null && !audio.ready)
 		{
 			if (!waitingForAudio)
 			{
@@ -1266,6 +1263,7 @@ class PlayState extends MusicBeatState
 					if (startingSong && !startedCountdown) startCountdown();
 				});
 			}
+			return;
 		}
 		#end
 		if (startedCountdown)
@@ -1429,17 +1427,7 @@ class PlayState extends MusicBeatState
 	function startSong():Void
 	{
 		#if html5
-		if (audio == null || !audio.ready)
-		{
-			if (audioFallbackTimer == null)
-			{
-				audioFallbackTimer = new FlxTimer().start(0.1, function(t) {
-					audioFallbackTimer = null;
-					if (startingSong && startedCountdown) startSong();
-				});
-			}
-			return;
-		}
+		if (audio == null || !audio.ready) return;
 		#end
 		startingSong = false;
 		

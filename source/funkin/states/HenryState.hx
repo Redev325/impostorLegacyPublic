@@ -2,6 +2,9 @@ package funkin.states;
 
 import flixel.FlxG;
 import flixel.FlxSprite;
+#if html5
+import funkin.backend.Html5Video;
+#end
 
 import funkin.data.Chart;
 import funkin.data.Song;
@@ -100,8 +103,14 @@ class HenryState extends MusicBeatState
 		add(video);
 		video.onEnd(options, true);
 		if (video.load(Paths.video(Paths.sanitize('henry/henryIntro')))) video.delayAndStart();
+		#elseif html5
+		Html5Video.play(
+			'assets/videos/henry/henryIntro.mp4',
+			function() {},
+			options,
+			startWeek
+		);
 		#else
-		// HTML5 does not include hxvlc video support, so skip this cutscene.
 		startWeek();
 		#end
 		
@@ -114,7 +123,6 @@ class HenryState extends MusicBeatState
 	{
 		super.update(elapsed);
 		
-		#if VIDEOS_ALLOWED
 		if (canClick)
 		{
 			for (i in [mic, sock, stare])
@@ -140,13 +148,23 @@ class HenryState extends MusicBeatState
 			
 			if (!FlxG.mouse.overlaps(stare) && !FlxG.mouse.overlaps(mic) && !FlxG.mouse.overlaps(sock)) over = false;
 		}
-		#end
 	}
 	
-	#if VIDEOS_ALLOWED
 	function fail(selection:String)
 	{
 		canClick = false;
+
+		#if html5
+		final videoPath:String = 'assets/videos/henry/' + selection + '.mp4';
+		switch (selection)
+		{
+			case 'mic':
+				FlxG.mouse.visible = false;
+				Html5Video.play(videoPath, function() {}, startWeek, reset);
+			default:
+				Html5Video.play(videoPath, function() {}, reset, reset);
+		}
+		#elseif VIDEOS_ALLOWED
 		switch (selection)
 		{
 			case 'mic':
@@ -155,16 +173,18 @@ class HenryState extends MusicBeatState
 			default:
 				video.onEnd(reset, true);
 		}
-		
+
 		if (video.load(Paths.video(Paths.sanitize('henry/' + selection)))) video.delayAndStart();
+		#end
 	}
-	#end
 	
 	function options():Void
 	{
 		freezeFrame.visible = true;
 		grad.visible = true;
-		#if VIDEOS_ALLOWED
+		#if html5
+		Html5Video.stop();
+		#elseif VIDEOS_ALLOWED
 		video.visible = false;
 		#end
 		
@@ -182,17 +202,19 @@ class HenryState extends MusicBeatState
 		});
 	}
 	
-	#if VIDEOS_ALLOWED
 	function reset()
 	{
 		canClick = true;
+		#if html5
+		Html5Video.stop();
+		#elseif VIDEOS_ALLOWED
 		video.visible = false;
+		#end
 		for (i in [sock, stare, mic, freezeFrame, grad])
 		{
 			i.visible = true;
 		}
 	}
-	#end
 	
 	function startWeek():Void
 	{

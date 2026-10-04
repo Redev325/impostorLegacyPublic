@@ -12,26 +12,37 @@ class Html5Video
 	static var endCallback:Null<Void->Void> = null;
 	static var errorCallback:Null<Void->Void> = null;
 	static var finished:Bool = false;
+	static var started:Bool = false;
+	static var pauseRequested:Bool = false;
 	static var loadTimeout:Null<Timer> = null;
 	#end
 
-	public static function play(path:String, onReady:Void->Void, onEnd:Void->Void, onError:Void->Void):Bool
+	public static function play(path:String, onReady:Void->Void, onEnd:Void->Void, onError:Void->Void, ?muted:Bool = false, ?loop:Bool = false):Bool
 	{
 		#if html5
 			stop();
+
+			if (path == null || path.trim().length == 0)
+			{
+				if (onError != null) onError();
+				return false;
+			}
+
 			final video:js.html.VideoElement = cast Browser.document.createElement('video');
 			currentVideo = video;
 			endCallback = onEnd;
 			errorCallback = onError;
 			finished = false;
-			loadTimeout = null;
+			started = false;
+			pauseRequested = false;
 
 			video.preload = 'auto';
 			video.autoplay = false;
 			video.controls = false;
-			video.loop = false;
-			video.muted = false;
+			video.loop = loop;
+			video.muted = muted;
 			video.setAttribute('playsinline', 'true');
+			video.setAttribute('webkit-playsinline', 'true');
 			video.src = path;
 			video.style.position = 'fixed';
 			video.style.left = '0';
@@ -42,44 +53,55 @@ class Html5Video
 			video.style.backgroundColor = 'black';
 			video.style.zIndex = '99999';
 
-			var videoReady:Bool = false;
-			final videoReadyCallback:Void->Void = function() {
-				if (currentVideo != video || finished || videoReady) return;
-				videoReady = true;
-				if (loadTimeout != null) { loadTimeout.stop(); loadTimeout = null; }
-				onReady();
+			final markStarted:Void->Void = function() {
+				if (currentVideo != video || finished || started || pauseRequested) return;
+				started = true;
+
+				if (loadTimeout != null)
+				{
+					loadTimeout.stop();
+					loadTimeout = null;
+				}
+
+				if (onReady != null) onReady();
+			};
+
+			final requestPlay:Void->Void = function() {
+				if (currentVideo != video || finished || pauseRequested) return;
+
 				try
 				{
-					final playResult:Dynamic = untyped video.play();
-					if (playResult != null)
+					final result:Dynamic = untyped video.play();
+					if (result != null)
 					{
-						final rejectHandler:Dynamic = Reflect.field(playResult, 'catch');
-						if (rejectHandler != null)
-							Reflect.callMethod(playResult, rejectHandler, [function(_) finish(errorCallback)]);
+						final catchFunction:Dynamic = Reflect.field(result, 'catch');
+						if (catchFunction != null)
+						{
+							Reflect.callMethod(result, catchFunction, [function(_) {
+								if (!started) finish(errorCallback);
+							}]);
+						}
 					}
 				}
 				catch (e:Dynamic)
 				{
-					finish(errorCallback);
+					if (!started) finish(errorCallback);
 				}
 			};
 
-			video.onloadeddata = function(_) { videoReadyCallback(); };
-
-			video.oncanplay = function(_) { videoReadyCallback(); };
-			video.onended = function(_) {
-				finish(endCallback);
-			};
-
-			video.onerror = function(_) {
-				finish(errorCallback);
-			};
+			video.onloadeddata = function(_) requestPlay();
+			video.oncanplay = function(_) requestPlay();
+			video.onplay = function(_) markStarted();
+			video.onended = function(_) finish(endCallback);
+			video.onerror = function(_) finish(errorCallback);
 
 			Browser.document.body.appendChild(video);
 
 			loadTimeout = Timer.delay(function() {
-				if (currentVideo == video && !finished) finish(errorCallback);
-			}, 8000);
+				if (currentVideo == video && !finished && !started)
+					finish(errorCallback);
+			}, 12000);
+
 			return true;
 		#else
 			return false;
@@ -93,6 +115,35 @@ class Html5Video
 		#end
 	}
 
+	public static function pause():Void
+	{
+		#if html5
+			if (currentVideo == null || finished) return;
+			pauseRequested = true;
+			try currentVideo.pause() catch (e:Dynamic) {}
+		#end
+	}
+
+	public static function resume():Void
+	{
+		#if html5
+			if (currentVideo == null || finished) return;
+			pauseRequested = false;
+
+			try
+			{
+				final result:Dynamic = untyped currentVideo.play();
+				if (result != null)
+				{
+					final catchFunction:Dynamic = Reflect.field(result, 'catch');
+					if (catchFunction != null)
+						Reflect.callMethod(result, catchFunction, [function(_) {}]);
+				}
+			}
+			catch (e:Dynamic) {}
+		#end
+	}
+
 	public static function stop():Void
 	{
 		#if html5
@@ -101,6 +152,15 @@ class Html5Video
 			endCallback = null;
 			errorCallback = null;
 			finished = true;
+			started = false;
+			pauseRequested = false;
+
+			if (loadTimeout != null)
+			{
+				loadTimeout.stop();
+				loadTimeout = null;
+			}
+
 			if (video != null)
 			{
 				try video.pause() catch (e:Dynamic) {}
@@ -116,7 +176,8 @@ class Html5Video
 	public static function seek(delta:Float):Void
 	{
 		#if html5
-			if (currentVideo == null) return;
+			if (currentVideo == null || finished) return;
+
 			try
 			{
 				final duration:Float = currentVideo.duration;
@@ -128,17 +189,46 @@ class Html5Video
 	}
 
 	#if html5
+	public static function getTime():Float
+	{
+		return currentVideo == null ? 0 : currentVideo.currentTime;
+	}
+
+	public static function getLength():Float
+	{
+		if (currentVideo == null) return -1;
+		final duration:Float = currentVideo.duration;
+		return Math.isNaN(duration) ? -1 : duration;
+	}
+
+	public static function isPlaying():Bool
+	{
+		return currentVideo != null && !currentVideo.paused && !currentVideo.ended;
+	}
+
+	public static function getPercent():Float
+	{
+		final duration = getLength();
+		return duration > 0 ? getTime() / duration : 0;
+	}
+
 	static function finish(callback:Null<Void->Void>):Void
 	{
 		if (finished) return;
 		finished = true;
+		pauseRequested = false;
+
+		if (loadTimeout != null)
+		{
+			loadTimeout.stop();
+			loadTimeout = null;
+		}
+
 		final video = currentVideo;
 		currentVideo = null;
 		final cb = callback;
 		endCallback = null;
 		errorCallback = null;
-
-		if (loadTimeout != null) { loadTimeout.stop(); loadTimeout = null; }
 
 		if (video != null)
 		{

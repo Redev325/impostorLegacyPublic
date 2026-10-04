@@ -126,7 +126,7 @@ public function videoCutscene(?vid:String = 'sussus-moogus', ?dAfter:Bool, ?canS
 		blackYnot.camera = camOther;
 		add(blackYnot);
 
-		final videoPath:String = 'assets/videos/' + Paths.sanitize(vid) + '.mp4';
+		final videoPath:String = FunkinAssets.resolveHtml5VideoPath(vid);
 		dialogueVideo = videoPath;
 		final ready:Void->Void = function() {
 			vidPlaying = true;

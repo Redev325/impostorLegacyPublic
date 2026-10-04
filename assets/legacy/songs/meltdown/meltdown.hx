@@ -42,11 +42,15 @@ function onUpdate()
 		if (controls.BACK)
 		{
 			outroCutscene = false;
+			#if html5
+			Html5Video.stop();
+			#else
 			if (meltdownVideo != null)
 			{
 				meltdownVideo.destroy();
 				meltdownVideo = null;
 			}
+			#end
 			endSong();
 		}
 	}

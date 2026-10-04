@@ -30,11 +30,13 @@ function onEndSong():Void {
 		videoCutscene('finale', false, false, function() endSong());
 		PlayState.seenCutscene = true;
 		
+		#if !html5
 		for (caption in video.captions._queue) // this is why we need ssa format
 		{
 			caption.text.setFormat(Paths.font('vcr.ttf'), 32, FlxColor.RED, FlxTextAlign.CENTER, null, FlxColor.BLACK);
 			caption.recalculate();
 		}
+		#end
 	});
 	
 	return Function_Stop;

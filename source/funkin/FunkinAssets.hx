@@ -207,35 +207,14 @@ class FunkinAssets
 				}
 			}
 			
-			var finished:Bool = false;
 			function complete(sound:Null<Sound>):Void
 			{
-				if (finished) return;
-				finished = true;
 				if (sound != null)
 				{
 					for (key in cacheKeys)
 						html5LoadedSounds.set(key, sound);
 				}
 				onComplete(sound);
-			}
-			
-			function loadViaAssetLibrary():Void
-			{
-				try
-				{
-					Assets.loadSound(url, true)
-						.onComplete(function(sound:Sound) complete(sound))
-						.onError(function(_) {
-							Logger.log('HTML5 asset-library audio request failed: ' + url, WARN);
-							complete(null);
-						});
-				}
-				catch (e:Dynamic)
-				{
-					Logger.log('HTML5 asset-library audio request could not start: ' + url + '\\nException: ' + e, WARN);
-					complete(null);
-				}
 			}
 			
 			function loadDirect():Void
@@ -246,22 +225,31 @@ class FunkinAssets
 					Sound.loadFromFile(directUrl)
 						.onComplete(function(sound:Sound) complete(sound))
 						.onError(function(_) {
-							Logger.log('HTML5 direct audio request failed: ' + directUrl, ERROR);
-							loadViaAssetLibrary();
+							Logger.log('HTML5 audio request failed: ' + directUrl, ERROR);
+							complete(null);
 						});
 				}
 				catch (e:Dynamic)
 				{
-					Logger.log('HTML5 direct audio request could not start: ' + directUrl + '\\nException: ' + e, ERROR);
-					loadViaAssetLibrary();
+					Logger.log('HTML5 audio request could not start: ' + directUrl + '\\nException: ' + e, ERROR);
+					complete(null);
 				}
 			}
 			
-			// Song libraries are intentionally deferred and may not be registered
-			// with Lime when gameplay begins. Start with the real packaged browser
-			// URL so a deferred library can never leave PlayableSong.ready false
-			// indefinitely. The qualified asset-library ID remains a fallback.
-			loadDirect();
+			// Qualified IDs use Lime's registered asset library. If that cannot
+			// resolve the deferred library at runtime, fall back to the actual
+			// packaged browser URL so gameplay does not depend on Lime's library
+			// registration state.
+			try
+			{
+				Assets.loadSound(url, true)
+					.onComplete(function(sound:Sound) complete(sound))
+					.onError(function(_) loadDirect());
+			}
+			catch (e:Dynamic)
+			{
+				loadDirect();
+			}
 		#else
 			onComplete(null);
 		#end
@@ -625,6 +613,44 @@ class FunkinAssets
 		return null;
 	}
 
+
+	#if html5
+	public static function resolveHtml5VideoPath(videoKey:String):String
+	{
+		final raw:String = Std.string(videoKey ?? '').trim();
+		final sanitized:String = raw.length > 0 ? Paths.sanitize(raw) : '';
+		final candidates:Array<String> = [];
+
+		function addCandidates(root:String, key:String):Void
+		{
+			if (key.length == 0) return;
+			candidates.push(root + key + '.mp4');
+			candidates.push(root + key + '.mov');
+		}
+
+		addCandidates('assets/videos/', raw);
+		addCandidates('assets/videos/', sanitized);
+		addCandidates('content/securitydlc/videos/', raw);
+		addCandidates('content/securitydlc/videos/', sanitized);
+
+		final listed:Array<String> = Assets.list();
+		for (candidate in candidates)
+		{
+			for (asset in listed)
+			{
+				var listedPath:String = Std.string(asset);
+				final colon:Int = listedPath.indexOf(':');
+				if (colon > 0) listedPath = listedPath.substr(colon + 1);
+
+				if (listedPath == candidate) return candidate;
+				if (listedPath.toLowerCase() == candidate.toLowerCase()) return listedPath;
+			}
+		}
+
+		final fallback:String = sanitized.length > 0 ? sanitized : raw;
+		return 'assets/videos/' + fallback + '.mp4';
+	}
+	#end
 
 	public static function getHtml5SongInfo(songName:String):Null<String>
 	{

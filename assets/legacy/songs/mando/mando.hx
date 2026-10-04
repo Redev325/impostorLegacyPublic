@@ -1,6 +1,6 @@
 function onLoad()
 {
-	videoCutscene('week3/mando', true);
+	videoCutscene('week3/Mando', true);
 }
 
 function onBeatHit()

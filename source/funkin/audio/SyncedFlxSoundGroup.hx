@@ -261,41 +261,59 @@ class PlayableSong extends VocalGroup
 		final songFolder:String = songPath == 'dlow' ? "d'low" : songPath;
 		final instFile:String = trackSwap ? 'Track-main.ogg' : 'Inst.ogg';
 		final instUrl:String = 'assets/songs/' + songFolder + '/' + instFile;
+		final songLibrary:String = 'song_' + (songPath == 'dlow' ? 'd_low' : songPath);
+		final instAssetId:String = songLibrary + ':' + instUrl;
+		
 		final instSound:FlxSound = new FlxSound();
 		inst = instSound;
 		add(instSound);
 		
-		// Use FlxSound's native browser streaming path. This is the same URL-based
-		// loader used by FunkinSound and, unlike the custom Sound-object bridge,
-		// reliably fires its onLoad callback on HTML5.
-		try
-		{
-			instSound.loadStream(instUrl, false, false, null, function() {
+		// Load the browser Sound asynchronously, then attach the decoded object
+		// to FlxSound. This matches the Flixel API available in this project.
+		FunkinAssets.loadHtml5SoundObject(instAssetId, [instUrl], function(loaded:Null<Sound>) {
+			if (loaded == null)
+			{
+				Logger.log('HTML5 instrument URL load failed: ' + instUrl, ERROR);
+				loading = false;
+				ready = false;
+				return;
+			}
+			try
+			{
+				instSound.loadEmbedded(loaded);
 				loading = false;
 				ready = true;
-			});
-		}
-		catch (e:Dynamic)
-		{
-			Logger.log('HTML5 instrument stream could not start: ' + instUrl + '\\nException: ' + e, ERROR);
-			loading = false;
-			ready = false;
-		}
+			}
+			catch (e:Dynamic)
+			{
+				Logger.log('HTML5 instrument attach failed: ' + instUrl + '\\nException: ' + e, ERROR);
+				loading = false;
+				ready = false;
+			}
+		});
 		
 		if (!trackSwap && data.needsVoices)
 		{
 			final voiceUrl:String = 'assets/songs/' + songFolder + '/Voices.ogg';
+			final voiceAssetId:String = songLibrary + ':' + voiceUrl;
 			final voiceTrack:FlxSound = new FlxSound();
 			addPlayerVocals(voiceTrack);
 			
-			try
-			{
-				voiceTrack.loadStream(voiceUrl, false, false);
-			}
-			catch (e:Dynamic)
-			{
-				Logger.log('HTML5 vocals stream could not start: ' + voiceUrl + '\\nException: ' + e, WARN);
-			}
+			FunkinAssets.loadHtml5SoundObject(voiceAssetId, [voiceUrl], function(loaded:Null<Sound>) {
+				if (loaded == null)
+				{
+					Logger.log('HTML5 vocals URL load failed: ' + voiceUrl, WARN);
+					return;
+				}
+				try
+				{
+					voiceTrack.loadEmbedded(loaded);
+				}
+				catch (e:Dynamic)
+				{
+					Logger.log('HTML5 vocals attach failed: ' + voiceUrl + '\\nException: ' + e, WARN);
+				}
+			});
 		}
 		
 		if (trackSwap) opponentVolume = 0;

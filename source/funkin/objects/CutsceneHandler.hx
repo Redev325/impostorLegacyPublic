@@ -4,6 +4,7 @@ import flixel.FlxG;
 import flixel.FlxBasic;
 import flixel.FlxSprite;
 import flixel.util.FlxSort;
+import flixel.tweens.FlxTween;
 
 import funkin.states.PlayState;
 
@@ -25,7 +26,12 @@ class CutsceneHandler extends FlxBasic
 			if (music != null)
 			{
 				FunkinSound.playMusic(Paths.music(music), 0, false);
+				#if html5
+				FlxG.sound.music.volume = 0;
+				FlxTween.tween(FlxG.sound.music, {volume: 1}, 1);
+				#else
 				FlxG.sound.music.fadeIn();
+				#end
 			}
 			if (onStart != null) onStart();
 		});
