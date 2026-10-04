@@ -2,6 +2,7 @@ package funkin.backend;
 
 #if html5
 import js.Browser;
+import haxe.Timer;
 #end
 
 class Html5Video
@@ -11,6 +12,7 @@ class Html5Video
 	static var endCallback:Null<Void->Void> = null;
 	static var errorCallback:Null<Void->Void> = null;
 	static var finished:Bool = false;
+	static var loadTimeout:Null<Timer> = null;
 	#end
 
 	public static function play(path:String, onReady:Void->Void, onEnd:Void->Void, onError:Void->Void):Bool
@@ -22,6 +24,7 @@ class Html5Video
 			endCallback = onEnd;
 			errorCallback = onError;
 			finished = false;
+			loadTimeout = null;
 
 			video.preload = 'auto';
 			video.autoplay = false;
@@ -39,15 +42,14 @@ class Html5Video
 			video.style.backgroundColor = 'black';
 			video.style.zIndex = '99999';
 
-			video.onloadeddata = function(_) {
-				if (currentVideo != video || finished) return;
+			var videoReady:Bool = false;
+			final videoReadyCallback:Void->Void = function() {
+				if (currentVideo != video || finished || videoReady) return;
+				videoReady = true;
+				if (loadTimeout != null) { loadTimeout.stop(); loadTimeout = null; }
 				onReady();
 				try
 				{
-					// Browser autoplay can reject play() after the asynchronous
-					// media load finishes. Treat that as a clean video failure
-					// instead of leaving the game permanently behind the black
-					// cutscene overlay.
 					final playResult:Dynamic = untyped video.play();
 					if (playResult != null)
 					{
@@ -62,6 +64,9 @@ class Html5Video
 				}
 			};
 
+			video.onloadeddata = function(_) { videoReadyCallback(); };
+
+			video.oncanplay = function(_) { videoReadyCallback(); };
 			video.onended = function(_) {
 				finish(endCallback);
 			};
@@ -71,6 +76,10 @@ class Html5Video
 			};
 
 			Browser.document.body.appendChild(video);
+
+			loadTimeout = Timer.delay(function() {
+				if (currentVideo == video && !finished) finish(errorCallback);
+			}, 8000);
 			return true;
 		#else
 			return false;
@@ -128,6 +137,8 @@ class Html5Video
 		final cb = callback;
 		endCallback = null;
 		errorCallback = null;
+
+		if (loadTimeout != null) { loadTimeout.stop(); loadTimeout = null; }
 
 		if (video != null)
 		{
