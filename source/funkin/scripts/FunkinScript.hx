@@ -431,6 +431,21 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		set('FunkinSound', funkin.audio.FunkinSound);
 
 		#if html5
+		// Legacy song scripts call these functions without a prefix. Bind them
+		// directly to the already-loaded dialogue script instead of using the
+		// generic HScript shared-function reflection path.
+		final callDialogue = function(name:String, args:Array<Dynamic>):Dynamic {
+			final state:Null<PlayState> = PlayState.instance;
+			if (state == null) return null;
+			final dialogueScript:Null<FunkinScript> = state.scripts.getScript('gameplay:assets/scripts/dialogue.hx');
+			if (dialogueScript == null || !dialogueScript.exists(name)) return null;
+			return dialogueScript.call(name, args)?.returnValue;
+		};
+		set('readDialogue', function():Dynamic return callDialogue('readDialogue', []));
+		set('videoCutscene', Reflect.makeVarArgs(function(args:Array<Dynamic>):Dynamic return callDialogue('videoCutscene', args)));
+		#end
+
+		#if html5
 		set('snapCamToPos', function(x:Float = 0, y:Float = 0, lockPosition:Bool = false):Void {
 			if (PlayState.instance != null) PlayState.instance.snapCamToPos(x, y, lockPosition);
 		});
