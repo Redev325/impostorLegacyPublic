@@ -350,7 +350,8 @@ function v4SpeakerShit()
  */
 public function getHudV5SongDialogue(?song:String):Null<String>
 {
-	final safeSong:String = Paths.sanitize(song ?? songName);
+	final activeSong:String = song ?? PlayState.SONG?.song ?? '';
+	final safeSong:String = Paths.sanitize(activeSong);
 	#if html5
 	return FunkinAssets.getHtml5SongDialogue(safeSong);
 	#else
@@ -366,7 +367,8 @@ public function readDialogue()
 		startCountdown();
 		return;
 	}
-	var safeSong:String = Paths.sanitize(songName);
+	var activeSong:String = PlayState.SONG?.song ?? '';
+	var safeSong:String = Paths.sanitize(activeSong);
 	#if html5
 	var cachedDialogue:Null<String> = FunkinAssets.getHtml5SongDialogue(safeSong);
 	if (cachedDialogue != null)
